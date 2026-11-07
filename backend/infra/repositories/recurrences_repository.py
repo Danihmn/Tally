@@ -1,4 +1,5 @@
 import uuid
+from typing import Any
 
 from sqlalchemy import Select, func, select
 from sqlalchemy.orm import Session
@@ -54,3 +55,12 @@ def search_recurrences(
 def count_recurrences(session: Session, filters: RecurrenceFilters) -> int:
     stmt = _apply_filters(select(func.count(Recurrences.id)), filters)
     return session.scalar(stmt) or 0
+
+
+@translate_db_errors("recurrences")
+def create_recurrence(session: Session, values: dict[str, Any]) -> Recurrences:
+    """`values` uses Recurrences column names."""
+    recurrence = Recurrences(**values)
+    session.add(recurrence)
+    session.flush()
+    return recurrence

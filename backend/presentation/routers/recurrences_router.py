@@ -1,14 +1,22 @@
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
-from domain.entities import Recurrence
+from domain.entities import Recurrence, User
 from infra.database.session import get_db
 from presentation.schemas.common_schemas import Page
-from presentation.schemas.recurrence_schemas import RecurrenceQuery, RecurrenceResponse
-from services.recurrences_service import get_recurrence_by_id, search_recurrences
+from presentation.schemas.recurrence_schemas import (
+    RecurrenceCreate,
+    RecurrenceQuery,
+    RecurrenceResponse,
+)
+from services.recurrences_service import (
+    create_recurrence,
+    get_recurrence_by_id,
+    search_recurrences,
+)
 from services.token_service import get_current_user
 
 # Both people of the household see every recurrence (the app is private, for two people).
@@ -56,3 +64,22 @@ def get_recurrence_endpoint(
     session: Annotated[Session, Depends(get_db)],
 ) -> RecurrenceResponse:
     return _to_response(get_recurrence_by_id(session, recurrence_id))
+
+
+@router.post("", response_model=RecurrenceResponse, status_code=status.HTTP_201_CREATED)
+def create_recurrence_endpoint(
+    body: RecurrenceCreate,
+    session: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
+) -> RecurrenceResponse:
+    recurrence = Recurrence(
+        type=body.type,
+        payment_type=body.payment_type,
+        category=body.category,
+        amount=body.amount,
+        currency_code=body.currency_code.upper(),
+        user_id=body.user_id or current_user.id,
+    )
+    created = create_recurrence(session, recurrence)
+    session.commit()
+    return _to_response(created)

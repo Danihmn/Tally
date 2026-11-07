@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from domain.entities import Transaction, User
 from infra.database.session import get_session
+from infra.jobs.reconciliation_registration import reconciliate_financial_entries
 from integrations.pluggy.exceptions.pluggy_exception_error import PluggyExceptionError
 from integrations.pluggy.http_clients.account.account_client import get_all_accounts
 from integrations.pluggy.http_clients.auth.auth_client import authenticate
@@ -79,6 +80,9 @@ def _sync_user_transactions(session: Session, user: User) -> None:
                     incoming,
                     datetime.combine(date_from, time.min, tzinfo=UTC),
                 )
+                reconciliate_financial_entries(
+                    user.id
+                )  # After syncing all accounts, we can reconciliate the financial entries for this user
         except PluggyExceptionError:
             logger.warning(
                 "Pluggy error on item %s, skipping it",

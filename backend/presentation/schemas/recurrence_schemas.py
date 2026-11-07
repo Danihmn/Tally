@@ -41,6 +41,19 @@ class RecurrenceQuery(BaseModel):
         )
 
 
+class RecurrenceCreate(BaseModel):
+    """Body of POST /recurrences. `user_id` defaults to the logged user."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    type: Literal["REVENUES", "EXPENSES"]
+    payment_type: Literal["DEBIT", "CREDIT"] | None = None
+    category: str | None = Field(default=None, min_length=1, max_length=100)
+    amount: decimal.Decimal = Field(gt=0, max_digits=18, decimal_places=2)
+    currency_code: str = Field(default="BRL", min_length=3, max_length=3)
+    user_id: uuid.UUID | None = None
+
+
 class RecurrenceResponse(BaseModel):
     id: uuid.UUID
     user_id: uuid.UUID | None
