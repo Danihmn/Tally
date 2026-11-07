@@ -1,0 +1,56 @@
+import uuid
+
+from sqlalchemy import Select, func, select
+from sqlalchemy.orm import Session
+
+from domain.read_models import RecurrenceFilters
+from infra.database.models import Recurrences
+from infra.repositories.exceptions import RecordNotFoundError, translate_db_errors
+
+
+def _apply_filters(stmt: Select, filters: RecurrenceFilters) -> Select:
+    stmt = stmt.where(Recurrences.deleted_at.is_(None))
+    if filters.user_id is not None:
+        stmt = stmt.where(Recurrences.user_id == filters.user_id)
+    if filters.type is not None:
+        stmt = stmt.where(Recurrences.type == filters.type)
+    if filters.payment_type is not None:
+        stmt = stmt.where(Recurrences.payment_type == filters.payment_type)
+    if filters.category is not None:
+        stmt = stmt.where(Recurrences.category == filters.category)
+    if filters.min_amount is not None:
+        stmt = stmt.where(Recurrences.amount >= filters.min_amount)
+    if filters.max_amount is not None:
+        stmt = stmt.where(Recurrences.amount <= filters.max_amount)
+    return stmt
+
+
+@translate_db_errors("recurrences")
+def get_recurrence_by_id(session: Session, recurrence_id: uuid.UUID) -> Recurrences:
+    """A recurrence that was not soft deleted."""
+    recurrence = session.get(Recurrences, recurrence_id)
+    if recurrence is None or recurrence.deleted_at is not None:
+        raise RecordNotFoundError("recurrences", "get_recurrence_by_id")
+    return recurrence
+
+
+@translate_db_errors("recurrences")
+def search_recurrences(
+    session: Session,
+    filters: RecurrenceFilters,
+    limit: int = 50,
+    offset: int = 0,
+) -> list[Recurrences]:
+    stmt = _apply_filters(select(Recurrences), filters)
+    stmt = (
+        stmt.order_by(Recurrences.created_at.desc(), Recurrences.id)
+        .limit(limit)
+        .offset(offset)
+    )
+    return list(session.scalars(stmt).all())
+
+
+@translate_db_errors("recurrences")
+def count_recurrences(session: Session, filters: RecurrenceFilters) -> int:
+    stmt = _apply_filters(select(func.count(Recurrences.id)), filters)
+    return session.scalar(stmt) or 0

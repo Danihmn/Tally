@@ -387,7 +387,11 @@ class FinancialEntries(Base):
             name="financial_entries_status_check",
         ),
         CheckConstraint(
-            "type = ANY (ARRAY['DEBIT'::text, 'CREDIT'::text])",
+            "payment_type = ANY (ARRAY['DEBIT'::text, 'CREDIT'::text])",
+            name="financial_entries_payment_type_check",
+        ),
+        CheckConstraint(
+            "type = ANY (ARRAY['REVENUES'::text, 'EXPENSES'::text])",
             name="financial_entries_type_check",
         ),
         ForeignKeyConstraint(
@@ -421,7 +425,6 @@ class FinancialEntries(Base):
     )
     user_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False)
-    type: Mapped[str] = mapped_column(Text, nullable=False)
     amount: Mapped[decimal.Decimal] = mapped_column(Numeric(18, 2), nullable=False)
     currency_code: Mapped[str] = mapped_column(
         String(3), nullable=False, server_default=text("'BRL'::character varying")
@@ -433,6 +436,9 @@ class FinancialEntries(Base):
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(True), nullable=False, server_default=text("now()")
     )
+    type: Mapped[str] = mapped_column(
+        Text, nullable=False, server_default=text("'EXPENSES'::text")
+    )
     bank_account_id: Mapped[uuid.UUID | None] = mapped_column(Uuid)
     category: Mapped[str | None] = mapped_column(Text)
     due_date: Mapped[datetime.date | None] = mapped_column(Date)
@@ -441,6 +447,7 @@ class FinancialEntries(Base):
     notes: Mapped[str | None] = mapped_column(Text)
     updated_at: Mapped[datetime.datetime | None] = mapped_column(DateTime(True))
     deleted_at: Mapped[datetime.datetime | None] = mapped_column(DateTime(True))
+    payment_type: Mapped[str | None] = mapped_column(Text)
 
     bank_account: Mapped[BankAccounts | None] = relationship(
         "BankAccounts", back_populates="financial_entries"
@@ -513,7 +520,11 @@ class Recurrences(Base):
     __table_args__ = (
         CheckConstraint("amount > 0", name="recurrences_amount_check"),
         CheckConstraint(
-            "type = ANY (ARRAY['DEBIT'::text, 'CREDIT'::text])",
+            "payment_type = ANY (ARRAY['DEBIT'::text, 'CREDIT'::text])",
+            name="recurrences_payment_type_check",
+        ),
+        CheckConstraint(
+            "type = ANY (ARRAY['REVENUES'::text, 'EXPENSES'::text])",
             name="recurrences_type_check",
         ),
         ForeignKeyConstraint(
@@ -528,7 +539,6 @@ class Recurrences(Base):
     id: Mapped[uuid.UUID] = mapped_column(
         Uuid, primary_key=True, server_default=text("gen_random_uuid()")
     )
-    type: Mapped[str] = mapped_column(Text, nullable=False)
     amount: Mapped[decimal.Decimal] = mapped_column(Numeric(18, 2), nullable=False)
     currency_code: Mapped[str] = mapped_column(
         String(3), nullable=False, server_default=text("'BRL'::character varying")
@@ -536,9 +546,13 @@ class Recurrences(Base):
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(True), nullable=False, server_default=text("now()")
     )
+    type: Mapped[str] = mapped_column(
+        Text, nullable=False, server_default=text("'EXPENSES'::text")
+    )
     category: Mapped[str | None] = mapped_column(Text)
     updated_at: Mapped[datetime.datetime | None] = mapped_column(DateTime(True))
     deleted_at: Mapped[datetime.datetime | None] = mapped_column(DateTime(True))
     user_id: Mapped[uuid.UUID | None] = mapped_column(Uuid)
+    payment_type: Mapped[str | None] = mapped_column(Text)
 
     user: Mapped[Users | None] = relationship("Users", back_populates="recurrences")

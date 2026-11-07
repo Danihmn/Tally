@@ -6,6 +6,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from domain.read_models import TransactionFilters
+from presentation.schemas._validators import check_amount_range, check_date_range
 from presentation.schemas.common_schemas import end_of_day_utc, start_of_day_utc
 
 
@@ -29,14 +30,8 @@ class TransactionQuery(BaseModel):
 
     @model_validator(mode="after")
     def _check_ranges(self) -> TransactionQuery:
-        if self.date_from and self.date_to and self.date_from > self.date_to:
-            raise ValueError("date_from must not be after date_to")
-        if (
-            self.min_amount is not None
-            and self.max_amount is not None
-            and self.min_amount > self.max_amount
-        ):
-            raise ValueError("min_amount must not be greater than max_amount")
+        check_date_range(self.date_from, self.date_to, "date_from", "date_to")
+        check_amount_range(self.min_amount, self.max_amount)
         return self
 
     def to_filters(self) -> TransactionFilters:

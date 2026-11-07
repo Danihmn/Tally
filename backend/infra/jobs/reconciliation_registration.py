@@ -86,7 +86,7 @@ def reconciliate_financial_entries(user_id: uuid.UUID) -> None:
     """
     Pairs PLANNED financial entries with POSTED bank transactions.
 
-    Only unambiguous matches (same amount, type, account and date within the
+    Only unambiguous matches (same amount, direction (EXPENSES = DEBIT, REVENUES = CREDIT), account and date within the
     tolerance, one candidate on each side) are reconciled: a row is added to
     `reconciliations` (source AUTO) and the entry becomes RECONCILED.
     Everything else stays PLANNED, to be handled by the AI agent.

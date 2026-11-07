@@ -8,7 +8,9 @@ from presentation.exception_handlers import register_exception_handlers
 from presentation.routers import (
     auth_router,
     bank_accounts_router,
+    financial_entries_router,
     pluggy_items_router,
+    recurrences_router,
     transactions_router,
     users_router,
 )
@@ -30,4 +32,6 @@ app.include_router(users_router.router)
 app.include_router(pluggy_items_router.router)
 app.include_router(bank_accounts_router.router)
 app.include_router(transactions_router.router)
+app.include_router(financial_entries_router.router)
+app.include_router(recurrences_router.router)
 app.include_router(item_webhooks.router)

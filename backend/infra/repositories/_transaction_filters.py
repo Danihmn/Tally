@@ -2,6 +2,7 @@ from sqlalchemy import Select, func
 
 from domain.read_models import TransactionFilters
 from infra.database.models import BankAccounts, PluggyItems, Transactions
+from infra.repositories._like import ilike_contains
 
 
 def join_owner(stmt: Select) -> Select:
@@ -9,10 +10,6 @@ def join_owner(stmt: Select) -> Select:
     return stmt.join(
         BankAccounts, Transactions.bank_account_id == BankAccounts.id
     ).join(PluggyItems, BankAccounts.pluggy_item_id == PluggyItems.id)
-
-
-def _escape_like(text: str) -> str:
-    return text.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
 
 
 def apply_filters(stmt: Select, filters: TransactionFilters) -> Select:
@@ -33,8 +30,7 @@ def apply_filters(stmt: Select, filters: TransactionFilters) -> Select:
     if filters.category is not None:
         stmt = stmt.where(Transactions.category == filters.category)
     if filters.search:
-        pattern = f"%{_escape_like(filters.search)}%"
-        stmt = stmt.where(Transactions.description.ilike(pattern, escape="\\"))
+        stmt = stmt.where(ilike_contains(Transactions.description, filters.search))
     if filters.min_amount is not None:
         stmt = stmt.where(func.abs(Transactions.amount) >= filters.min_amount)
     if filters.max_amount is not None:

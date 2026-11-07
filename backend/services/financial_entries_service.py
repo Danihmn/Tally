@@ -4,6 +4,7 @@ import uuid
 from sqlalchemy.orm import Session
 
 from domain.entities import FinancialEntry
+from domain.read_models import FinancialEntryFilters
 from infra.repositories import financial_entries_repository
 from services._mappers import to_entity, to_values
 from services.exceptions import translate_repository_errors
@@ -70,3 +71,28 @@ def mark_financial_entry_deleted(
 ) -> FinancialEntry:
     entry = financial_entries_repository.soft_delete_financial_entry(session, entry_id)
     return to_entity(FinancialEntry, entry)
+
+
+@translate_repository_errors
+def get_active_financial_entry_by_id(
+    session: Session, entry_id: uuid.UUID
+) -> FinancialEntry:
+    entry = financial_entries_repository.get_active_financial_entry_by_id(
+        session, entry_id
+    )
+    return to_entity(FinancialEntry, entry)
+
+
+@translate_repository_errors
+def search_financial_entries(
+    session: Session,
+    filters: FinancialEntryFilters,
+    limit: int = 50,
+    offset: int = 0,
+) -> tuple[list[FinancialEntry], int]:
+    """A page of entries and the total that match the filters."""
+    rows = financial_entries_repository.search_financial_entries(
+        session, filters, limit, offset
+    )
+    total = financial_entries_repository.count_financial_entries(session, filters)
+    return [to_entity(FinancialEntry, e) for e in rows], total

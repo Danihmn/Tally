@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 @dataclass(slots=True)
 class Recurrence:
-    type: str
+    type: str  # REVENUES | EXPENSES
     amount: decimal.Decimal
     currency_code: str = "BRL"
     id: uuid.UUID | None = None
@@ -15,3 +15,4 @@ class Recurrence:
     updated_at: datetime.datetime | None = None
     deleted_at: datetime.datetime | None = None
     user_id: uuid.UUID | None = None
+    payment_type: str | None = None  # DEBIT | CREDIT

@@ -11,6 +11,9 @@ from domain.entities import FinancialEntry, Transaction
 
 DATE_TOLERANCE_DAYS = 3
 
+# The direction of the money: an expense leaves the account (DEBIT), a revenue enters it (CREDIT).
+ENTRY_TYPE_TO_TRANSACTION_TYPE = {"EXPENSES": "DEBIT", "REVENUES": "CREDIT"}
+
 
 def is_match(entry: FinancialEntry, transaction: Transaction) -> bool:
     """True when the transaction looks like the payment/receipt of the entry."""
@@ -18,7 +21,7 @@ def is_match(entry: FinancialEntry, transaction: Transaction) -> bool:
         return False
     if transaction.currency_code != entry.currency_code:
         return False
-    if transaction.type != entry.type:
+    if transaction.type != ENTRY_TYPE_TO_TRANSACTION_TYPE.get(entry.type):
         return False
     if (
         entry.bank_account_id is not None
