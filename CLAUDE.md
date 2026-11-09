@@ -19,6 +19,9 @@ Use case: private use by two people (two different CPFs). Not a public product f
 | Database | PostgreSQL |
 | Mobile app | Flutter |
 | Bank data | Pluggy, free "Meu Pluggy" plan (Open Finance) |
+| Hosting (planned, not final) | AWS Lightsail |
+
+Hosting is **not decided yet**. AWS Lightsail is the likely choice because of low management complexity and low cost. It may change. Details and open points are in `backend/README.md` ("Deployment (planned)"). In production, the static public domain replaces ngrok as `PUBLIC_BASE_URL`.
 
 Pluggy code lives in `backend/integrations/pluggy/` (`http_clients/`, `schemas/`, `exceptions/`, `config.py`).
 

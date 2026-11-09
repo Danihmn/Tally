@@ -104,6 +104,36 @@ How it works:
 - The tunnel must be open when Pluggy updates the data. With it closed, ngrok answers `404 ERR_NGROK_3200` and Pluggy gives up after a few attempts.
 - ngrok's inspector, with the received requests, is at `http://127.0.0.1:4040`.
 
+## Deployment (planned): AWS Lightsail
+
+**Status:** planned, the decision is not final.
+
+**Why Lightsail:**
+
+- Low management complexity: a fixed-plan virtual server, without the IAM / VPC / ECS setup of the larger AWS services.
+- Low and predictable cost, which fits a private app used by two people.
+
+**Intended shape:**
+
+- One Lightsail instance running the FastAPI API.
+- PostgreSQL on the same instance (cheapest) or on a Lightsail managed database (less upkeep).
+- A static IP and a domain, with HTTPS.
+
+**Effect on the project:**
+
+- The static public domain replaces ngrok in production: `PUBLIC_BASE_URL` becomes that domain, and the webhook registration (`infra/jobs/webhook_registration.py`) uses it as it does today.
+- ngrok stays only for local development.
+
+**Open points (to decide):**
+
+- [ ] PostgreSQL on the instance or managed.
+- [ ] HTTPS: reverse proxy (Caddy / nginx + Let's Encrypt) or Lightsail load balancer.
+- [ ] Backups / snapshots. The transaction history must not be lost (see `CLAUDE.md`, section 5.4).
+- [ ] How the secrets (`JWT_SECRET_KEY`, `ENCRYPTION_KEY`, `DATABASE_URL`) reach the server.
+- [ ] How the API is run (systemd or Docker).
+
+Prices and plan sizes are not written here because they change. Check the AWS pricing when deciding.
+
 ## Testing flow
 
 1. Postgres running, with the scripts applied.
