@@ -6,12 +6,12 @@ from sqlalchemy.orm import Session
 
 from domain.read_models import TransactionWithOwner
 from infra.database.session import get_db
+from presentation.dependencies.auth import get_current_user
 from presentation.schemas.common_schemas import Page
 from presentation.schemas.transaction_schemas import (
     TransactionQuery,
     TransactionResponse,
 )
-from services.token_service import get_current_user
 from services.transactions_service import (
     get_transaction_with_owner,
     search_transactions,

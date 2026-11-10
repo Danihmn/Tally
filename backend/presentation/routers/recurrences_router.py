@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from domain.entities import Recurrence, User
 from infra.database.session import get_db
+from presentation.dependencies.auth import get_current_user
 from presentation.schemas.common_schemas import Page
 from presentation.schemas.recurrence_schemas import (
     RecurrenceCreate,
@@ -17,7 +18,6 @@ from services.recurrences_service import (
     get_recurrence_by_id,
     search_recurrences,
 )
-from services.token_service import get_current_user
 
 # Both people of the household see every recurrence (the app is private, for two people).
 router = APIRouter(

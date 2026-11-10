@@ -100,7 +100,7 @@ Pluggy tells us when an item is created, updated or deleted by calling a webhook
 
 How it works:
 
-- At startup (and when a user is created), the backend registers (or fixes) three webhooks of every user in Pluggy, pointing to `PUBLIC_BASE_URL` + the route of each event (`infra/jobs/webhook_registration.py`):
+- At startup (and when a user is created), the backend registers (or fixes) three webhooks of every user in Pluggy, pointing to `PUBLIC_BASE_URL` + the route of each event (`jobs/webhook_registration.py`):
 
   | Event | Route | What the backend does |
   |---|---|---|
@@ -133,7 +133,7 @@ How it works:
 
 - The API runs with **one worker, one process** (for example `uvicorn` without `--workers`, and no `--reload` in production). One instance only: no auto-scaling, no second instance behind a load balancer.
 - Why: the webhook registration (`register_webhooks`, called in the app's `lifespan`) runs at the startup of every process. It reads the webhooks in Pluggy, and if the secret does not match the stored hash it rotates it: new secret in Pluggy first, then its hash in the database. Two processes starting together can do this at the same time. Pluggy then keeps one secret and the database the hash of the other, and every webhook gets a 401 until the next restart.
-- **If more than one worker is ever needed, or AWS auto-scaling is turned on, first implement a lock in the webhook registration** (`infra/jobs/webhook_registration.py`). Use a PostgreSQL advisory lock around the whole loop of users and `ensure_item_webhooks`, on the same session (connection), released in a `finally`:
+- **If more than one worker is ever needed, or AWS auto-scaling is turned on, first implement a lock in the webhook registration** (`jobs/webhook_registration.py`). Use a PostgreSQL advisory lock around the whole loop of users and `ensure_item_webhooks`, on the same session (connection), released in a `finally`:
 
 ```python
 from sqlalchemy import text
@@ -152,7 +152,7 @@ with get_session() as session:
 
 **Effect on the project:**
 
-- The static public domain replaces ngrok in production: `PUBLIC_BASE_URL` becomes that domain, and the webhook registration (`infra/jobs/webhook_registration.py`) uses it as it does today.
+- The static public domain replaces ngrok in production: `PUBLIC_BASE_URL` becomes that domain, and the webhook registration (`jobs/webhook_registration.py`) uses it as it does today.
 - ngrok stays only for local development.
 
 **Open points (to decide):**
@@ -179,10 +179,11 @@ Prices and plan sizes are not written here because they change. Check the AWS pr
 
 | Folder | Content |
 |---|---|
-| `domain/` | Entities |
-| `infra/` | Database (session, generated models), repositories, jobs |
+| `domain/` | Entities, read models, pure rules (reconciliation matching) |
+| `infra/` | Database (session, generated models), repositories (`common/`: errors and query helpers), security (`security/`: password hash, encryption, webhook secret, JWT) |
 | `integrations/pluggy/` | Pluggy's HTTP clients, schemas and config |
-| `presentation/` | FastAPI app, routers, schemas, webhooks |
-| `services/` | Business rules |
+| `jobs/` | Background flows that call the services (item registration, transaction import, reconciliation, webhook registration) |
+| `presentation/` | FastAPI app, routers, schemas, webhooks, dependencies (`get_current_user`) |
+| `services/` | Business rules (`common/`: service errors and entity mappers) |
 | `sql_scripts/` | Schema (source of truth) |
 | `tests/` | Unit tests, same folder structure as the source |

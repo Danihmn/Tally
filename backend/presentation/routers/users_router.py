@@ -6,11 +6,11 @@ from sqlalchemy.orm import Session
 
 from domain.entities import User
 from infra.database.session import get_db
-from infra.jobs.webhook_registration import register_webhooks
+from infra.security.encryption import encrypt
+from infra.security.password_hasher import get_password_hash
+from jobs.webhook_registration import register_webhooks
+from presentation.dependencies.auth import get_current_user
 from presentation.schemas.user_schemas import UserCreate, UserResponse
-from services.encryption_service import encrypt
-from services.password_hash_service import get_password_hash
-from services.token_service import get_current_user
 from services.users_service import create_user, get_user_by_id, list_users
 
 router = APIRouter(prefix="/users", tags=["users"])

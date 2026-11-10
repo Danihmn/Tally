@@ -3,6 +3,12 @@ import logging
 from sqlalchemy.orm import Session
 
 from domain.entities import User
+from infra.security.encryption import decrypt
+from infra.security.webhook_secret import (
+    generate_webhook_secret,
+    hash_webhook_secret,
+    verify_webhook_secret,
+)
 from integrations.pluggy.config import item_webhook_paths, webhook_token_header
 from integrations.pluggy.http_clients.auth.auth_client import authenticate
 from integrations.pluggy.http_clients.webhook.webhook_client import (
@@ -13,13 +19,7 @@ from integrations.pluggy.http_clients.webhook.webhook_client import (
 from integrations.pluggy.schemas.webhook.webhook_response_schema import (
     WebhookResponseSchema,
 )
-from services.encryption_service import decrypt
 from services.users_service import update_user_webhook_secret_hash
-from services.webhook_secret_service import (
-    generate_webhook_secret,
-    hash_webhook_secret,
-    verify_webhook_secret,
-)
 
 logger = logging.getLogger(__name__)
 

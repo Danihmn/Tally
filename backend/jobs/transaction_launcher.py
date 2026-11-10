@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from domain.entities import Transaction, User
 from infra.database.session import get_session
-from infra.jobs.reconciliation_registration import reconciliate_financial_entries
+from infra.security.encryption import decrypt
 from integrations.pluggy.exceptions.pluggy_exception_error import PluggyExceptionError
 from integrations.pluggy.http_clients.account.account_client import get_all_accounts
 from integrations.pluggy.http_clients.auth.auth_client import authenticate
@@ -16,9 +16,9 @@ from integrations.pluggy.http_clients.transaction.transaction_client import (
     get_all_transactions,
 )
 from integrations.pluggy.schemas.base_error_schema import BaseErrorSchema
+from jobs.reconciliation_registration import reconciliate_financial_entries
 from services.bank_accounts_sync_service import sync_bank_account
-from services.encryption_service import decrypt
-from services.exceptions import ServiceError
+from services.common.exceptions import ServiceError
 from services.pluggy_items_service import list_pluggy_items_by_user
 from services.transactions_sync_service import (
     sync_account_transactions,

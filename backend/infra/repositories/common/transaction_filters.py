@@ -2,7 +2,7 @@ from sqlalchemy import Select, func
 
 from domain.read_models import TransactionFilters
 from infra.database.models import BankAccounts, PluggyItems, Transactions
-from infra.repositories._like import ilike_contains
+from infra.repositories.common.like import ilike_contains
 
 
 def join_owner(stmt: Select) -> Select:

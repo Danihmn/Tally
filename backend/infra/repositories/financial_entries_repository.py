@@ -7,8 +7,11 @@ from sqlalchemy.orm import Session
 
 from domain.read_models import FinancialEntryFilters
 from infra.database.models import FinancialEntries
-from infra.repositories._like import ilike_contains
-from infra.repositories.exceptions import RecordNotFoundError, translate_db_errors
+from infra.repositories.common.exceptions import (
+    RecordNotFoundError,
+    translate_db_errors,
+)
+from infra.repositories.common.like import ilike_contains
 
 # Ids per UPDATE statement.
 _CHUNK_SIZE = 500
