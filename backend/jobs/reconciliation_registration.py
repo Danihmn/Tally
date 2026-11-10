@@ -9,7 +9,7 @@ from domain.entities import FinancialEntry, Reconciliation, Transaction
 from domain.read_models import TransactionFilters
 from domain.reconciliation_matching import find_matches
 from infra.database.session import get_session
-from services.exceptions import ServiceError
+from services.common.exceptions import ServiceError
 from services.financial_entries_service import (
     list_financial_entries_by_user,
     mark_financial_entries_status,

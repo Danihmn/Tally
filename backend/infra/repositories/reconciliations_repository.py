@@ -6,7 +6,10 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from infra.database.models import Reconciliations
-from infra.repositories.exceptions import RecordNotFoundError, translate_db_errors
+from infra.repositories.common.exceptions import (
+    RecordNotFoundError,
+    translate_db_errors,
+)
 
 # Ids per IN clause.
 _CHUNK_SIZE = 500

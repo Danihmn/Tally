@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.concurrency import run_in_threadpool
 
-from infra.jobs.webhook_registration import register_webhooks
+from jobs.webhook_registration import register_webhooks
 from presentation.exception_handlers import register_exception_handlers
 from presentation.routers import (
     auth_router,

@@ -5,22 +5,22 @@ from sqlalchemy.orm import Session
 
 from domain.entities import User
 from infra.database.session import get_db
-from infra.jobs.item_registration import register_user_item
-from infra.jobs.transaction_launcher import launch_user_transactions
+from infra.security.webhook_secret import hash_webhook_secret
 from integrations.pluggy.config import (
     item_created_webhook_path,
     item_deleted_webhook_path,
     item_updated_webhook_path,
     webhook_token_header,
 )
+from jobs.item_registration import register_user_item
+from jobs.transaction_launcher import launch_user_transactions
 from presentation.schemas.pluggy_webhook_schemas import PluggyItemEvent
-from services.exceptions import NotFoundError
+from services.common.exceptions import NotFoundError
 from services.pluggy_items_service import (
     get_pluggy_item_by_pluggy_item_id,
     mark_pluggy_item_deleted,
 )
 from services.users_service import get_user_by_webhook_secret_hash
-from services.webhook_secret_service import hash_webhook_secret
 
 router = APIRouter(tags=["pluggy-webhooks"])
 

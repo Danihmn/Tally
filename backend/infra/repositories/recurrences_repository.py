@@ -6,7 +6,10 @@ from sqlalchemy.orm import Session
 
 from domain.read_models import RecurrenceFilters
 from infra.database.models import Recurrences
-from infra.repositories.exceptions import RecordNotFoundError, translate_db_errors
+from infra.repositories.common.exceptions import (
+    RecordNotFoundError,
+    translate_db_errors,
+)
 
 
 def _apply_filters(stmt: Select, filters: RecurrenceFilters) -> Select:

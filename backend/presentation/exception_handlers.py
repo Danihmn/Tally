@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 
-from services.exceptions import (
+from services.common.exceptions import (
     AlreadyExistsError,
     InvalidDataError,
     NotFoundError,

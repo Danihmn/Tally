@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from domain.read_models import BankAccountWithOwner
 from infra.database.session import get_db
+from presentation.dependencies.auth import get_current_user
 from presentation.schemas.bank_account_schemas import (
     BankAccountQuery,
     BankAccountResponse,
@@ -14,7 +15,6 @@ from services.bank_accounts_service import (
     get_bank_account_with_owner,
     search_bank_accounts,
 )
-from services.token_service import get_current_user
 
 # Both people of the household see every account (the app is private, for two people).
 router = APIRouter(
