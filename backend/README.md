@@ -70,6 +70,16 @@ uv run fastapi dev presentation/app.py
 
 The API starts at `http://127.0.0.1:8000` and the interactive docs are at `http://127.0.0.1:8000/docs`.
 
+## Running the tests
+
+From `backend/`:
+
+```bash
+uv run python -m unittest discover -s tests -t .
+```
+
+Unit tests only (standard library `unittest`): no database, no Pluggy and no `.env` needed. The rules are in `CLAUDE.md` (section 6).
+
 ## Pluggy webhooks with ngrok
 
 Pluggy tells us when an item is created, updated or deleted by calling a webhook. Since the API runs on your machine, ngrok exposes it publicly.
@@ -175,3 +185,4 @@ Prices and plan sizes are not written here because they change. Check the AWS pr
 | `presentation/` | FastAPI app, routers, schemas, webhooks |
 | `services/` | Business rules |
 | `sql_scripts/` | Schema (source of truth) |
+| `tests/` | Unit tests, same folder structure as the source |

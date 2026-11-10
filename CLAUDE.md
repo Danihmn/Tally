@@ -77,3 +77,25 @@ Rules for the agent:
 ### 5.4 Data we keep
 - Re-authorizing can change the `itemId`. Our tables use our own UUID primary keys, and Pluggy ids are separate unique columns. Transactions are reconciled by our own ids, not by assuming the item id is stable.
 - We store transactions locally: after the consent expires, the API returns nothing, and the AI features need the history.
+
+## 6. Tests
+
+Unit tests live in `backend/tests/`. They test the logic only: **no database, no Pluggy, no network**.
+
+Rules for the agent:
+1. **Every new feature, fix or adjustment comes with tests.** Create the tests if they don't exist, or update the existing ones. Then run the whole suite and make sure it passes before committing. Say in the answer which tests were added or changed, and the result of the run.
+2. Use only the standard library: `unittest` and `unittest.mock`. For routers, `fastapi.testclient.TestClient` (it uses `httpx`, already a dependency). **Do not add test dependencies** (no pytest, pytest-mock, freezegun, respx...).
+3. One test file per source module, in the same folder structure as the source: `services/x.py` → `tests/services/test_x.py`, `infra/jobs/y.py` → `tests/infra/jobs/test_y.py`. Every test folder has an `__init__.py`. Keep each file about its own module only, and group the tests in one `TestCase` class per function or behavior.
+4. Patch names **where they are used**, not where they are defined (`patch("infra.jobs.transaction_launcher.get_all_transactions")`). The `Session` is a `MagicMock`. A `get_session()` is replaced with `tests.factories.fake_get_session(session)`.
+5. Shared builders go in `tests/factories.py` (`make_transaction`, `make_entry`, `make_user`...). Money uses `Decimal`. Dates are frozen by patching `date` / `datetime` in the module under test (see `tests/infra/jobs/`).
+6. `tests/__init__.py` sets fake env vars before any import (the settings and the Fernet key are built at import time). Do not read the real `.env` in tests.
+7. Repositories (`infra/repositories/`) are SQL: they are out of the unit tests scope (they need a real Postgres, in a future integration suite). Do not mock the SQLAlchemy session to "test" a query.
+8. Test names describe the behavior (`test_empty_answer_from_pluggy_deletes_nothing`), not the implementation.
+
+Run from `backend/`:
+
+```bash
+uv run python -m unittest discover -s tests -t .
+```
+
+`main_test.py` is not a test: it runs the real sync job. The `test*.py` pattern does not collect it.
