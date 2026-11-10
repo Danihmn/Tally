@@ -23,7 +23,7 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="Finance App", lifespan=lifespan)
+app = FastAPI(title="Tally - Personal Financial Assistant", lifespan=lifespan)
 
 register_exception_handlers(app)
 

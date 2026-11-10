@@ -1,4 +1,4 @@
-# Finance App — Backend
+# Tally — Backend
 
 FastAPI backend of the personal finance app (bank reconciliation + AI). The project goal, stack and rules are in the root [`CLAUDE.md`](../CLAUDE.md).
 

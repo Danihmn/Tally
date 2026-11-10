@@ -1,4 +1,4 @@
-# Personal Finance App (Bank Reconciliation + AI)
+# Tally (Bank Reconciliation + AI)
 
 ## 1. Project goal
 
