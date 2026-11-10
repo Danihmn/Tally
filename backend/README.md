@@ -51,6 +51,10 @@ cp .env.example .env
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | Access token lifetime |
 | `ENCRYPTION_KEY` | Fernet key that encrypts the Pluggy client secret |
 | `PUBLIC_BASE_URL` | Public HTTPS URL Pluggy reaches the backend at (the ngrok one) |
+| `BEDROCK_API_KEY` | Optional. Empty or unset: the AI agents use local Ollama (dev). Filled: they use the OpenAI model on AWS Bedrock (production) |
+| `BEDROCK_BASE_URL` | OpenAI-compatible Bedrock endpoint. Required when `BEDROCK_API_KEY` is set |
+| `BEDROCK_MODEL` | Bedrock model id. Required when `BEDROCK_API_KEY` is set |
+| `OLLAMA_BASE_URL` / `OLLAMA_MODEL` | Optional. Default `http://localhost:11434` / `llama3.2:latest` |
 
 Generate the `ENCRYPTION_KEY`:
 
