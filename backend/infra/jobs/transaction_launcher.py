@@ -15,6 +15,7 @@ from integrations.pluggy.http_clients.auth.auth_client import authenticate
 from integrations.pluggy.http_clients.transaction.transaction_client import (
     get_all_transactions,
 )
+from integrations.pluggy.schemas.base_error_schema import BaseErrorSchema
 from services.bank_accounts_sync_service import sync_bank_account
 from services.encryption_service import decrypt
 from services.exceptions import ServiceError
@@ -58,6 +59,8 @@ def _sync_user_transactions(session: Session, user: User) -> None:
                     days=1, months=6
                 )  # Last 6 months (and D-1, recommended by Pluggy)
                 incoming: list[Transaction] = []
+                seen_cursors: set[str] = set()
+                seen_ids: set[str] = set()
                 while True:
                     transactions_response = get_all_transactions(
                         api_key,
@@ -74,15 +77,27 @@ def _sync_user_transactions(session: Session, user: User) -> None:
                     if not next:
                         break
 
+                    # No page limit (a busy account can have many pages): only a cursor that does
+                    # not advance is an error. Syncing a partial list would mark the missing
+                    # transactions as deleted, so the account is skipped instead
+                    page_ids = {t.id for t in transactions_response.results}
+                    if next in seen_cursors or (page_ids and page_ids <= seen_ids):
+                        raise PluggyExceptionError(
+                            BaseErrorSchema.model_validate({
+                                "code": 0,
+                                "codeDescription": "PAGINATION_NOT_ADVANCING",
+                                "message": f"Pagination of account {account.id} is not advancing",
+                            })
+                        )
+                    seen_cursors.add(next)
+                    seen_ids |= page_ids
+
                 sync_account_transactions(
                     session,
                     stored_account.id,
                     incoming,
                     datetime.combine(date_from, time.min, tzinfo=UTC),
                 )
-                reconciliate_financial_entries(
-                    user.id
-                )  # After syncing all accounts, we can reconciliate the financial entries for this user
         except PluggyExceptionError:
             logger.warning(
                 "Pluggy error on item %s, skipping it",
@@ -99,6 +114,12 @@ def _sync_and_commit_user(session: Session, user: User) -> None:
         # One user failing must not stop the others
         session.rollback()
         logger.exception("Transactions job failed for user %s", user.id)
+        return
+
+    # Once per user and only after the commit: the job opens its own session, so it only sees
+    # the transactions that are already committed
+    if user.id is not None:
+        reconciliate_financial_entries(user.id)
 
 
 def launch_transactions():

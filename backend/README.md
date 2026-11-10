@@ -119,6 +119,27 @@ How it works:
 - PostgreSQL on the same instance (cheapest) or on a Lightsail managed database (less upkeep).
 - A static IP and a domain, with HTTPS.
 
+**Single worker (required for now):**
+
+- The API runs with **one worker, one process** (for example `uvicorn` without `--workers`, and no `--reload` in production). One instance only: no auto-scaling, no second instance behind a load balancer.
+- Why: the webhook registration (`register_webhooks`, called in the app's `lifespan`) runs at the startup of every process. It reads the webhooks in Pluggy, and if the secret does not match the stored hash it rotates it: new secret in Pluggy first, then its hash in the database. Two processes starting together can do this at the same time. Pluggy then keeps one secret and the database the hash of the other, and every webhook gets a 401 until the next restart.
+- **If more than one worker is ever needed, or AWS auto-scaling is turned on, first implement a lock in the webhook registration** (`infra/jobs/webhook_registration.py`). Use a PostgreSQL advisory lock around the whole loop of users and `ensure_item_webhooks`, on the same session (connection), released in a `finally`:
+
+```python
+from sqlalchemy import text
+
+_WEBHOOK_LOCK_ID = 7_301_001  # arbitrary number, the same in every process
+
+with get_session() as session:
+    session.execute(text("SELECT pg_advisory_lock(:id)"), {"id": _WEBHOOK_LOCK_ID})
+    try:
+        ...  # the loop of users and ensure_item_webhooks
+    finally:
+        session.execute(text("SELECT pg_advisory_unlock(:id)"), {"id": _WEBHOOK_LOCK_ID})
+```
+
+- Notes: the lock belongs to the database connection, so lock and unlock must use the same session. `pg_advisory_xact_lock` does not fit, because the job commits once per user and the lock would be released at the first commit. `pg_try_advisory_lock` (skip the registration when another process holds the lock) is an option, since the other process is already doing the work.
+
 **Effect on the project:**
 
 - The static public domain replaces ngrok in production: `PUBLIC_BASE_URL` becomes that domain, and the webhook registration (`infra/jobs/webhook_registration.py`) uses it as it does today.

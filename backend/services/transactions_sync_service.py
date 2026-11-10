@@ -11,6 +11,7 @@ from domain.entities import Transaction
 from integrations.pluggy.schemas.transaction.transaction_response_schema import (
     TransactionResponseSchema,
 )
+from services.reconciliations_service import undo_reconciliations_of_transactions
 from services.transactions_service import (
     list_transactions_since,
     mark_transactions_deleted,
@@ -57,6 +58,7 @@ class SyncResult:
     id_changed: int = 0
     restored: int = 0  # Deleted before, returned by Pluggy again
     deleted: int = 0  # Stored, but Pluggy does not return them anymore
+    reconciliations_undone: int = 0  # Matches broken by a deleted/changed transaction
 
 
 def to_transaction_entity(
@@ -120,6 +122,7 @@ def sync_account_transactions(
     result = SyncResult()
     to_upsert: dict[uuid.UUID, Transaction] = {}  # dedup by pluggy_transaction_id
     to_update: dict[uuid.UUID, Transaction] = {}  # keyed by the stored row's id
+    critical_changed: set[uuid.UUID] = set()  # stored rows whose amount/date/type changed
     for transaction in incoming:
         current = by_pluggy_id.get(transaction.pluggy_transaction_id)
 
@@ -134,7 +137,8 @@ def sync_account_transactions(
                 transaction.id = current.id
                 to_update[current.id] = transaction  # type: ignore[index]
                 result.id_changed += 1
-                _log_critical_changes(current, transaction)
+                if _log_critical_changes(current, transaction) and current.id:
+                    critical_changed.add(current.id)
                 continue
             if len(candidates) > 1:
                 logger.warning(
@@ -159,7 +163,8 @@ def sync_account_transactions(
                     result.restored += 1
                 else:
                     result.updated += 1
-            _log_critical_changes(current, transaction)
+            if _log_critical_changes(current, transaction) and current.id:
+                critical_changed.add(current.id)
             to_upsert[transaction.pluggy_transaction_id] = transaction
 
     if to_upsert:
@@ -171,10 +176,20 @@ def sync_account_transactions(
     if stale:
         mark_transactions_deleted(session, stale)
         result.deleted = len(stale)
+        # A deleted transaction cannot back a reconciliation, whoever made it
+        result.reconciliations_undone += undo_reconciliations_of_transactions(
+            session, stale
+        )
         logger.info(
             "account %s: %d stored transaction(s) no longer returned by Pluggy, marked as deleted",
             bank_account_id,
             len(stale),
+        )
+    if critical_changed:
+        # Amount/date/type changed: the AUTO match may no longer hold, so it goes back to the job.
+        # MANUAL ones were a person's choice and stay (the warning is logged)
+        result.reconciliations_undone += undo_reconciliations_of_transactions(
+            session, list(critical_changed), only_auto=True
         )
     return result
 
@@ -204,7 +219,8 @@ def _find_stale_transactions(
     ]
 
 
-def _log_critical_changes(stored: Transaction, incoming: Transaction) -> None:
+def _log_critical_changes(stored: Transaction, incoming: Transaction) -> bool:
+    """Logs the changes that invalidate a reconciliation. True when there was any."""
     changes = diff_transaction(stored, incoming)
     critical = {f: changes[f] for f in _CRITICAL_FIELDS if f in changes}
     if critical:
@@ -213,3 +229,4 @@ def _log_critical_changes(stored: Transaction, incoming: Transaction) -> None:
             stored.pluggy_transaction_id,
             {f: f"{old} -> {new}" for f, (old, new) in critical.items()},
         )
+    return bool(critical)

@@ -81,16 +81,19 @@ def update_financial_entry(
 
 @translate_db_errors("financial_entries")
 def update_financial_entries_status(
-    session: Session, ids: list[uuid.UUID], status: str
+    session: Session,
+    ids: list[uuid.UUID],
+    status: str,
+    only_from: str | None = None,
 ) -> None:
+    """`only_from`: touch only the entries currently in this status (others are left as they are)."""
     now = datetime.datetime.now(datetime.UTC)
     for start in range(0, len(ids), _CHUNK_SIZE):
         chunk = ids[start : start + _CHUNK_SIZE]
-        session.execute(
-            update(FinancialEntries)
-            .where(FinancialEntries.id.in_(chunk))
-            .values(status=status, updated_at=now)
-        )
+        stmt = update(FinancialEntries).where(FinancialEntries.id.in_(chunk))
+        if only_from is not None:
+            stmt = stmt.where(FinancialEntries.status == only_from)
+        session.execute(stmt.values(status=status, updated_at=now))
 
 
 @translate_db_errors("financial_entries")

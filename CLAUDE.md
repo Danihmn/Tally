@@ -23,6 +23,8 @@ Use case: private use by two people (two different CPFs). Not a public product f
 
 Hosting is **not decided yet**. AWS Lightsail is the likely choice because of low management complexity and low cost. It may change. Details and open points are in `backend/README.md` ("Deployment (planned)"). In production, the static public domain replaces ngrok as `PUBLIC_BASE_URL`.
 
+Deployment constraint: the API runs with **one worker and one instance** (no auto-scaling). The webhook registration (`register_webhooks`, in the app's `lifespan`) rotates the webhook secret in Pluggy and then stores its hash, and two processes starting together can leave them out of sync (all webhooks return 401 until a restart). If more than one worker is needed, or AWS auto-scaling is turned on, **first** add a PostgreSQL advisory lock (`pg_advisory_lock`, same session, released in a `finally`) around the registration in `infra/jobs/webhook_registration.py`. The code and the notes are in `backend/README.md` ("Deployment (planned)").
+
 Pluggy code lives in `backend/integrations/pluggy/` (`http_clients/`, `schemas/`, `exceptions/`, `config.py`).
 
 ## 3. Database schema

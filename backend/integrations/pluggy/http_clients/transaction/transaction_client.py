@@ -50,9 +50,12 @@ def get_all_transactions(
         key: value for key, value in params.items() if value is not None
     }  # Ignore None values
 
+    # `next` is a ready-to-use query string that already carries the filters and the cursor.
+    # httpx replaces the URL's query string with `params`, so passing both would drop the cursor
+    # (every page would be the first one again).
     response = httpx.get(
-        f"{base_url}/v2/transactions{next if next else ''}",
-        params=params,
+        f"{base_url}/v2/transactions{next}" if next else f"{base_url}/v2/transactions",
+        params=None if next else params,
         headers={"X-API-KEY": api_key},
     )
     if response.is_error:

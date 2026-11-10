@@ -60,9 +60,14 @@ def update_financial_entry(
 
 @translate_repository_errors
 def mark_financial_entries_status(
-    session: Session, ids: list[uuid.UUID], status: str
+    session: Session,
+    ids: list[uuid.UUID],
+    status: str,
+    only_from: str | None = None,
 ) -> None:
-    financial_entries_repository.update_financial_entries_status(session, ids, status)
+    financial_entries_repository.update_financial_entries_status(
+        session, ids, status, only_from
+    )
 
 
 @translate_repository_errors
