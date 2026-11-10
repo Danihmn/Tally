@@ -1,6 +1,6 @@
 import unittest
 
-from infra.repositories.exceptions import (
+from infra.repositories.common.exceptions import (
     ConstraintViolationError,
     DatabaseConnectionError,
     DuplicateRecordError,
@@ -8,7 +8,7 @@ from infra.repositories.exceptions import (
     RecordNotFoundError,
     RepositoryError,
 )
-from services.exceptions import (
+from services.common.exceptions import (
     AlreadyExistsError,
     InvalidDataError,
     NotFoundError,

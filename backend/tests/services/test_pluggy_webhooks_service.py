@@ -2,9 +2,9 @@ import datetime
 import unittest
 from unittest.mock import MagicMock, call, patch
 
+from infra.security.webhook_secret import hash_webhook_secret
 from integrations.pluggy.config import item_webhook_paths, webhook_token_header
 from services.pluggy_webhooks_service import ensure_item_webhooks
-from services.webhook_secret_service import hash_webhook_secret
 from tests.factories import make_user, make_webhook, page
 
 MODULE = "services.pluggy_webhooks_service"

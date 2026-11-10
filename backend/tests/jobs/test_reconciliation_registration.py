@@ -7,13 +7,13 @@ from unittest.mock import MagicMock, call, patch
 
 from domain.entities import Reconciliation
 from domain.read_models import TransactionWithOwner
-from infra.jobs import reconciliation_registration
-from infra.jobs.reconciliation_registration import (
+from jobs import reconciliation_registration
+from jobs.reconciliation_registration import (
     _load_transactions,
     _window_start,
     reconciliate_financial_entries,
 )
-from services.exceptions import ServiceError
+from services.common.exceptions import ServiceError
 from tests.factories import (
     USER_ID,
     fake_get_session,
@@ -22,7 +22,7 @@ from tests.factories import (
     make_transaction,
 )
 
-MODULE = "infra.jobs.reconciliation_registration"
+MODULE = "jobs.reconciliation_registration"
 WINDOW_START = datetime.date(2026, 9, 1)
 
 

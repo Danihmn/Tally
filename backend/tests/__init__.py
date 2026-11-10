@@ -1,6 +1,6 @@
 """Unit tests. No database, no Pluggy, no network.
 
-`settings.Settings()` and the Fernet in `services.encryption_service` are built at import time, so
+`settings.Settings()` and the Fernet in `infra.security.encryption` are built at import time, so
 fake values are set here, before any project module is imported. Env vars win over the `.env` file,
 so a real `.env` is never used by the tests. The engine is lazy: the fake DATABASE_URL is never
 reached (port 1), and a test that touches the database by mistake fails loudly.

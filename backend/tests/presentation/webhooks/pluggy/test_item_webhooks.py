@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 from fastapi.testclient import TestClient
 
 from infra.database.session import get_db
+from infra.security.webhook_secret import hash_webhook_secret
 from integrations.pluggy.config import (
     item_created_webhook_path,
     item_deleted_webhook_path,
@@ -12,7 +13,6 @@ from integrations.pluggy.config import (
     webhook_token_header,
 )
 from presentation.app import app
-from services.webhook_secret_service import hash_webhook_secret
 from tests.factories import make_pluggy_item, make_user, utc
 
 MODULE = "presentation.webhooks.pluggy.item_webhooks"

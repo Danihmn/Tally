@@ -6,16 +6,16 @@ from unittest.mock import MagicMock, call, patch
 
 import httpx
 
-from infra.jobs import transaction_launcher
-from infra.jobs.transaction_launcher import (
+from integrations.pluggy.exceptions.pluggy_exception_error import PluggyExceptionError
+from integrations.pluggy.schemas.base_error_schema import BaseErrorSchema
+from jobs import transaction_launcher
+from jobs.transaction_launcher import (
     _sync_and_commit_user,
     _sync_user_transactions,
     launch_transactions,
     launch_user_transactions,
 )
-from integrations.pluggy.exceptions.pluggy_exception_error import PluggyExceptionError
-from integrations.pluggy.schemas.base_error_schema import BaseErrorSchema
-from services.exceptions import NotFoundError, ServiceError
+from services.common.exceptions import NotFoundError, ServiceError
 from tests.factories import (
     fake_get_session,
     make_pluggy_item,
@@ -24,7 +24,7 @@ from tests.factories import (
     page,
 )
 
-MODULE = "infra.jobs.transaction_launcher"
+MODULE = "jobs.transaction_launcher"
 
 
 class _FrozenDate(datetime.date):
