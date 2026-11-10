@@ -1,6 +1,6 @@
 from functools import wraps
 
-from infra.repositories.exceptions import (
+from infra.repositories.common.exceptions import (
     ConstraintViolationError,
     DatabaseConnectionError,
     DuplicateRecordError,

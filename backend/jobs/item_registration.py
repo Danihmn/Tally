@@ -4,12 +4,12 @@ import uuid
 import httpx
 
 from infra.database.session import get_session
-from infra.jobs.transaction_launcher import launch_user_transactions
+from infra.security.encryption import decrypt
 from integrations.pluggy.exceptions.pluggy_exception_error import PluggyExceptionError
 from integrations.pluggy.http_clients.auth.auth_client import authenticate
 from integrations.pluggy.http_clients.item.item_client import get_item
-from services.encryption_service import decrypt
-from services.exceptions import ServiceError
+from jobs.transaction_launcher import launch_user_transactions
+from services.common.exceptions import ServiceError
 from services.pluggy_items_service import register_pluggy_item_if_missing
 from services.users_service import get_user_by_id
 

@@ -5,7 +5,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from infra.database.models import Addresses
-from infra.repositories.exceptions import translate_db_errors
+from infra.repositories.common.exceptions import translate_db_errors
 
 
 @translate_db_errors("addresses")

@@ -7,8 +7,11 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from infra.database.models import BankAccounts, PluggyItems
-from infra.repositories._upsert import upsert_one
-from infra.repositories.exceptions import RecordNotFoundError, translate_db_errors
+from infra.repositories.common.exceptions import (
+    RecordNotFoundError,
+    translate_db_errors,
+)
+from infra.repositories.common.upsert import upsert_one
 
 
 @translate_db_errors("bank_accounts")

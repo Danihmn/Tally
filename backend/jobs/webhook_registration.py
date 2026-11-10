@@ -4,7 +4,7 @@ import httpx
 
 from infra.database.session import get_session
 from integrations.pluggy.exceptions.pluggy_exception_error import PluggyExceptionError
-from services.exceptions import ServiceError
+from services.common.exceptions import ServiceError
 from services.pluggy_webhooks_service import ensure_item_webhooks
 from services.users_service import list_users
 from settings import settings

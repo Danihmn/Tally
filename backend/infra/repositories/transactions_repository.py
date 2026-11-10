@@ -8,8 +8,11 @@ from sqlalchemy.orm import Session
 
 from domain.read_models import TransactionFilters
 from infra.database.models import PluggyItems, Transactions
-from infra.repositories._transaction_filters import apply_filters, join_owner
-from infra.repositories.exceptions import RecordNotFoundError, translate_db_errors
+from infra.repositories.common.exceptions import (
+    RecordNotFoundError,
+    translate_db_errors,
+)
+from infra.repositories.common.transaction_filters import apply_filters, join_owner
 
 # Columns never overwritten when the transaction already exists.
 _KEEP_ON_CONFLICT = {"id", "created_at", "pluggy_transaction_id", "bank_account_id"}

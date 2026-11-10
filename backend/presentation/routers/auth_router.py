@@ -5,9 +5,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from infra.database.session import get_db
-from presentation.schemas.auth_schemas import LoginRequest
-from services.password_hash_service import get_password_hash, verify_password
-from services.token_service import Token, create_access_token
+from infra.security.jwt_tokens import create_access_token
+from infra.security.password_hasher import get_password_hash, verify_password
+from presentation.schemas.auth_schemas import LoginRequest, Token
 from services.users_service import get_user_by_email
 from settings import settings
 

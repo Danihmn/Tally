@@ -5,7 +5,10 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from infra.database.models import PluggyItems
-from infra.repositories.exceptions import RecordNotFoundError, translate_db_errors
+from infra.repositories.common.exceptions import (
+    RecordNotFoundError,
+    translate_db_errors,
+)
 
 
 @translate_db_errors("pluggy_items")

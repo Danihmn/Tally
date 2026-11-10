@@ -5,8 +5,8 @@ from sqlalchemy.orm import Session
 
 from domain.entities import PluggyItem
 from infra.repositories import pluggy_items_repository
-from services._mappers import to_entity
-from services.exceptions import AlreadyExistsError, translate_repository_errors
+from services.common.exceptions import AlreadyExistsError, translate_repository_errors
+from services.common.mappers import to_entity
 
 
 @translate_repository_errors

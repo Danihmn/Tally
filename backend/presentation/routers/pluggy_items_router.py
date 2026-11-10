@@ -5,12 +5,12 @@ from sqlalchemy.orm import Session
 
 from domain.entities import PluggyItem, User
 from infra.database.session import get_db
+from presentation.dependencies.auth import get_current_user
 from presentation.schemas.pluggy_item_schemas import (
     PluggyItemCreate,
     PluggyItemResponse,
 )
 from services.pluggy_items_service import create_pluggy_item
-from services.token_service import get_current_user
 
 router = APIRouter(prefix="/pluggy-items", tags=["pluggy-items"])
 
