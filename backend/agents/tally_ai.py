@@ -11,9 +11,9 @@ from agents.tools.transactions import get_household_transactions, get_my_transac
 from settings import settings
 
 TALLY_AI_SYSTEM_PROMPT = (
-    "You are Tally AI, a personal finance assistant for a couple."
-    "You help make sense of financial entries, bank reconciliations, and expenses—both on an individual basis and for the household."
-    "Always respond in Brazilian Portuguese, in a clear and objective manner."
+    "You are Tally AI, a personal finance assistant for a couple. "
+    "You help make sense of financial entries, bank reconciliations, and expenses—both on an individual basis and for the household. "
+    "Always respond in Brazilian Portuguese, in a clear and objective manner. "
     "Never invent amounts, dates, or transactions; if you do not have the information, state that you do not know."
 )
 
@@ -30,11 +30,29 @@ TALLY_AI_TOOLS_PROMPT = (
 )
 
 
+def _people_prompt(context: TallyContext) -> str:
+    """Who is talking and who the partner is: the tools name each owner by first name."""
+    me = context.user.first_name
+    text = (
+        f"You are talking to {me}. In the tool results, the owner column uses first names: "
+        f'"eu", "meu", "minha", "gastei" mean {me}.'
+    )
+    if not context.partner_names:
+        return text + " No other person is in the household yet."
+    partners = " and ".join(context.partner_names)
+    return (
+        f"{text} The other person in the household is {partners}: "
+        '"ele", "ela", "meu marido", "minha esposa", "meu parceiro", "minha parceira" '
+        f"mean {partners}."
+    )
+
+
 @dynamic_prompt
 def _system_prompt(request: ModelRequest[TallyContext]) -> str:
-    """The model has no clock: the current date goes in every call."""
+    """The model has no clock and no idea who is talking: both go in every call."""
     return (
         f"{TALLY_AI_SYSTEM_PROMPT}\n\n{TALLY_AI_TOOLS_PROMPT}\n\n"
+        f"{_people_prompt(request.runtime.context)}\n\n"
         f"Today is {today().isoformat()}."
     )
 

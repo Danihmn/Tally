@@ -1,5 +1,6 @@
 import datetime
 import unittest
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 from agents.context import TallyContext
@@ -10,6 +11,7 @@ from agents.tally_ai import (
     get_tally_ai,
 )
 from agents.tools.transactions import get_household_transactions, get_my_transactions
+from tests.factories import make_user
 
 
 def make_settings(bedrock_api_key=None, bedrock_model="openai.gpt-oss-120b-1:0", bedrock_base_url="https://bedrock.example/openai/v1"):
@@ -99,6 +101,10 @@ def _system_prompt_text() -> str:
     captured = {}
 
     class _Request:
+        runtime = SimpleNamespace(
+            context=TallyContext(user=make_user(first_name="Ana"), partner_names=("Bruno",))
+        )
+
         def override(self, **kwargs):
             captured.update(kwargs)
             return self
