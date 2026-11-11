@@ -10,6 +10,7 @@ from services.transactions_sync_service import (
 )
 from tests.factories import (
     ACCOUNT_ID,
+    HOUSEHOLD_ID,
     make_incoming,
     make_transaction,
     make_transaction_schema,
@@ -28,10 +29,11 @@ class ToTransactionEntityTests(unittest.TestCase):
             merchant={"name": "Shop"},
         )
 
-        entity = to_transaction_entity(schema, ACCOUNT_ID)
+        entity = to_transaction_entity(schema, ACCOUNT_ID, HOUSEHOLD_ID)
 
         self.assertIsNone(entity.id)
         self.assertEqual(entity.bank_account_id, ACCOUNT_ID)
+        self.assertEqual(entity.household_id, HOUSEHOLD_ID)
         self.assertEqual(entity.pluggy_transaction_id, schema.id)
         self.assertEqual(entity.amount, Decimal("-10.01"))  # rounded by the schema
         self.assertEqual(entity.status, "POSTED")

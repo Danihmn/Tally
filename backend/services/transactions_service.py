@@ -52,6 +52,21 @@ def list_transactions_by_account(
 
 
 @translate_repository_errors
+def list_transactions_by_household(
+    session: Session,
+    household_id: uuid.UUID,
+    date_from: datetime.datetime | None = None,
+    date_to: datetime.datetime | None = None,
+    limit: int = 50,
+    offset: int = 0,
+) -> list[Transaction]:
+    transactions = transactions_repository.list_transactions_by_household(
+        session, household_id, date_from, date_to, limit, offset
+    )
+    return [to_entity(Transaction, t) for t in transactions]
+
+
+@translate_repository_errors
 def upsert_transactions(
     session: Session, transactions: list[Transaction]
 ) -> list[Transaction]:

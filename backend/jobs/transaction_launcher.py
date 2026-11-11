@@ -50,7 +50,9 @@ def _sync_user_transactions(session: Session, user: User) -> None:
             accounts = get_all_accounts(api_key, str(item.pluggy_item_id))
             for account in accounts.results:
                 # Our own pluggy_items id, not Pluggy's item id
-                stored_account, _ = sync_bank_account(session, item.id, account)
+                stored_account, _ = sync_bank_account(
+                    session, item.id, account, user.household_id
+                )
                 if stored_account.id is None:
                     raise ValueError("Bank account without id")
 
@@ -69,7 +71,9 @@ def _sync_user_transactions(session: Session, user: User) -> None:
                         next=next,
                     )
                     incoming.extend(
-                        to_transaction_entity(t, stored_account.id)
+                        to_transaction_entity(
+                            t, stored_account.id, stored_account.household_id
+                        )
                         for t in transactions_response.results
                     )
 

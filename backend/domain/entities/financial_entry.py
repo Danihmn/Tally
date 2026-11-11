@@ -11,6 +11,7 @@ class FinancialEntry:
     type: str  # REVENUES | EXPENSES
     amount: decimal.Decimal
     reference_month: datetime.date
+    household_id: uuid.UUID
     currency_code: str = "BRL"
     status: str = "PLANNED"
     id: uuid.UUID | None = None

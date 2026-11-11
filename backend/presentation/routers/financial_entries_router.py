@@ -13,11 +13,13 @@ from presentation.schemas.financial_entry_schemas import (
     FinancialEntryQuery,
     FinancialEntryResponse,
 )
+from services.common.exceptions import NotFoundError
 from services.financial_entries_service import (
     create_financial_entry,
     get_active_financial_entry_by_id,
     search_financial_entries,
 )
+from services.users_service import get_user_by_id
 
 # Both people of the household see every entry (the app is private, for two people).
 router = APIRouter(
@@ -83,7 +85,12 @@ def create_financial_entry_endpoint(
     current_user: Annotated[User, Depends(get_current_user)],
 ) -> FinancialEntryResponse:
     assert current_user.id is not None
+    if body.user_id is not None and body.user_id != current_user.id:
+        # An entry can only be assigned to someone of the same household
+        if get_user_by_id(session, body.user_id).household_id != current_user.household_id:
+            raise NotFoundError("User not found")
     entry = FinancialEntry(
+        household_id=current_user.household_id,
         user_id=body.user_id or current_user.id,
         description=body.description,
         type=body.type,

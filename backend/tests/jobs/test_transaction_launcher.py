@@ -46,7 +46,9 @@ class SyncUserTransactionsTests(unittest.TestCase):
         self.session = MagicMock()
         self.user = make_user()
         self.item = make_pluggy_item()
-        self.stored_account = SimpleNamespace(id=uuid.uuid4())
+        self.stored_account = SimpleNamespace(
+            id=uuid.uuid4(), household_id=self.user.household_id
+        )
 
         self.mocks = {}
         for name in (
@@ -97,6 +99,7 @@ class SyncUserTransactionsTests(unittest.TestCase):
             self.session,
             self.item.id,
             self.mocks["get_all_accounts"].return_value.results[0],
+            self.user.household_id,
         )
 
     def test_reads_the_last_six_months_plus_one_day(self):

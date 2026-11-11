@@ -40,6 +40,17 @@ def list_users(session: Session, limit: int = 10, offset: int = 0) -> list[Users
 
 
 @translate_db_errors("users")
+def list_users_by_household(session: Session, household_id: uuid.UUID) -> list[Users]:
+    """Everyone in the household (a few people), with no pagination."""
+    stmt = (
+        select(Users)
+        .where(Users.household_id == household_id)
+        .order_by(Users.created_at, Users.id)
+    )
+    return list(session.scalars(stmt).all())
+
+
+@translate_db_errors("users")
 def create_user(
     session: Session,
     first_name: str,
@@ -47,8 +58,10 @@ def create_user(
     hashed_password: str,
     pluggy_client_id: uuid.UUID,
     pluggy_client_secret_crypto: str,
+    household_id: uuid.UUID,
 ) -> Users:
     user = Users(
+        household_id=household_id,
         first_name=first_name,
         email=email,
         hashed_password=hashed_password,

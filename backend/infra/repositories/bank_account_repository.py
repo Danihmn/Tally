@@ -58,6 +58,19 @@ def list_bank_accounts_by_item(
 
 
 @translate_db_errors("bank_accounts")
+def list_bank_accounts_by_household(
+    session: Session, household_id: uuid.UUID
+) -> list[BankAccounts]:
+    """Every account of the household, with no pagination (few accounts per household)."""
+    stmt = (
+        select(BankAccounts)
+        .where(BankAccounts.household_id == household_id)
+        .order_by(BankAccounts.created_at, BankAccounts.id)
+    )
+    return list(session.scalars(stmt).all())
+
+
+@translate_db_errors("bank_accounts")
 def upsert_bank_account(session: Session, values: dict[str, Any]) -> BankAccounts:
     """Insert or update by pluggy_account_id. `values` uses BankAccounts column names."""
     return upsert_one(
@@ -87,9 +100,12 @@ def search_bank_accounts(
     account_type: str | None = None,
     limit: int = 50,
     offset: int = 0,
+    household_id: uuid.UUID | None = None,
 ) -> list[tuple[BankAccounts, uuid.UUID]]:
     """Accounts with the owner's user id. Accounts of deleted items stay: their history is kept."""
     stmt = _with_owner(select(BankAccounts, PluggyItems.user_id))
+    if household_id is not None:
+        stmt = stmt.where(BankAccounts.household_id == household_id)
     if user_id is not None:
         stmt = stmt.where(PluggyItems.user_id == user_id)
     if account_type is not None:

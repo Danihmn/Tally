@@ -47,6 +47,16 @@ def list_bank_accounts_by_item(
 
 
 @translate_repository_errors
+def list_bank_accounts_by_household(
+    session: Session, household_id: uuid.UUID
+) -> list[BankAccount]:
+    accounts = bank_account_repository.list_bank_accounts_by_household(
+        session, household_id
+    )
+    return [to_entity(BankAccount, a) for a in accounts]
+
+
+@translate_repository_errors
 def upsert_bank_account(session: Session, account: BankAccount) -> BankAccount:
     saved = bank_account_repository.upsert_bank_account(session, to_values(account))
     return to_entity(BankAccount, saved)
@@ -69,9 +79,10 @@ def search_bank_accounts(
     account_type: str | None = None,
     limit: int = 50,
     offset: int = 0,
+    household_id: uuid.UUID | None = None,
 ) -> list[BankAccountWithOwner]:
     rows = bank_account_repository.search_bank_accounts(
-        session, user_id, account_type, limit, offset
+        session, user_id, account_type, limit, offset, household_id
     )
     return [
         BankAccountWithOwner(account=to_entity(BankAccount, a), user_id=owner_id)

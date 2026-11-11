@@ -15,6 +15,8 @@ def join_owner(stmt: Select) -> Select:
 def apply_filters(stmt: Select, filters: TransactionFilters) -> Select:
     """Adds the WHERE clauses. The statement must already be joined with join_owner()."""
     stmt = stmt.where(Transactions.deleted_at.is_(None))
+    if filters.household_id is not None:
+        stmt = stmt.where(Transactions.household_id == filters.household_id)
     if filters.user_id is not None:
         stmt = stmt.where(PluggyItems.user_id == filters.user_id)
     if filters.bank_account_id is not None:

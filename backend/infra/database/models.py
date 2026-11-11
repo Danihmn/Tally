@@ -25,14 +25,44 @@ class Base(DeclarativeBase):
     pass
 
 
+class Households(Base):
+    __tablename__ = "households"
+    __table_args__ = (PrimaryKeyConstraint("id", name="households_pkey"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, primary_key=True, server_default=text("gen_random_uuid()")
+    )
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(True), nullable=False, server_default=text("now()")
+    )
+
+    users: Mapped[list[Users]] = relationship("Users", back_populates="household")
+    bank_accounts: Mapped[list[BankAccounts]] = relationship(
+        "BankAccounts", back_populates="household"
+    )
+    financial_entries: Mapped[list[FinancialEntries]] = relationship(
+        "FinancialEntries", back_populates="household"
+    )
+    transactions: Mapped[list[Transactions]] = relationship(
+        "Transactions", back_populates="household"
+    )
+
+
 class Users(Base):
     __tablename__ = "users"
     __table_args__ = (
+        ForeignKeyConstraint(
+            ["household_id"],
+            ["households.id"],
+            ondelete="RESTRICT",
+            name="users_household_id_fkey",
+        ),
         PrimaryKeyConstraint("id", name="users_pkey"),
         UniqueConstraint("email", name="users_email_key"),
         UniqueConstraint(
             "pluggy_webhook_secret_hash", name="users_pluggy_webhook_secret_hash_key"
         ),
+        Index("idx_users_household_id", "household_id"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -46,8 +76,10 @@ class Users(Base):
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(True), nullable=False, server_default=text("now()")
     )
+    household_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
     pluggy_webhook_secret_hash: Mapped[str | None] = mapped_column(Text)
 
+    household: Mapped[Households] = relationship("Households", back_populates="users")
     pluggy_items: Mapped[list[PluggyItems]] = relationship(
         "PluggyItems", back_populates="user"
     )
@@ -107,6 +139,12 @@ class BankAccounts(Base):
             name="bank_accounts_type_check",
         ),
         ForeignKeyConstraint(
+            ["household_id"],
+            ["households.id"],
+            ondelete="RESTRICT",
+            name="bank_accounts_household_id_fkey",
+        ),
+        ForeignKeyConstraint(
             ["pluggy_item_id"],
             ["pluggy_items.id"],
             ondelete="RESTRICT",
@@ -116,6 +154,7 @@ class BankAccounts(Base):
         UniqueConstraint(
             "pluggy_account_id", name="bank_accounts_pluggy_account_id_key"
         ),
+        Index("idx_bank_accounts_household_id", "household_id"),
         Index("idx_bank_accounts_pluggy_item_id", "pluggy_item_id"),
     )
 
@@ -136,8 +175,12 @@ class BankAccounts(Base):
     tax_number: Mapped[str | None] = mapped_column(Text)
     owner: Mapped[str | None] = mapped_column(Text)
     updated_at: Mapped[datetime.datetime | None] = mapped_column(DateTime(True))
+    household_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
     balance: Mapped[decimal.Decimal | None] = mapped_column(Numeric(18, 2))
 
+    household: Mapped[Households] = relationship(
+        "Households", back_populates="bank_accounts"
+    )
     pluggy_item: Mapped[PluggyItems] = relationship(
         "PluggyItems", back_populates="bank_accounts"
     )
@@ -315,11 +358,18 @@ class Transactions(Base):
             ondelete="RESTRICT",
             name="transactions_bank_account_id_fkey",
         ),
+        ForeignKeyConstraint(
+            ["household_id"],
+            ["households.id"],
+            ondelete="RESTRICT",
+            name="transactions_household_id_fkey",
+        ),
         PrimaryKeyConstraint("id", name="transactions_pkey"),
         UniqueConstraint(
             "pluggy_transaction_id", name="transactions_pluggy_transaction_id_key"
         ),
         Index("idx_transactions_account_date", "bank_account_id", "date"),
+        Index("idx_transactions_household_date", "household_id", "date"),
         Index(
             "idx_transactions_provider_id",
             "bank_account_id",
@@ -341,6 +391,7 @@ class Transactions(Base):
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(True), nullable=False, server_default=text("now()")
     )
+    household_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
     description: Mapped[str | None] = mapped_column(Text)
     balance: Mapped[decimal.Decimal | None] = mapped_column(Numeric(18, 2))
     category: Mapped[str | None] = mapped_column(Text)
@@ -361,6 +412,9 @@ class Transactions(Base):
 
     bank_account: Mapped[BankAccounts] = relationship(
         "BankAccounts", back_populates="transactions"
+    )
+    household: Mapped[Households] = relationship(
+        "Households", back_populates="transactions"
     )
     reconciliations: Mapped[list[Reconciliations]] = relationship(
         "Reconciliations", back_populates="transaction"
@@ -401,6 +455,12 @@ class FinancialEntries(Base):
             name="financial_entries_bank_account_id_fkey",
         ),
         ForeignKeyConstraint(
+            ["household_id"],
+            ["households.id"],
+            ondelete="RESTRICT",
+            name="financial_entries_household_id_fkey",
+        ),
+        ForeignKeyConstraint(
             ["user_id"],
             ["users.id"],
             ondelete="RESTRICT",
@@ -411,6 +471,12 @@ class FinancialEntries(Base):
             "idx_financial_entries_bank_account_id",
             "bank_account_id",
             postgresql_where="(bank_account_id IS NOT NULL)",
+        ),
+        Index(
+            "idx_financial_entries_household_month",
+            "household_id",
+            "reference_month",
+            postgresql_where="(deleted_at IS NULL)",
         ),
         Index(
             "idx_financial_entries_user_month",
@@ -439,6 +505,7 @@ class FinancialEntries(Base):
     type: Mapped[str] = mapped_column(
         Text, nullable=False, server_default=text("'EXPENSES'::text")
     )
+    household_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
     bank_account_id: Mapped[uuid.UUID | None] = mapped_column(Uuid)
     category: Mapped[str | None] = mapped_column(Text)
     due_date: Mapped[datetime.date | None] = mapped_column(Date)
@@ -451,6 +518,9 @@ class FinancialEntries(Base):
 
     bank_account: Mapped[BankAccounts | None] = relationship(
         "BankAccounts", back_populates="financial_entries"
+    )
+    household: Mapped[Households] = relationship(
+        "Households", back_populates="financial_entries"
     )
     user: Mapped[Users] = relationship("Users", back_populates="financial_entries")
     reconciliations: Mapped[list[Reconciliations]] = relationship(

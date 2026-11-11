@@ -62,10 +62,13 @@ class SyncResult:
 
 
 def to_transaction_entity(
-    schema: TransactionResponseSchema, bank_account_id: uuid.UUID
+    schema: TransactionResponseSchema,
+    bank_account_id: uuid.UUID,
+    household_id: uuid.UUID,
 ) -> Transaction:
     """Pluggy transaction -> entity. id/created_at stay unset: the database fills them."""
     return Transaction(
+        household_id=household_id,
         bank_account_id=bank_account_id,
         pluggy_transaction_id=schema.id,
         date=schema.date,

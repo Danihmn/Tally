@@ -10,6 +10,7 @@ class User:
     hashed_password: str
     pluggy_client_id: uuid.UUID
     pluggy_client_secret_crypto: str
+    household_id: uuid.UUID
     pluggy_webhook_secret_hash: str | None = None
     id: uuid.UUID | None = None
     created_at: datetime.datetime | None = None

@@ -14,6 +14,7 @@ class Transaction:
     amount: decimal.Decimal
     status: str
     type: str
+    household_id: uuid.UUID
     id: uuid.UUID | None = None
     created_at: datetime.datetime | None = None
     description: str | None = None

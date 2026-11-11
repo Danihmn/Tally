@@ -26,6 +26,7 @@ from integrations.pluggy.schemas.webhook.webhook_response_schema import (
 UTC = datetime.UTC
 ACCOUNT_ID = uuid.UUID("00000000-0000-0000-0000-00000000a001")
 USER_ID = uuid.UUID("00000000-0000-0000-0000-00000000b001")
+HOUSEHOLD_ID = uuid.UUID("00000000-0000-0000-0000-00000000c001")
 
 
 def utc(year: int, month: int, day: int, hour: int = 12) -> datetime.datetime:
@@ -35,6 +36,7 @@ def utc(year: int, month: int, day: int, hour: int = 12) -> datetime.datetime:
 def make_transaction(**overrides: Any) -> Transaction:
     values: dict[str, Any] = {
         "id": uuid.uuid4(),
+        "household_id": HOUSEHOLD_ID,
         "bank_account_id": ACCOUNT_ID,
         "pluggy_transaction_id": uuid.uuid4(),
         "date": utc(2026, 11, 5),
@@ -62,6 +64,7 @@ def make_incoming(stored: Transaction, **overrides: Any) -> Transaction:
 def make_entry(**overrides: Any) -> FinancialEntry:
     values: dict[str, Any] = {
         "id": uuid.uuid4(),
+        "household_id": HOUSEHOLD_ID,
         "user_id": USER_ID,
         "description": "Market",
         "type": "EXPENSES",
@@ -92,6 +95,7 @@ def make_user(**overrides: Any) -> User:
         "hashed_password": "hash",
         "pluggy_client_id": uuid.uuid4(),
         "pluggy_client_secret_crypto": "secret-crypto",
+        "household_id": HOUSEHOLD_ID,
     }
     values.update(overrides)
     return User(**values)

@@ -32,6 +32,12 @@ def list_users(session: Session, limit: int = 10, offset: int = 0) -> list[User]
 
 
 @translate_repository_errors
+def list_users_by_household(session: Session, household_id: uuid.UUID) -> list[User]:
+    users = users_repository.list_users_by_household(session, household_id)
+    return [to_entity(User, u) for u in users]
+
+
+@translate_repository_errors
 def create_user(session: Session, user: User) -> User:
     created = users_repository.create_user(
         session,
@@ -40,6 +46,7 @@ def create_user(session: Session, user: User) -> User:
         hashed_password=user.hashed_password,
         pluggy_client_id=user.pluggy_client_id,
         pluggy_client_secret_crypto=user.pluggy_client_secret_crypto,
+        household_id=user.household_id,
     )
     return to_entity(User, created)
 

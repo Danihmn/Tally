@@ -28,6 +28,7 @@ class TransactionWithOwner:
 class TransactionFilters:
     """Every field is optional: None means "do not filter by it"."""
 
+    household_id: uuid.UUID | None = None
     user_id: uuid.UUID | None = None
     bank_account_id: uuid.UUID | None = None
     date_from: datetime.datetime | None = None  # inclusive
@@ -56,6 +57,7 @@ class RecurrenceFilters:
 class FinancialEntryFilters:
     """Every field is optional: None means "do not filter by it"."""
 
+    household_id: uuid.UUID | None = None
     user_id: uuid.UUID | None = None
     bank_account_id: uuid.UUID | None = None
     type: str | None = None  # REVENUES | EXPENSES

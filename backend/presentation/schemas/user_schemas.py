@@ -10,6 +10,7 @@ class UserCreate(BaseModel):
     password: str = Field(min_length=8)
     pluggy_client_id: uuid.UUID
     pluggy_client_secret: str = Field(min_length=1)
+    household_id: uuid.UUID
 
 
 class UserResponse(BaseModel):
@@ -18,4 +19,5 @@ class UserResponse(BaseModel):
     id: uuid.UUID
     first_name: str
     email: str
+    household_id: uuid.UUID
     created_at: datetime.datetime

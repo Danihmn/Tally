@@ -13,6 +13,7 @@ class BankAccount:
     name: str
     number: str
     currency_code: str
+    household_id: uuid.UUID
     id: uuid.UUID | None = None
     created_at: datetime.datetime | None = None
     marketing_name: str | None = None

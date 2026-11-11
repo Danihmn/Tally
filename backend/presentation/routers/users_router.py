@@ -11,6 +11,7 @@ from infra.security.password_hasher import get_password_hash
 from jobs.webhook_registration import register_webhooks
 from presentation.dependencies.auth import get_current_user
 from presentation.schemas.user_schemas import UserCreate, UserResponse
+from services.households_service import get_household_by_id
 from services.users_service import create_user, get_user_by_id, list_users
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -27,7 +28,9 @@ def create_user_endpoint(
     body: UserCreate,
     session: Annotated[Session, Depends(get_db)],
 ) -> User:
+    get_household_by_id(session, body.household_id)  # NotFoundError (404) if it does not exist
     user = User(
+        household_id=body.household_id,
         first_name=body.first_name,
         email=body.email.lower(),
         hashed_password=get_password_hash(body.password),

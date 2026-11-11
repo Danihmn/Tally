@@ -81,12 +81,15 @@ class SyncAccountResult:
 
 
 def to_bank_account_entity(
-    schema: AccountResponseSchema, pluggy_item_id: uuid.UUID
+    schema: AccountResponseSchema,
+    pluggy_item_id: uuid.UUID,
+    household_id: uuid.UUID,
 ) -> BankAccount:
     """Pluggy account -> entity. id/created_at stay unset: the database fills them.
 
     `pluggy_item_id` is our own pluggy_items id, not Pluggy's item id."""
     return BankAccount(
+        household_id=household_id,
         pluggy_item_id=pluggy_item_id,
         pluggy_account_id=uuid.UUID(schema.id),
         type=schema.type,
@@ -145,14 +148,17 @@ def diff_fields(
 
 
 def sync_bank_account(
-    session: Session, pluggy_item_id: uuid.UUID, schema: AccountResponseSchema
+    session: Session,
+    pluggy_item_id: uuid.UUID,
+    schema: AccountResponseSchema,
+    household_id: uuid.UUID,
 ) -> tuple[BankAccount, SyncAccountResult]:
     """Make the stored account (and its bank/credit data) match what Pluggy sent.
 
     Pluggy is the source of truth: anything that differs in the database is
     overwritten, and nothing is written when nothing differs."""
     result = SyncAccountResult()
-    incoming = to_bank_account_entity(schema, pluggy_item_id)
+    incoming = to_bank_account_entity(schema, pluggy_item_id, household_id)
     stored = get_bank_account_by_pluggy_account_id(session, incoming.pluggy_account_id)
 
     if stored is None:

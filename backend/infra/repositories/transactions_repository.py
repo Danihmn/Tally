@@ -82,6 +82,33 @@ def list_transactions_by_account(
 
 
 @translate_db_errors("transactions")
+def list_transactions_by_household(
+    session: Session,
+    household_id: uuid.UUID,
+    date_from: datetime.datetime | None = None,
+    date_to: datetime.datetime | None = None,
+    limit: int = 50,
+    offset: int = 0,
+) -> list[Transactions]:
+    stmt = (
+        select(Transactions)
+        .where(Transactions.household_id == household_id)
+        .where(Transactions.deleted_at.is_(None))
+    )
+    if date_from is not None:
+        stmt = stmt.where(Transactions.date >= date_from)
+    if date_to is not None:
+        stmt = stmt.where(Transactions.date < date_to)
+    stmt = (
+        stmt
+        .order_by(Transactions.date.desc(), Transactions.id)
+        .limit(limit)
+        .offset(offset)
+    )
+    return list(session.scalars(stmt).all())
+
+
+@translate_db_errors("transactions")
 def list_transactions_since(
     session: Session,
     bank_account_id: uuid.UUID,
@@ -166,7 +193,8 @@ def search_transactions(
     """Filtered page of transactions (newest first), each with the owner's user id."""
     stmt = apply_filters(join_owner(select(Transactions, PluggyItems.user_id)), filters)
     stmt = (
-        stmt.order_by(Transactions.date.desc(), Transactions.id)
+        stmt
+        .order_by(Transactions.date.desc(), Transactions.id)
         .limit(limit)
         .offset(offset)
     )

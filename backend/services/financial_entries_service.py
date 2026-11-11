@@ -37,6 +37,26 @@ def list_financial_entries_by_user(
 
 
 @translate_repository_errors
+def list_financial_entries_by_household(
+    session: Session,
+    household_id: uuid.UUID,
+    reference_month_from: datetime.date | None = None,
+    reference_month_to: datetime.date | None = None,
+    status: str | None = None,
+    bank_account_id: uuid.UUID | None = None,
+) -> list[FinancialEntry]:
+    entries = financial_entries_repository.list_financial_entries_by_household(
+        session,
+        household_id,
+        reference_month_from,
+        reference_month_to,
+        status,
+        bank_account_id,
+    )
+    return [to_entity(FinancialEntry, e) for e in entries]
+
+
+@translate_repository_errors
 def create_financial_entry(session: Session, entry: FinancialEntry) -> FinancialEntry:
     created = financial_entries_repository.create_financial_entry(
         session, to_values(entry)
