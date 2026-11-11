@@ -1,7 +1,13 @@
+from functools import cache
+
 from langchain.agents import create_agent
+from langchain.agents.middleware import ModelRequest, dynamic_prompt
 from langchain_ollama import ChatOllama
 from langchain_openai import ChatOpenAI
 
+from agents.clock import today
+from agents.context import TallyContext
+from agents.tools.transactions import get_household_transactions, get_my_transactions
 from settings import settings
 
 TALLY_AI_SYSTEM_PROMPT = (
@@ -10,6 +16,27 @@ TALLY_AI_SYSTEM_PROMPT = (
     "Always respond in Brazilian Portuguese, in a clear and objective manner."
     "Never invent amounts, dates, or transactions; if you do not have the information, state that you do not know."
 )
+
+TALLY_AI_TOOLS_PROMPT = (
+    "Always call a tool to read the real data before answering about transactions. "
+    "Choose the tool by WHO the question is about:\n"
+    "- the person talking (eu, meu, minha, gastei) -> get_my_transactions;\n"
+    "- the couple or the house (nós, nosso, a gente, casa, vocês, por pessoa, quem gastou mais) "
+    "-> get_household_transactions, which already says whose each transaction is. "
+    "Never answer a question about the couple with get_my_transactions, and never say you cannot "
+    "see the partner's data: get_household_transactions has it.\n"
+    "The tools already return the totals: never add amounts yourself. "
+    "Say which period you consulted. Never mention tool names to the user."
+)
+
+
+@dynamic_prompt
+def _system_prompt(request: ModelRequest[TallyContext]) -> str:
+    """The model has no clock: the current date goes in every call."""
+    return (
+        f"{TALLY_AI_SYSTEM_PROMPT}\n\n{TALLY_AI_TOOLS_PROMPT}\n\n"
+        f"Today is {today().isoformat()}."
+    )
 
 
 def _build_chat_model():
@@ -34,7 +61,14 @@ def build_tally_ai():
     """Builds the Tally AI orchestrator agent."""
     return create_agent(
         model=_build_chat_model(),
-        tools=[],
-        system_prompt=TALLY_AI_SYSTEM_PROMPT,
+        tools=[get_my_transactions, get_household_transactions],
+        middleware=[_system_prompt],
+        context_schema=TallyContext,
         name="tally_ai",
     )
+
+
+@cache
+def get_tally_ai():
+    """The compiled agent, built once and shared: the user comes in each call's context."""
+    return build_tally_ai()

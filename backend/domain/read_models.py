@@ -25,6 +25,16 @@ class TransactionWithOwner:
 
 
 @dataclass(slots=True)
+class TransactionSummary:
+    """Totals of every transaction that matches a filter (not just one page). Absolute values."""
+
+    debit_total: decimal.Decimal = decimal.Decimal("0.00")
+    credit_total: decimal.Decimal = decimal.Decimal("0.00")
+    debit_count: int = 0
+    credit_count: int = 0
+
+
+@dataclass(slots=True)
 class TransactionFilters:
     """Every field is optional: None means "do not filter by it"."""
 

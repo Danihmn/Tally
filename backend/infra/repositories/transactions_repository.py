@@ -1,4 +1,5 @@
 import datetime
+import decimal
 import uuid
 from typing import Any
 
@@ -205,6 +206,24 @@ def search_transactions(
 def count_transactions(session: Session, filters: TransactionFilters) -> int:
     stmt = apply_filters(join_owner(select(func.count(Transactions.id))), filters)
     return session.scalar(stmt) or 0
+
+
+@translate_db_errors("transactions")
+def summarize_transactions(
+    session: Session, filters: TransactionFilters
+) -> list[tuple[str, decimal.Decimal, int]]:
+    """(type, sum of abs(amount), count) per transaction type, over everything the filters match."""
+    stmt = apply_filters(
+        join_owner(
+            select(
+                Transactions.type,
+                func.coalesce(func.sum(func.abs(Transactions.amount)), 0),
+                func.count(Transactions.id),
+            )
+        ),
+        filters,
+    ).group_by(Transactions.type)
+    return [(type_, total, count) for type_, total, count in session.execute(stmt)]
 
 
 @translate_db_errors("transactions")

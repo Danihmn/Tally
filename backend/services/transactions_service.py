@@ -4,7 +4,11 @@ import uuid
 from sqlalchemy.orm import Session
 
 from domain.entities import Transaction
-from domain.read_models import TransactionFilters, TransactionWithOwner
+from domain.read_models import (
+    TransactionFilters,
+    TransactionSummary,
+    TransactionWithOwner,
+)
 from infra.repositories import transactions_repository
 from services.common.exceptions import translate_repository_errors
 from services.common.mappers import to_entity, to_values
@@ -128,3 +132,19 @@ def get_transaction_with_owner(
     return TransactionWithOwner(
         transaction=to_entity(Transaction, transaction), user_id=user_id
     )
+
+
+@translate_repository_errors
+def summarize_transactions(
+    session: Session, filters: TransactionFilters
+) -> TransactionSummary:
+    """Debit and credit totals (absolute values) and counts of everything the filters match."""
+    summary = TransactionSummary()
+    for type_, total, count in transactions_repository.summarize_transactions(
+        session, filters
+    ):
+        if type_ == "DEBIT":
+            summary.debit_total, summary.debit_count = total, count
+        elif type_ == "CREDIT":
+            summary.credit_total, summary.credit_count = total, count
+    return summary
