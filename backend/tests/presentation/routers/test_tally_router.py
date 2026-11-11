@@ -1,4 +1,5 @@
 import unittest
+import uuid
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
@@ -6,6 +7,7 @@ from fastapi.testclient import TestClient
 
 from agents.context import TallyContext
 from presentation.app import app
+from infra.database.session import get_db
 from presentation.dependencies.auth import get_current_user
 from tests.factories import make_user
 
@@ -22,6 +24,7 @@ class ChatEndpointTests(unittest.TestCase):
     def setUp(self):
         self.user = make_user()
         app.dependency_overrides[get_current_user] = lambda: self.user
+        app.dependency_overrides[get_db] = lambda: MagicMock()
         self.addCleanup(app.dependency_overrides.clear)
         # Not used as a context manager: the lifespan (webhook registration) does not run
         self.client = TestClient(app)
@@ -31,6 +34,11 @@ class ChatEndpointTests(unittest.TestCase):
         self.addCleanup(patcher.stop)
         self.agent = _agent_answering("Você gastou R$ 100,00.")
         self.get_agent.return_value = self.agent
+
+        patcher = patch(f"{MODULE}.list_users_by_household")
+        self.list_users = patcher.start()
+        self.addCleanup(patcher.stop)
+        self.list_users.return_value = [self.user, make_user(id=uuid.uuid4(), first_name="Partner")]
 
     def _chat(self, message="Quanto gastei?"):
         return self.client.post("/tally/chat", json={"message": message})
@@ -46,7 +54,7 @@ class ChatEndpointTests(unittest.TestCase):
 
         args, kwargs = self.agent.invoke.call_args
         self.assertEqual(args[0], {"messages": [{"role": "user", "content": "Quanto gastei?"}]})
-        self.assertEqual(kwargs["context"], TallyContext(user=self.user))
+        self.assertEqual(kwargs["context"], TallyContext(user=self.user, partner_names=("Partner",)))
 
     def test_content_in_blocks_is_joined_as_text(self):
         self.get_agent.return_value = _agent_answering(

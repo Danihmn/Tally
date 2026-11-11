@@ -9,3 +9,6 @@ class TallyContext:
     part of the tools' schemas, so the model can neither see nor change it."""
 
     user: User
+    # First names of the other household members, loaded once per request by the router,
+    # so the prompt can say who "ele"/"ela" is (the tools name owners by first name)
+    partner_names: tuple[str, ...] = ()

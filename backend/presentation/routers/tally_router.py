@@ -2,12 +2,15 @@ import logging
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
 
 from agents.context import TallyContext
 from agents.tally_ai import get_tally_ai
 from domain.entities import User
+from infra.database.session import get_db
 from presentation.dependencies.auth import get_current_user
 from presentation.schemas.tally_schemas import TallyChatRequest, TallyChatResponse
+from services.users_service import list_users_by_household
 
 logger = logging.getLogger(__name__)
 
@@ -31,11 +34,18 @@ def _text_of(content: str | list) -> str:
 def chat_endpoint(
     body: TallyChatRequest,
     current_user: Annotated[User, Depends(get_current_user)],
+    session: Annotated[Session, Depends(get_db)],
 ) -> TallyChatResponse:
     try:
+        # Loaded once here, not in the prompt: the prompt runs on every model call of the loop
+        partner_names = tuple(
+            u.first_name
+            for u in list_users_by_household(session, current_user.household_id)
+            if u.id != current_user.id
+        )
         result = get_tally_ai().invoke(
             {"messages": [{"role": "user", "content": body.message}]},
-            context=TallyContext(user=current_user),
+            context=TallyContext(user=current_user, partner_names=partner_names),
         )
         answer = _text_of(result["messages"][-1].content).strip()
     except Exception:
