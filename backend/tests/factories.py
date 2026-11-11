@@ -10,6 +10,9 @@ from typing import Any
 from unittest.mock import MagicMock
 
 from domain.entities import (
+    BankAccount,
+    BankData,
+    CreditData,
     FinancialEntry,
     PluggyItem,
     Reconciliation,
@@ -99,6 +102,38 @@ def make_user(**overrides: Any) -> User:
     }
     values.update(overrides)
     return User(**values)
+
+
+def make_bank_account(**overrides: Any) -> BankAccount:
+    values: dict[str, Any] = {
+        "id": ACCOUNT_ID,
+        "pluggy_item_id": uuid.uuid4(),
+        "pluggy_account_id": uuid.uuid4(),
+        "type": "BANK",
+        "subtype": "CHECKING_ACCOUNT",
+        "name": "Conta Corrente",
+        "number": "0001/12345-0",
+        "currency_code": "BRL",
+        "household_id": HOUSEHOLD_ID,
+        "owner": "TEST HOLDER",
+        "tax_number": "333.333.333-33",
+        "balance": Decimal("100.00"),
+        "updated_at": utc(2026, 11, 10),
+    }
+    values.update(overrides)
+    return BankAccount(**values)
+
+
+def make_bank_data(**overrides: Any) -> BankData:
+    values: dict[str, Any] = {"bank_account_id": ACCOUNT_ID}
+    values.update(overrides)
+    return BankData(**values)
+
+
+def make_credit_data(**overrides: Any) -> CreditData:
+    values: dict[str, Any] = {"bank_account_id": ACCOUNT_ID, "holder_type": "MAIN"}
+    values.update(overrides)
+    return CreditData(**values)
 
 
 def make_pluggy_item(**overrides: Any) -> PluggyItem:
