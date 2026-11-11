@@ -101,9 +101,13 @@ def search_bank_accounts(
     limit: int = 50,
     offset: int = 0,
     household_id: uuid.UUID | None = None,
+    only_active: bool = False,
 ) -> list[tuple[BankAccounts, uuid.UUID]]:
-    """Accounts with the owner's user id. Accounts of deleted items stay: their history is kept."""
+    """Accounts with the owner's user id. Accounts of deleted items stay (their history is
+    kept), unless `only_active` is True: then only accounts of connected items come back."""
     stmt = _with_owner(select(BankAccounts, PluggyItems.user_id))
+    if only_active:
+        stmt = stmt.where(PluggyItems.deleted_at.is_(None))
     if household_id is not None:
         stmt = stmt.where(BankAccounts.household_id == household_id)
     if user_id is not None:

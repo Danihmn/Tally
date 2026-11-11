@@ -80,9 +80,10 @@ def search_bank_accounts(
     limit: int = 50,
     offset: int = 0,
     household_id: uuid.UUID | None = None,
+    only_active: bool = False,
 ) -> list[BankAccountWithOwner]:
     rows = bank_account_repository.search_bank_accounts(
-        session, user_id, account_type, limit, offset, household_id
+        session, user_id, account_type, limit, offset, household_id, only_active
     )
     return [
         BankAccountWithOwner(account=to_entity(BankAccount, a), user_id=owner_id)

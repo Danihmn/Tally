@@ -7,6 +7,12 @@ from langchain_openai import ChatOpenAI
 
 from agents.clock import today
 from agents.context import TallyContext
+from agents.tools.accounts import (
+    get_household_bank_accounts,
+    get_household_credit_cards,
+    get_my_bank_accounts,
+    get_my_credit_cards,
+)
 from agents.tools.transactions import get_household_transactions, get_my_transactions
 from settings import settings
 
@@ -18,15 +24,26 @@ TALLY_AI_SYSTEM_PROMPT = (
 )
 
 TALLY_AI_TOOLS_PROMPT = (
-    "Always call a tool to read the real data before answering about transactions. "
-    "Choose the tool by WHO the question is about:\n"
-    "- the person talking (eu, meu, minha, gastei) -> get_my_transactions;\n"
+    "Always call a tool to read the real data before answering. "
+    "First choose the tool by WHAT the question is about:\n"
+    "- transactions, gastos, compras, recebimentos -> the transactions tools;\n"
+    "- bank accounts: saldo, conta, conta corrente, poupança, cheque especial, quanto tenho "
+    "-> the bank accounts tools;\n"
+    "- credit cards: cartão, fatura, limite, vencimento, pagamento mínimo "
+    "-> the credit cards tools.\n"
+    "Then choose by WHO the question is about:\n"
+    "- the person talking (eu, meu, minha, gastei) -> get_my_transactions, "
+    "get_my_bank_accounts or get_my_credit_cards;\n"
     "- the couple or the house (nós, nosso, a gente, casa, vocês, por pessoa, quem gastou mais) "
-    "-> get_household_transactions, which already says whose each transaction is. "
-    "Never answer a question about the couple with get_my_transactions, and never say you cannot "
-    "see the partner's data: get_household_transactions has it.\n"
+    "-> get_household_transactions, get_household_bank_accounts or get_household_credit_cards, "
+    "which already say whose each line is. "
+    "Never answer a question about the couple with a get_my_* tool, and never say you cannot "
+    "see the partner's data: the get_household_* tools have it.\n"
+    "A credit card's open invoice is money owed, not money the person has: never mix it with "
+    "the bank balance. "
     "The tools already return the totals: never add amounts yourself. "
-    "Say which period you consulted. Never mention tool names to the user."
+    "Say which period you consulted (for transactions) or the last update date (for accounts "
+    "and cards). Never mention tool names to the user."
 )
 
 
@@ -79,7 +96,14 @@ def build_tally_ai():
     """Builds the Tally AI orchestrator agent."""
     return create_agent(
         model=_build_chat_model(),
-        tools=[get_my_transactions, get_household_transactions],
+        tools=[
+            get_my_transactions,
+            get_household_transactions,
+            get_my_bank_accounts,
+            get_household_bank_accounts,
+            get_my_credit_cards,
+            get_household_credit_cards,
+        ],
         middleware=[_system_prompt],
         context_schema=TallyContext,
         name="tally_ai",

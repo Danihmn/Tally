@@ -10,6 +10,12 @@ from agents.tally_ai import (
     build_tally_ai,
     get_tally_ai,
 )
+from agents.tools.accounts import (
+    get_household_bank_accounts,
+    get_household_credit_cards,
+    get_my_bank_accounts,
+    get_my_credit_cards,
+)
 from agents.tools.transactions import get_household_transactions, get_my_transactions
 from tests.factories import make_user
 
@@ -72,13 +78,23 @@ class TestModelChoice(unittest.TestCase):
 @patch("agents.tally_ai.create_agent")
 @patch("agents.tally_ai.ChatOllama")
 class TestBuildTallyAi(unittest.TestCase):
-    def test_agent_gets_the_transaction_tools_and_the_context_schema(self, chat_ollama, create_agent):
+    def test_agent_gets_the_transaction_account_and_card_tools_and_the_context_schema(self, chat_ollama, create_agent):
         with patch("agents.tally_ai.settings", make_settings()):
             agent = build_tally_ai()
 
         kwargs = create_agent.call_args.kwargs
         self.assertEqual(kwargs["model"], chat_ollama.return_value)
-        self.assertEqual(kwargs["tools"], [get_my_transactions, get_household_transactions])
+        self.assertEqual(
+            kwargs["tools"],
+            [
+                get_my_transactions,
+                get_household_transactions,
+                get_my_bank_accounts,
+                get_household_bank_accounts,
+                get_my_credit_cards,
+                get_household_credit_cards,
+            ],
+        )
         self.assertIs(kwargs["context_schema"], TallyContext)
         self.assertEqual(kwargs["middleware"], [_system_prompt])
         self.assertEqual(kwargs["name"], "tally_ai")
@@ -93,6 +109,13 @@ class TestSystemPrompt(unittest.TestCase):
         self.assertIn(TALLY_AI_SYSTEM_PROMPT, text)
         self.assertIn("get_my_transactions", text)
         self.assertIn("get_household_transactions", text)
+        for name in (
+            "get_my_bank_accounts",
+            "get_household_bank_accounts",
+            "get_my_credit_cards",
+            "get_household_credit_cards",
+        ):
+            self.assertIn(name, text)
         self.assertIn("Today is 2026-11-10.", text)
 
 
