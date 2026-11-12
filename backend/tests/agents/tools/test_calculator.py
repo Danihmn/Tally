@@ -1,7 +1,7 @@
 import unittest
 from decimal import Decimal
 
-from agents.tools.calculator import calculate, calculate_expression, round_to_cents
+from agents.tools.calculator import calculate, calculate_expression
 
 
 class CalculateExpressionTests(unittest.TestCase):
@@ -61,16 +61,6 @@ class CalculateExpressionTests(unittest.TestCase):
     def test_a_number_too_large_for_a_float_is_rejected(self):
         with self.assertRaises(ValueError):
             calculate_expression("1e400")
-
-
-class RoundToCentsTests(unittest.TestCase):
-    def test_rounds_half_up(self):
-        self.assertEqual(round_to_cents(Decimal("2.345")), Decimal("2.35"))
-        self.assertEqual(round_to_cents(Decimal("-2.345")), Decimal("-2.35"))
-        self.assertEqual(round_to_cents(Decimal("2.344")), Decimal("2.34"))
-
-    def test_never_returns_negative_zero(self):
-        self.assertEqual(str(round_to_cents(Decimal("-0.001"))), "0.00")
 
 
 class CalculateToolTests(unittest.TestCase):

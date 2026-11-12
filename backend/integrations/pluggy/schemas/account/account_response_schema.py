@@ -1,27 +1,16 @@
 from datetime import UTC, datetime
-from decimal import ROUND_HALF_UP, Decimal
+from decimal import Decimal
 
-from pydantic import BaseModel, ConfigDict, field_validator
-from pydantic.alias_generators import to_camel
+from pydantic import field_validator
 
-_CAMEL_CONFIG = ConfigDict(
-    alias_generator=to_camel,  # created_at -> createdAt
-    validate_by_name=True,  # accepts created_at and createdAt
-    validate_by_alias=True,
-)
+from integrations.pluggy.schemas.pluggy_model import PluggyModel
+from utils.money import round_to_cents, round_to_cents_or_none
 
-
-def _round_to_cents(value: Decimal | None) -> Decimal | None:
-    # The database columns are numeric(18, 2); keeping the same scale (and the
-    # same tie rounding as Postgres) avoids false differences when comparing.
-    if value is None:
-        return None
-    return value.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+# Amounts are rounded to cents: the database columns are numeric(18, 2), and keeping the same
+# scale (and the same tie rounding as Postgres) avoids false differences when comparing.
 
 
-class AccountResponseSchemaBankData(BaseModel):
-    model_config = _CAMEL_CONFIG
-
+class AccountResponseSchemaBankData(PluggyModel):
     transfer_number: str | None = None
     closing_balance: Decimal | None = None
     automatically_invested_balance: Decimal | None = None
@@ -38,12 +27,10 @@ class AccountResponseSchemaBankData(BaseModel):
     )
     @classmethod
     def _round(cls, value: Decimal | None) -> Decimal | None:
-        return _round_to_cents(value)
+        return round_to_cents_or_none(value)
 
 
-class AccountResponseSchemaCreditData(BaseModel):
-    model_config = _CAMEL_CONFIG
-
+class AccountResponseSchemaCreditData(PluggyModel):
     level: str | None = None
     brand: str | None = None
     balance_close_date: datetime | None = None
@@ -63,7 +50,7 @@ class AccountResponseSchemaCreditData(BaseModel):
     )
     @classmethod
     def _round(cls, value: Decimal | None) -> Decimal | None:
-        return _round_to_cents(value)
+        return round_to_cents_or_none(value)
 
     @field_validator("balance_close_date", "balance_due_date")
     @classmethod
@@ -75,9 +62,7 @@ class AccountResponseSchemaCreditData(BaseModel):
         return value
 
 
-class AccountResponseSchema(BaseModel):
-    model_config = _CAMEL_CONFIG
-
+class AccountResponseSchema(PluggyModel):
     id: str
     created_at: datetime
     updated_at: datetime
@@ -97,4 +82,4 @@ class AccountResponseSchema(BaseModel):
     @field_validator("balance")
     @classmethod
     def _round_balance(cls, value: Decimal) -> Decimal:
-        return _round_to_cents(value)  # type: ignore[return-value]
+        return round_to_cents(value)

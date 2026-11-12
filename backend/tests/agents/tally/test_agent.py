@@ -3,13 +3,13 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
-from agents.context import TallyContext
-from agents.tally_ai import (
+from agents.tally.agent import (
     TALLY_AI_SYSTEM_PROMPT,
     _system_prompt,
     build_tally_ai,
     get_tally_ai,
 )
+from agents.tally.context import TallyContext
 from agents.tools.accounts import (
     get_household_bank_accounts,
     get_household_credit_cards,
@@ -27,70 +27,14 @@ from agents.tools.transactions import (
 from tests.factories import make_user
 
 
-def make_settings(bedrock_api_key=None, bedrock_model="openai.gpt-oss-120b-1:0", bedrock_base_url="https://bedrock.example/openai/v1"):
-    fake = MagicMock()
-    fake.ollama_model = "llama3.2:latest"
-    fake.ollama_base_url = "http://localhost:11434"
-    fake.bedrock_api_key = bedrock_api_key
-    fake.bedrock_model = bedrock_model
-    fake.bedrock_base_url = bedrock_base_url
-    return fake
-
-
-@patch("agents.tally_ai.create_agent")
-@patch("agents.tally_ai.ChatOpenAI")
-@patch("agents.tally_ai.ChatOllama")
-class TestModelChoice(unittest.TestCase):
-    def test_no_bedrock_key_uses_ollama_with_its_settings(self, chat_ollama, chat_openai, create_agent):
-        with patch("agents.tally_ai.settings", make_settings(bedrock_api_key=None)):
-            build_tally_ai()
-
-        chat_ollama.assert_called_once_with(model="llama3.2:latest", base_url="http://localhost:11434")
-        chat_openai.assert_not_called()
-        self.assertIs(create_agent.call_args.kwargs["model"], chat_ollama.return_value)
-
-    def test_empty_bedrock_key_uses_ollama(self, chat_ollama, chat_openai, create_agent):
-        with patch("agents.tally_ai.settings", make_settings(bedrock_api_key="")):
-            build_tally_ai()
-
-        chat_ollama.assert_called_once()
-        chat_openai.assert_not_called()
-
-    def test_filled_bedrock_key_uses_openai_on_bedrock(self, chat_ollama, chat_openai, create_agent):
-        with patch("agents.tally_ai.settings", make_settings(bedrock_api_key="secret")):
-            build_tally_ai()
-
-        chat_openai.assert_called_once_with(
-            model="openai.gpt-oss-120b-1:0",
-            api_key="secret",
-            base_url="https://bedrock.example/openai/v1",
-        )
-        chat_ollama.assert_not_called()
-        self.assertIs(create_agent.call_args.kwargs["model"], chat_openai.return_value)
-
-    def test_bedrock_key_without_model_fails_instead_of_falling_back_to_ollama(self, chat_ollama, chat_openai, create_agent):
-        with patch("agents.tally_ai.settings", make_settings(bedrock_api_key="secret", bedrock_model=None)):
-            with self.assertRaises(ValueError):
-                build_tally_ai()
-
-        chat_ollama.assert_not_called()
-        chat_openai.assert_not_called()
-
-    def test_bedrock_key_without_base_url_fails(self, chat_ollama, chat_openai, create_agent):
-        with patch("agents.tally_ai.settings", make_settings(bedrock_api_key="secret", bedrock_base_url="")):
-            with self.assertRaises(ValueError):
-                build_tally_ai()
-
-
-@patch("agents.tally_ai.create_agent")
-@patch("agents.tally_ai.ChatOllama")
+@patch("agents.tally.agent.create_agent")
+@patch("agents.tally.agent.build_chat_model")
 class TestBuildTallyAi(unittest.TestCase):
-    def test_agent_gets_every_query_tool_the_calculator_and_the_context_schema(self, chat_ollama, create_agent):
-        with patch("agents.tally_ai.settings", make_settings()):
-            agent = build_tally_ai()
+    def test_agent_gets_every_query_tool_the_calculator_and_the_context_schema(self, build_chat_model, create_agent):
+        agent = build_tally_ai()
 
         kwargs = create_agent.call_args.kwargs
-        self.assertEqual(kwargs["model"], chat_ollama.return_value)
+        self.assertIs(kwargs["model"], build_chat_model.return_value)
         self.assertEqual(
             kwargs["tools"],
             [
@@ -115,7 +59,7 @@ class TestBuildTallyAi(unittest.TestCase):
 
 class TestSystemPrompt(unittest.TestCase):
     def test_prompt_has_the_persona_the_tools_rules_and_todays_date(self):
-        with patch("agents.tally_ai.today", return_value=datetime.date(2026, 11, 10)):
+        with patch("agents.tally.agent.today", return_value=datetime.date(2026, 11, 10)):
             text = _system_prompt_text()
 
         self.assertIn(TALLY_AI_SYSTEM_PROMPT, text)
@@ -160,7 +104,7 @@ class TestGetTallyAi(unittest.TestCase):
         get_tally_ai.cache_clear()
         self.addCleanup(get_tally_ai.cache_clear)
 
-        with patch("agents.tally_ai.build_tally_ai") as build:
+        with patch("agents.tally.agent.build_tally_ai") as build:
             first = get_tally_ai()
             second = get_tally_ai()
 

@@ -7,7 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from domain.read_models import TransactionFilters
 from presentation.schemas._validators import check_amount_range, check_date_range
-from presentation.schemas.common_schemas import end_of_day_utc, start_of_day_utc
+from utils.dates import end_of_day_utc, start_of_day_utc
 
 
 class TransactionQuery(BaseModel):

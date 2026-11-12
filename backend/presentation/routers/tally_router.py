@@ -4,8 +4,8 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from agents.context import TallyContext
-from agents.tally_ai import get_tally_ai
+from agents.tally.agent import get_tally_ai
+from agents.tally.context import TallyContext
 from domain.entities import User
 from infra.database.session import get_db
 from presentation.dependencies.auth import get_current_user

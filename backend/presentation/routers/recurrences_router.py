@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from domain.entities import Recurrence, User
 from infra.database.session import get_db
 from presentation.dependencies.auth import get_current_user
-from presentation.schemas.common_schemas import Page, first_day_of_month
+from presentation.schemas.common_schemas import Page
 from presentation.schemas.recurrence_schemas import (
     RecurrenceCreate,
     RecurrenceProvisionRequest,
@@ -24,6 +24,7 @@ from services.recurrences_service import (
     search_recurrences,
 )
 from services.users_service import get_user_by_id
+from utils.dates import first_day_of_month
 
 # Both people of the household see every recurrence of the household (the app is private, for two
 # people). Recurrences of other households are not found.

@@ -6,13 +6,22 @@ matched with a transaction. Entries are grouped by `reference_month` (the first 
 """
 
 import datetime
-import decimal
 from typing import Literal
 
 from langchain.tools import ToolRuntime, tool
 
-from agents.clock import today
-from agents.context import TallyContext
+from agents.common.clock import today
+from agents.common.context import AgentContext
+from agents.common.formatting import (
+    clamp_limit,
+    day,
+    month,
+    money,
+    period_note,
+    scope_line,
+    text,
+)
+from agents.tools._shared import owner_names, tool_errors
 from domain.entities import FinancialEntry, User
 from domain.read_models import FinancialEntryFilters, FinancialEntryTotals
 from infra.database.session import get_session
@@ -20,7 +29,7 @@ from services.financial_entries_service import (
     search_financial_entries,
     summarize_financial_entries,
 )
-from services.users_service import list_users_by_household
+from utils.dates import first_day_of_month
 
 DEFAULT_LIMIT = 20
 MAX_LIMIT = 50
@@ -46,7 +55,7 @@ def _resolve_months(
 ) -> tuple[datetime.date, datetime.date, bool]:
     """(first month, last month, True when it defaulted to the current month), as first days."""
     if month_from is None and month_to is None:
-        current = today().replace(day=1)
+        current = first_day_of_month(today())
         return current, current, True
 
     start = _parse_month(month_from, "month_from") if month_from else None
@@ -57,14 +66,6 @@ def _resolve_months(
     if start > end:
         raise ValueError("month_from must not be after month_to")
     return start, end, False
-
-
-def _month(value: datetime.date) -> str:
-    return value.strftime("%Y-%m")
-
-
-def _money(value: decimal.Decimal) -> str:
-    return f"{value:.2f}"
 
 
 def _status(entry: FinancialEntry, now: datetime.date) -> str:
@@ -88,14 +89,14 @@ def _totals_line(label: str, totals: FinancialEntryTotals) -> str:
     expected = totals.planned_total + totals.reconciled_total
     count = totals.planned_count + totals.reconciled_count
     line = (
-        f"Total {label}: {_money(expected)} ({count} entries); "
-        f"planned (not reconciled yet): {_money(totals.planned_total)} "
-        f"({totals.planned_count}); reconciled: {_money(totals.reconciled_total)} "
+        f"Total {label}: {money(expected)} ({count} entries); "
+        f"planned (not reconciled yet): {money(totals.planned_total)} "
+        f"({totals.planned_count}); reconciled: {money(totals.reconciled_total)} "
         f"({totals.reconciled_count})"
     )
     if totals.cancelled_count:
         line += (
-            f"; cancelled, left out of the total: {_money(totals.cancelled_total)} "
+            f"; cancelled, left out of the total: {money(totals.cancelled_total)} "
             f"({totals.cancelled_count})"
         )
     return line
@@ -113,7 +114,7 @@ def _find_entries(
     limit: int,
 ) -> str:
     start, end, defaulted = _resolve_months(month_from, month_to)
-    limit = max(1, min(limit, MAX_LIMIT))
+    limit = clamp_limit(limit, MAX_LIMIT)
     household_id = user.household_id
     filters = FinancialEntryFilters(
         household_id=household_id,
@@ -129,17 +130,12 @@ def _find_entries(
     with get_session() as session:
         items, total = search_financial_entries(session, filters, limit=limit)
         summary = summarize_financial_entries(session, filters)
-        names = {
-            u.id: u.first_name for u in list_users_by_household(session, household_id)
-        }
+        names = owner_names(session, household_id)
 
-    period = _month(start) if start == end else f"{_month(start)} to {_month(end)}"
+    period = month(start) if start == end else f"{month(start)} to {month(end)}"
     lines = [
-        f"Reference months: {period}"
-        + (" (current month, no period was given)" if defaulted else ""),
-        "Scope: only the logged user's entries"
-        if only_mine
-        else "Scope: the whole household",
+        f"Reference months: {period}{period_note(defaulted)}",
+        scope_line(only_mine, "entries"),
     ]
     if not items:
         lines.append("No entries found for these filters.")
@@ -153,13 +149,13 @@ def _find_entries(
     for entry in items:
         lines.append(
             " | ".join([
-                _month(entry.reference_month),
-                entry.due_date.isoformat() if entry.due_date else "-",
+                month(entry.reference_month),
+                day(entry.due_date),
                 entry.description,
-                entry.category or "-",
+                text(entry.category),
                 entry.type,
-                entry.payment_type or "-",
-                _money(entry.amount),
+                text(entry.payment_type),
+                money(entry.amount),
                 _status(entry, now),
                 _installment(entry),
                 names.get(entry.user_id, "?"),
@@ -185,8 +181,9 @@ def _find_entries(
         "house. " + _FILTERS_HELP
     ),
 )
+@tool_errors
 def get_my_entries(
-    runtime: ToolRuntime[TallyContext],
+    runtime: ToolRuntime[AgentContext],
     month_from: str | None = None,
     month_to: str | None = None,
     type: Literal["REVENUES", "EXPENSES"] | None = None,
@@ -195,20 +192,17 @@ def get_my_entries(
     search: str | None = None,
     limit: int = DEFAULT_LIMIT,
 ) -> str:
-    try:
-        return _find_entries(
-            runtime.context.user,
-            True,
-            month_from,
-            month_to,
-            type,
-            status,
-            category,
-            search,
-            limit,
-        )
-    except ValueError as error:
-        return f"Error: {error}"
+    return _find_entries(
+        runtime.context.user,
+        True,
+        month_from,
+        month_to,
+        type,
+        status,
+        category,
+        search,
+        limit,
+    )
 
 
 @tool(
@@ -221,8 +215,9 @@ def get_my_entries(
         + _FILTERS_HELP
     ),
 )
+@tool_errors
 def get_household_entries(
-    runtime: ToolRuntime[TallyContext],
+    runtime: ToolRuntime[AgentContext],
     month_from: str | None = None,
     month_to: str | None = None,
     type: Literal["REVENUES", "EXPENSES"] | None = None,
@@ -231,17 +226,14 @@ def get_household_entries(
     search: str | None = None,
     limit: int = DEFAULT_LIMIT,
 ) -> str:
-    try:
-        return _find_entries(
-            runtime.context.user,
-            False,
-            month_from,
-            month_to,
-            type,
-            status,
-            category,
-            search,
-            limit,
-        )
-    except ValueError as error:
-        return f"Error: {error}"
+    return _find_entries(
+        runtime.context.user,
+        False,
+        month_from,
+        month_to,
+        type,
+        status,
+        category,
+        search,
+        limit,
+    )

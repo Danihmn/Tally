@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from domain.entities import FinancialEntry, User
 from infra.database.session import get_db
 from presentation.dependencies.auth import get_current_user
-from presentation.schemas.common_schemas import Page, first_day_of_month
+from presentation.schemas.common_schemas import Page
 from presentation.schemas.financial_entry_schemas import (
     FinancialEntryCreate,
     FinancialEntryQuery,
@@ -20,6 +20,7 @@ from services.financial_entries_service import (
     search_financial_entries,
 )
 from services.users_service import get_user_by_id
+from utils.dates import first_day_of_month
 
 # Both people of the household see every entry (the app is private, for two people).
 router = APIRouter(

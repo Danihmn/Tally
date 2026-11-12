@@ -5,7 +5,7 @@ from decimal import Decimal
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
-from agents.context import TallyContext
+from agents.common.context import AgentContext
 from agents.tools.entries import get_household_entries, get_my_entries
 from domain.read_models import FinancialEntrySummary, FinancialEntryTotals
 from tests.factories import (
@@ -26,13 +26,13 @@ class EntriesToolTestCase(unittest.TestCase):
     def setUp(self):
         self.user = make_user(first_name="Ana")
         self.partner = make_user(id=PARTNER_ID, first_name="Bia")
-        self.runtime = SimpleNamespace(context=TallyContext(user=self.user))
+        self.runtime = SimpleNamespace(context=AgentContext(user=self.user))
 
         self.mocks = {}
         for name in (
             "search_financial_entries",
             "summarize_financial_entries",
-            "list_users_by_household",
+            "owner_names",
         ):
             patcher = patch(f"{MODULE}.{name}")
             self.mocks[name] = patcher.start()
@@ -46,7 +46,10 @@ class EntriesToolTestCase(unittest.TestCase):
 
         self.mocks["search_financial_entries"].return_value = ([], 0)
         self.mocks["summarize_financial_entries"].return_value = FinancialEntrySummary()
-        self.mocks["list_users_by_household"].return_value = [self.user, self.partner]
+        self.mocks["owner_names"].return_value = {
+            self.user.id: "Ana",
+            self.partner.id: "Bia",
+        }
 
     def filters(self):
         return self.mocks["search_financial_entries"].call_args.args[1]
