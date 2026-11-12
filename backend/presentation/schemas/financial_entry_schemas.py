@@ -7,6 +7,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from domain.entities import FinancialEntry
 from domain.read_models import FinancialEntryFilters
 from presentation.schemas._validators import check_amount_range, check_date_range
 from presentation.schemas.common_schemas import first_day_of_month
@@ -136,5 +137,30 @@ class FinancialEntryResponse(BaseModel):
     installment_number: int | None
     installment_total: int | None
     notes: str | None
+    recurrence_id: uuid.UUID | None
     created_at: datetime.datetime
     updated_at: datetime.datetime | None
+
+    @classmethod
+    def from_entity(cls, e: FinancialEntry) -> FinancialEntryResponse:
+        assert e.id is not None and e.created_at is not None
+        return cls(
+            id=e.id,
+            user_id=e.user_id,
+            bank_account_id=e.bank_account_id,
+            description=e.description,
+            category=e.category,
+            type=e.type,
+            payment_type=e.payment_type,
+            amount=e.amount,
+            currency_code=e.currency_code,
+            reference_month=e.reference_month,
+            due_date=e.due_date,
+            status=e.status,
+            installment_number=e.installment_number,
+            installment_total=e.installment_total,
+            notes=e.notes,
+            recurrence_id=e.recurrence_id,
+            created_at=e.created_at,
+            updated_at=e.updated_at,
+        )

@@ -16,6 +16,7 @@ from domain.entities import (
     FinancialEntry,
     PluggyItem,
     Reconciliation,
+    Recurrence,
     Transaction,
     User,
 )
@@ -88,6 +89,21 @@ def make_reconciliation(**overrides: Any) -> Reconciliation:
     }
     values.update(overrides)
     return Reconciliation(**values)
+
+
+def make_recurrence(**overrides: Any) -> Recurrence:
+    values: dict[str, Any] = {
+        "id": uuid.uuid4(),
+        "household_id": HOUSEHOLD_ID,
+        "user_id": USER_ID,
+        "description": "Rent",
+        "type": "EXPENSES",
+        "amount": Decimal("1500.00"),
+        "currency_code": "BRL",
+        "source": "MANUAL",
+    }
+    values.update(overrides)
+    return Recurrence(**values)
 
 
 def make_user(**overrides: Any) -> User:

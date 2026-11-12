@@ -14,6 +14,8 @@ from infra.repositories.common.exceptions import (
 
 def _apply_filters(stmt: Select, filters: RecurrenceFilters) -> Select:
     stmt = stmt.where(Recurrences.deleted_at.is_(None))
+    if filters.household_id is not None:
+        stmt = stmt.where(Recurrences.household_id == filters.household_id)
     if filters.user_id is not None:
         stmt = stmt.where(Recurrences.user_id == filters.user_id)
     if filters.type is not None:
@@ -50,6 +52,20 @@ def search_recurrences(
         stmt.order_by(Recurrences.created_at.desc(), Recurrences.id)
         .limit(limit)
         .offset(offset)
+    )
+    return list(session.scalars(stmt).all())
+
+
+@translate_db_errors("recurrences")
+def list_recurrences_by_household(
+    session: Session, household_id: uuid.UUID
+) -> list[Recurrences]:
+    """Every recurrence of the household that was not soft deleted, with no pagination (few rows)."""
+    stmt = (
+        select(Recurrences)
+        .where(Recurrences.household_id == household_id)
+        .where(Recurrences.deleted_at.is_(None))
+        .order_by(Recurrences.created_at, Recurrences.id)
     )
     return list(session.scalars(stmt).all())
 

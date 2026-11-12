@@ -183,7 +183,7 @@ Prices and plan sizes are not written here because they change. Check the AWS pr
 
 | Folder | Content |
 |---|---|
-| `domain/` | Entities, read models, pure rules (reconciliation matching) |
+| `domain/` | Entities, read models, pure rules (reconciliation matching, recurrence provisioning) |
 | `infra/` | Database (session, generated models), repositories (`common/`: errors and query helpers), security (`security/`: password hash, encryption, webhook secret, JWT) |
 | `integrations/pluggy/` | Pluggy's HTTP clients, schemas and config |
 | `jobs/` | Background flows that call the services (item registration, transaction import, reconciliation, webhook registration) |

@@ -74,3 +74,21 @@ class CreateFinancialEntryEndpointTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 404)
         self.mocks["create_financial_entry"].assert_not_called()
+
+    def test_response_has_the_recurrence_of_the_entry(self):
+        recurrence_id = uuid.uuid4()
+        self.mocks["create_financial_entry"].side_effect = lambda session, entry: make_entry(
+            created_at=utc(2026, 11, 1), recurrence_id=recurrence_id
+        )
+
+        response = self.client.post("/financial-entries", json=self._body())
+
+        self.assertEqual(response.json()["recurrence_id"], str(recurrence_id))
+
+    def test_entry_created_by_hand_has_no_recurrence(self):
+        response = self.client.post("/financial-entries", json=self._body())
+
+        self.assertIsNone(response.json()["recurrence_id"])
+        self.assertIsNone(
+            self.mocks["create_financial_entry"].call_args.args[1].recurrence_id
+        )
