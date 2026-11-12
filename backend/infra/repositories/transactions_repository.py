@@ -3,7 +3,7 @@ import decimal
 import uuid
 from typing import Any
 
-from sqlalchemy import func, select, update
+from sqlalchemy import Text, Uuid, func, literal, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
@@ -224,6 +224,43 @@ def summarize_transactions(
         filters,
     ).group_by(Transactions.type)
     return [(type_, total, count) for type_, total, count in session.execute(stmt)]
+
+
+@translate_db_errors("transactions")
+def summarize_transactions_by(
+    session: Session,
+    filters: TransactionFilters,
+    by_owner: bool,
+    by_category: bool,
+) -> list[tuple[uuid.UUID | None, str | None, str, decimal.Decimal, int]]:
+    """(owner user id, category, type, sum of abs(amount), count) per group and type.
+
+    A column that is not grouped comes back as None.
+    """
+    owner = PluggyItems.user_id if by_owner else literal(None, type_=Uuid)
+    category = Transactions.category if by_category else literal(None, type_=Text)
+    stmt = apply_filters(
+        join_owner(
+            select(
+                owner,
+                category,
+                Transactions.type,
+                func.coalesce(func.sum(func.abs(Transactions.amount)), 0),
+                func.count(Transactions.id),
+            )
+        ),
+        filters,
+    )
+    groups = [Transactions.type]
+    if by_owner:
+        groups.append(PluggyItems.user_id)  # type: ignore
+    if by_category:
+        groups.append(Transactions.category)  # type: ignore
+    stmt = stmt.group_by(*groups)
+    return [
+        (user_id, category_, type_, total, count)
+        for user_id, category_, type_, total, count in session.execute(stmt)
+    ]
 
 
 @translate_db_errors("transactions")

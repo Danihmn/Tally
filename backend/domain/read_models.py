@@ -7,7 +7,7 @@ or hold the filters of a query.
 import datetime
 import decimal
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from domain.entities import BankAccount, Transaction
 
@@ -28,6 +28,22 @@ class TransactionWithOwner:
 class TransactionSummary:
     """Totals of every transaction that matches a filter (not just one page). Absolute values."""
 
+    debit_total: decimal.Decimal = decimal.Decimal("0.00")
+    credit_total: decimal.Decimal = decimal.Decimal("0.00")
+    debit_count: int = 0
+    credit_count: int = 0
+
+
+@dataclass(slots=True)
+class TransactionGroupTotal:
+    """Totals of one group (owner and/or category) of transactions. Absolute values.
+
+    `user_id` is None when the query was not grouped by owner; `category` is None when it was not
+    grouped by category, or for the transactions that have no category.
+    """
+
+    user_id: uuid.UUID | None = None
+    category: str | None = None
     debit_total: decimal.Decimal = decimal.Decimal("0.00")
     credit_total: decimal.Decimal = decimal.Decimal("0.00")
     debit_count: int = 0
@@ -81,3 +97,23 @@ class FinancialEntryFilters:
     due_date_to: datetime.date | None = None  # inclusive
     min_amount: decimal.Decimal | None = None
     max_amount: decimal.Decimal | None = None
+
+
+@dataclass(slots=True)
+class FinancialEntryTotals:
+    """Totals and counts of the entries of one type (REVENUES or EXPENSES), per status."""
+
+    planned_total: decimal.Decimal = decimal.Decimal("0.00")
+    planned_count: int = 0
+    reconciled_total: decimal.Decimal = decimal.Decimal("0.00")
+    reconciled_count: int = 0
+    cancelled_total: decimal.Decimal = decimal.Decimal("0.00")
+    cancelled_count: int = 0
+
+
+@dataclass(slots=True)
+class FinancialEntrySummary:
+    """Totals of every entry that matches a filter (not just one page)."""
+
+    revenues: FinancialEntryTotals = field(default_factory=FinancialEntryTotals)
+    expenses: FinancialEntryTotals = field(default_factory=FinancialEntryTotals)

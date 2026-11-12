@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from domain.entities import Transaction
 from domain.read_models import (
     TransactionFilters,
+    TransactionGroupTotal,
     TransactionSummary,
     TransactionWithOwner,
 )
@@ -148,3 +149,28 @@ def summarize_transactions(
         elif type_ == "CREDIT":
             summary.credit_total, summary.credit_count = total, count
     return summary
+
+
+@translate_repository_errors
+def summarize_transactions_by(
+    session: Session,
+    filters: TransactionFilters,
+    by_owner: bool,
+    by_category: bool,
+) -> list[TransactionGroupTotal]:
+    """Debit and credit totals per owner and/or category, biggest debit total first."""
+    groups: dict[tuple, TransactionGroupTotal] = {}
+    for user_id, category, type_, total, count in transactions_repository.summarize_transactions_by(
+        session, filters, by_owner, by_category
+    ):
+        group = groups.setdefault(
+            (user_id, category),
+            TransactionGroupTotal(user_id=user_id, category=category),
+        )
+        if type_ == "DEBIT":
+            group.debit_total, group.debit_count = total, count
+        elif type_ == "CREDIT":
+            group.credit_total, group.credit_count = total, count
+    return sorted(
+        groups.values(), key=lambda g: (g.debit_total, g.credit_total), reverse=True
+    )

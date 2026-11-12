@@ -16,7 +16,14 @@ from agents.tools.accounts import (
     get_my_bank_accounts,
     get_my_credit_cards,
 )
-from agents.tools.transactions import get_household_transactions, get_my_transactions
+from agents.tools.calculator import calculate
+from agents.tools.entries import get_household_entries, get_my_entries
+from agents.tools.transactions import (
+    get_household_spending_summary,
+    get_household_transactions,
+    get_my_spending_summary,
+    get_my_transactions,
+)
 from tests.factories import make_user
 
 
@@ -78,7 +85,7 @@ class TestModelChoice(unittest.TestCase):
 @patch("agents.tally_ai.create_agent")
 @patch("agents.tally_ai.ChatOllama")
 class TestBuildTallyAi(unittest.TestCase):
-    def test_agent_gets_the_transaction_account_and_card_tools_and_the_context_schema(self, chat_ollama, create_agent):
+    def test_agent_gets_every_query_tool_the_calculator_and_the_context_schema(self, chat_ollama, create_agent):
         with patch("agents.tally_ai.settings", make_settings()):
             agent = build_tally_ai()
 
@@ -89,10 +96,15 @@ class TestBuildTallyAi(unittest.TestCase):
             [
                 get_my_transactions,
                 get_household_transactions,
+                get_my_spending_summary,
+                get_household_spending_summary,
+                get_my_entries,
+                get_household_entries,
                 get_my_bank_accounts,
                 get_household_bank_accounts,
                 get_my_credit_cards,
                 get_household_credit_cards,
+                calculate,
             ],
         )
         self.assertIs(kwargs["context_schema"], TallyContext)
@@ -110,6 +122,11 @@ class TestSystemPrompt(unittest.TestCase):
         self.assertIn("get_my_transactions", text)
         self.assertIn("get_household_transactions", text)
         for name in (
+            "get_my_spending_summary",
+            "get_household_spending_summary",
+            "get_my_entries",
+            "get_household_entries",
+            "calculate",
             "get_my_bank_accounts",
             "get_household_bank_accounts",
             "get_my_credit_cards",

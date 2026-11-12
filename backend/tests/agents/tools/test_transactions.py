@@ -7,10 +7,16 @@ from unittest.mock import MagicMock, patch
 
 from agents.context import TallyContext
 from agents.tools.transactions import (
+    get_household_spending_summary,
     get_household_transactions,
+    get_my_spending_summary,
     get_my_transactions,
 )
-from domain.read_models import TransactionSummary, TransactionWithOwner
+from domain.read_models import (
+    TransactionGroupTotal,
+    TransactionSummary,
+    TransactionWithOwner,
+)
 from tests.factories import (
     HOUSEHOLD_ID,
     USER_ID,
@@ -33,7 +39,12 @@ class ToolTestCase(unittest.TestCase):
         self.runtime = SimpleNamespace(context=TallyContext(user=self.user))
 
         self.mocks = {}
-        for name in ("search_transactions", "summarize_transactions", "list_users_by_household"):
+        for name in (
+            "search_transactions",
+            "summarize_transactions",
+            "summarize_transactions_by",
+            "list_users_by_household",
+        ):
             patcher = patch(f"{MODULE}.{name}")
             self.mocks[name] = patcher.start()
             self.addCleanup(patcher.stop)
@@ -46,6 +57,7 @@ class ToolTestCase(unittest.TestCase):
 
         self.mocks["search_transactions"].return_value = ([], 0)
         self.mocks["summarize_transactions"].return_value = TransactionSummary()
+        self.mocks["summarize_transactions_by"].return_value = []
         self.mocks["list_users_by_household"].return_value = [self.user, self.partner]
 
     def filters(self):
@@ -186,3 +198,137 @@ class OutputTests(ToolTestCase):
         get_my_transactions.func(runtime=self.runtime, type="DEBIT")
 
         self.assertIs(self.mocks["summarize_transactions"].call_args.args[1], self.filters())
+
+
+class SpendingSummaryScopeTests(ToolTestCase):
+    def summary_call(self):
+        return self.mocks["summarize_transactions_by"].call_args.args
+
+    def test_my_summary_is_filtered_by_user_and_groups_by_category_by_default(self):
+        get_my_spending_summary.func(runtime=self.runtime)
+
+        _, filters, by_owner, by_category = self.summary_call()
+        self.assertEqual(filters.user_id, USER_ID)
+        self.assertEqual(filters.household_id, HOUSEHOLD_ID)
+        self.assertEqual((by_owner, by_category), (False, True))
+
+    def test_household_summary_is_not_filtered_by_user_and_groups_by_owner_by_default(self):
+        get_household_spending_summary.func(runtime=self.runtime)
+
+        _, filters, by_owner, by_category = self.summary_call()
+        self.assertIsNone(filters.user_id)
+        self.assertEqual(filters.household_id, HOUSEHOLD_ID)
+        self.assertEqual((by_owner, by_category), (True, False))
+
+    def test_owner_and_category_groups_by_both(self):
+        get_household_spending_summary.func(
+            runtime=self.runtime, group_by="owner_and_category"
+        )
+
+        _, _, by_owner, by_category = self.summary_call()
+        self.assertEqual((by_owner, by_category), (True, True))
+
+    def test_unknown_group_by_returns_an_error(self):
+        result = get_household_spending_summary.func(runtime=self.runtime, group_by="month")
+
+        self.assertTrue(result.startswith("Error:"))
+        self.mocks["summarize_transactions_by"].assert_not_called()
+
+    def test_the_user_and_the_household_are_not_arguments_of_the_model(self):
+        for tool in (get_my_spending_summary, get_household_spending_summary):
+            self.assertNotIn("runtime", tool.args)
+            self.assertNotIn("user_id", tool.args)
+            self.assertNotIn("household_id", tool.args)
+
+    def test_period_and_filters_are_the_same_as_the_transactions_tools(self):
+        get_household_spending_summary.func(
+            runtime=self.runtime,
+            date_from="2026-10-01",
+            date_to="2026-10-31",
+            type="DEBIT",
+            category="",
+            search="ifood",
+        )
+
+        _, filters, _, _ = self.summary_call()
+        self.assertEqual(filters.date_from, utc(2026, 10, 1, hour=0))
+        self.assertEqual(filters.date_to, utc(2026, 11, 1, hour=0))
+        self.assertEqual(filters.type, "DEBIT")
+        self.assertIsNone(filters.category)
+        self.assertEqual(filters.search, "ifood")
+        self.assertIs(self.mocks["summarize_transactions"].call_args.args[1], filters)
+
+    def test_invalid_period_returns_an_error(self):
+        result = get_my_spending_summary.func(runtime=self.runtime, date_from="ontem")
+
+        self.assertTrue(result.startswith("Error:"))
+        self.mocks["summarize_transactions_by"].assert_not_called()
+
+
+class SpendingSummaryOutputTests(ToolTestCase):
+    def test_no_transactions_says_so(self):
+        result = get_household_spending_summary.func(runtime=self.runtime)
+
+        self.assertIn("No transactions found", result)
+        self.assertIn("Period: 2026-11-01 to 2026-11-30 (current month", result)
+
+    def test_groups_by_owner_use_first_names_and_keep_the_service_order(self):
+        self.mocks["summarize_transactions_by"].return_value = [
+            TransactionGroupTotal(
+                user_id=PARTNER_ID,
+                debit_total=Decimal("900"),
+                debit_count=12,
+                credit_total=Decimal("50.5"),
+                credit_count=1,
+            ),
+            TransactionGroupTotal(user_id=USER_ID, debit_total=Decimal("300.1"), debit_count=4),
+        ]
+        self.mocks["summarize_transactions"].return_value = TransactionSummary(
+            debit_total=Decimal("1200.10"), debit_count=16, credit_total=Decimal("50.50"), credit_count=1
+        )
+
+        result = get_household_spending_summary.func(runtime=self.runtime)
+
+        lines = result.splitlines()
+        self.assertIn("owner | total debits | debit count | total credits | credit count", lines)
+        bia = lines.index("Bia | 900.00 | 12 | 50.50 | 1")
+        ana = lines.index("Ana | 300.10 | 4 | 0.00 | 0")
+        self.assertLess(bia, ana)
+        self.assertIn("Total debits: 1200.10 (16 transactions)", result)
+        self.assertIn("Total credits: 50.50 (1 transactions)", result)
+
+    def test_groups_by_category_name_the_missing_category(self):
+        self.mocks["summarize_transactions_by"].return_value = [
+            TransactionGroupTotal(category="Food", debit_total=Decimal("10"), debit_count=1),
+            TransactionGroupTotal(category=None, debit_total=Decimal("5"), debit_count=1),
+        ]
+
+        result = get_my_spending_summary.func(runtime=self.runtime)
+
+        self.assertIn("category | total debits", result)
+        self.assertIn("Food | 10.00 | 1 | 0.00 | 0", result)
+        self.assertIn("sem categoria | 5.00 | 1 | 0.00 | 0", result)
+        self.assertNotIn("Ana |", result)
+
+    def test_owner_and_category_lines_have_both_columns(self):
+        self.mocks["summarize_transactions_by"].return_value = [
+            TransactionGroupTotal(
+                user_id=USER_ID, category="Food", debit_total=Decimal("10"), debit_count=1
+            ),
+        ]
+
+        result = get_household_spending_summary.func(
+            runtime=self.runtime, group_by="owner_and_category"
+        )
+
+        self.assertIn("owner | category | total debits", result)
+        self.assertIn("Ana | Food | 10.00 | 1 | 0.00 | 0", result)
+
+    def test_an_owner_outside_the_household_list_is_shown_as_unknown(self):
+        self.mocks["summarize_transactions_by"].return_value = [
+            TransactionGroupTotal(user_id=uuid.uuid4(), debit_total=Decimal("1"), debit_count=1),
+        ]
+
+        result = get_household_spending_summary.func(runtime=self.runtime)
+
+        self.assertIn("? | 1.00 | 1", result)

@@ -71,7 +71,7 @@ def _load(
         names = {
             u.id: u.first_name for u in list_users_by_household(session, household_id)
         }
-    return rows, names
+    return rows, names  # type: ignore
 
 
 def _scope_line(only_mine: bool) -> str:

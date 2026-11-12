@@ -10,7 +10,11 @@ from domain.entities import User
 from domain.read_models import TransactionFilters
 from infra.database.session import get_session
 from presentation.schemas.common_schemas import end_of_day_utc, start_of_day_utc
-from services.transactions_service import search_transactions, summarize_transactions
+from services.transactions_service import (
+    search_transactions,
+    summarize_transactions,
+    summarize_transactions_by,
+)
 from services.users_service import list_users_by_household
 
 DEFAULT_LIMIT = 20
@@ -181,6 +185,166 @@ def get_household_transactions(
             category,
             search,
             limit,
+        )
+    except ValueError as error:
+        return f"Error: {error}"
+
+
+GroupBy = Literal["owner", "category", "owner_and_category"]
+
+_SUMMARY_HELP = (
+    "Totals grouped by person (owner), by category, or both (group_by: owner, category or "
+    "owner_and_category), biggest spending first. Filters (all optional): date_from and date_to "
+    "as YYYY-MM-DD (both inclusive; without them the current month is used), type DEBIT or "
+    "CREDIT, category, search (text inside the description). "
+    "The result already has every total: never add amounts yourself."
+)
+
+
+def _summarize(
+    user: User,
+    only_mine: bool,
+    group_by: str,
+    date_from: str | None,
+    date_to: str | None,
+    type: str | None,
+    category: str | None,
+    search: str | None,
+) -> str:
+    if group_by not in ("owner", "category", "owner_and_category"):
+        raise ValueError(
+            "group_by must be owner, category or owner_and_category, "
+            f"got '{group_by}'"
+        )
+    by_owner = group_by in ("owner", "owner_and_category")
+    by_category = group_by in ("category", "owner_and_category")
+    start, end, defaulted = _resolve_period(date_from, date_to)
+    household_id = user.household_id
+    filters = TransactionFilters(
+        household_id=household_id,
+        user_id=user.id if only_mine else None,
+        date_from=start_of_day_utc(start),
+        date_to=end_of_day_utc(end),
+        type=type,
+        category=category or None,
+        search=search or None,
+    )
+
+    with get_session() as session:
+        groups = summarize_transactions_by(session, filters, by_owner, by_category)
+        summary = summarize_transactions(session, filters)
+        names = {
+            u.id: u.first_name for u in list_users_by_household(session, household_id)
+        }
+
+    lines = [
+        f"Period: {start.isoformat()} to {end.isoformat()}"
+        + (" (current month, no period was given)" if defaulted else ""),
+        "Scope: only the logged user's transactions"
+        if only_mine
+        else "Scope: the whole household",
+        f"Grouped by: {group_by}",
+    ]
+    if not groups:
+        lines.append("No transactions found for these filters.")
+        return "\n".join(lines)
+
+    columns = (["owner"] if by_owner else []) + (["category"] if by_category else [])
+    lines.append(
+        " | ".join(columns + ["total debits", "debit count", "total credits", "credit count"])
+    )
+    for group in groups:
+        keys = []
+        if by_owner:
+            keys.append(names.get(group.user_id, "?"))  # type: ignore[arg-type]
+        if by_category:
+            keys.append(group.category or "sem categoria")
+        lines.append(
+            " | ".join(
+                keys
+                + [
+                    _money(group.debit_total),
+                    str(group.debit_count),
+                    _money(group.credit_total),
+                    str(group.credit_count),
+                ]
+            )
+        )
+    lines.append(f"{len(groups)} groups (biggest debit total first).")
+    lines.append(
+        f"Total debits: {_money(summary.debit_total)} ({summary.debit_count} transactions)"
+    )
+    lines.append(
+        f"Total credits: {_money(summary.credit_total)} ({summary.credit_count} transactions)"
+    )
+    lines.append(
+        "Notes: debits are money out, credits are money in. Card bill payments and transfers "
+        "between the couple's own accounts are inside these totals; filter by category to "
+        "leave them out."
+    )
+    return "\n".join(lines)
+
+
+@tool(
+    "get_my_spending_summary",
+    description=(
+        "ONLY the logged person's own spending and income, totaled by category (default) or "
+        "by person. Call it for 'quanto eu gastei por categoria', 'onde eu mais gastei', "
+        "'com o que eu gastei'. Never use it for the couple or the house. " + _SUMMARY_HELP
+    ),
+)
+def get_my_spending_summary(
+    runtime: ToolRuntime[TallyContext],
+    group_by: GroupBy = "category",
+    date_from: str | None = None,
+    date_to: str | None = None,
+    type: Literal["DEBIT", "CREDIT"] | None = None,
+    category: str | None = None,
+    search: str | None = None,
+) -> str:
+    try:
+        return _summarize(
+            runtime.context.user,
+            True,
+            group_by,
+            date_from,
+            date_to,
+            type,
+            category,
+            search,
+        )
+    except ValueError as error:
+        return f"Error: {error}"
+
+
+@tool(
+    "get_household_spending_summary",
+    description=(
+        "Spending and income of EVERYONE in the household (the couple), totaled by person "
+        "(default), by category, or both. Call it for 'quem gastou mais', 'quanto cada um "
+        "gastou', 'por pessoa', 'onde a gente mais gastou', 'gastos da casa por categoria'. "
+        + _SUMMARY_HELP
+    ),
+)
+def get_household_spending_summary(
+    runtime: ToolRuntime[TallyContext],
+    group_by: GroupBy = "owner",
+    date_from: str | None = None,
+    date_to: str | None = None,
+    type: Literal["DEBIT", "CREDIT"] | None = None,
+    category: str | None = None,
+    search: str | None = None,
+) -> str:
+    try:
+        return _summarize(
+            runtime.context.user,
+            False,
+            group_by,
+            date_from,
+            date_to,
+            type,
+            category,
+            search,
         )
     except ValueError as error:
         return f"Error: {error}"

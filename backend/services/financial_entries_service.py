@@ -4,7 +4,11 @@ import uuid
 from sqlalchemy.orm import Session
 
 from domain.entities import FinancialEntry
-from domain.read_models import FinancialEntryFilters
+from domain.read_models import (
+    FinancialEntryFilters,
+    FinancialEntrySummary,
+    FinancialEntryTotals,
+)
 from infra.repositories import financial_entries_repository
 from services.common.exceptions import translate_repository_errors
 from services.common.mappers import to_entity, to_values
@@ -121,3 +125,34 @@ def search_financial_entries(
     )
     total = financial_entries_repository.count_financial_entries(session, filters)
     return [to_entity(FinancialEntry, e) for e in rows], total
+
+
+_STATUS_FIELDS = {
+    "PLANNED": ("planned_total", "planned_count"),
+    "RECONCILED": ("reconciled_total", "reconciled_count"),
+    "CANCELLED": ("cancelled_total", "cancelled_count"),
+}
+
+
+@translate_repository_errors
+def summarize_financial_entries(
+    session: Session, filters: FinancialEntryFilters
+) -> FinancialEntrySummary:
+    """Totals and counts per type and status of everything the filters match."""
+    summary = FinancialEntrySummary()
+    for (
+        type_,
+        status,
+        total,
+        count,
+    ) in financial_entries_repository.summarize_financial_entries(session, filters):
+        totals: FinancialEntryTotals | None = {
+            "REVENUES": summary.revenues,
+            "EXPENSES": summary.expenses,
+        }.get(type_)
+        fields = _STATUS_FIELDS.get(status)
+        if totals is None or fields is None:
+            continue
+        setattr(totals, fields[0], total)
+        setattr(totals, fields[1], count)
+    return summary

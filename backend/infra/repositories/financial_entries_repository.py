@@ -1,4 +1,5 @@
 import datetime
+import decimal
 import uuid
 from typing import Any
 
@@ -205,6 +206,26 @@ def search_financial_entries(
 def count_financial_entries(session: Session, filters: FinancialEntryFilters) -> int:
     stmt = _apply_search_filters(select(func.count(FinancialEntries.id)), filters)
     return session.scalar(stmt) or 0
+
+
+@translate_db_errors("financial_entries")
+def summarize_financial_entries(
+    session: Session, filters: FinancialEntryFilters
+) -> list[tuple[str, str, decimal.Decimal, int]]:
+    """(type, status, sum of amount, count) per type and status, over everything the filters match."""
+    stmt = _apply_search_filters(
+        select(
+            FinancialEntries.type,
+            FinancialEntries.status,
+            func.coalesce(func.sum(FinancialEntries.amount), 0),
+            func.count(FinancialEntries.id),
+        ),
+        filters,
+    ).group_by(FinancialEntries.type, FinancialEntries.status)
+    return [
+        (type_, status, total, count)
+        for type_, status, total, count in session.execute(stmt)
+    ]
 
 
 @translate_db_errors("financial_entries")
