@@ -25,3 +25,4 @@ class FinancialEntry:
     updated_at: datetime.datetime | None = None
     deleted_at: datetime.datetime | None = None
     payment_type: str | None = None  # DEBIT | CREDIT
+    recurrence_id: uuid.UUID | None = None  # set when created from a recurrence

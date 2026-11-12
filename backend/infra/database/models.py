@@ -46,6 +46,9 @@ class Households(Base):
     transactions: Mapped[list[Transactions]] = relationship(
         "Transactions", back_populates="household"
     )
+    recurrences: Mapped[list[Recurrences]] = relationship(
+        "Recurrences", back_populates="household"
+    )
 
 
 class Users(Base):
@@ -461,6 +464,12 @@ class FinancialEntries(Base):
             name="financial_entries_household_id_fkey",
         ),
         ForeignKeyConstraint(
+            ["recurrence_id"],
+            ["recurrences.id"],
+            ondelete="RESTRICT",
+            name="financial_entries_recurrence_id_fkey",
+        ),
+        ForeignKeyConstraint(
             ["user_id"],
             ["users.id"],
             ondelete="RESTRICT",
@@ -483,6 +492,13 @@ class FinancialEntries(Base):
             "user_id",
             "reference_month",
             postgresql_where="(deleted_at IS NULL)",
+        ),
+        Index(
+            "uq_financial_entries_recurrence_month",
+            "recurrence_id",
+            "reference_month",
+            postgresql_where="((deleted_at IS NULL) AND (recurrence_id IS NOT NULL))",
+            unique=True,
         ),
     )
 
@@ -515,12 +531,16 @@ class FinancialEntries(Base):
     updated_at: Mapped[datetime.datetime | None] = mapped_column(DateTime(True))
     deleted_at: Mapped[datetime.datetime | None] = mapped_column(DateTime(True))
     payment_type: Mapped[str | None] = mapped_column(Text)
+    recurrence_id: Mapped[uuid.UUID | None] = mapped_column(Uuid)
 
     bank_account: Mapped[BankAccounts | None] = relationship(
         "BankAccounts", back_populates="financial_entries"
     )
     household: Mapped[Households] = relationship(
         "Households", back_populates="financial_entries"
+    )
+    recurrence: Mapped[Recurrences | None] = relationship(
+        "Recurrences", back_populates="financial_entries"
     )
     user: Mapped[Users] = relationship("Users", back_populates="financial_entries")
     reconciliations: Mapped[list[Reconciliations]] = relationship(
@@ -590,12 +610,25 @@ class Recurrences(Base):
     __table_args__ = (
         CheckConstraint("amount > 0", name="recurrences_amount_check"),
         CheckConstraint(
+            "due_day >= 1 AND due_day <= 31", name="recurrences_due_day_check"
+        ),
+        CheckConstraint(
             "payment_type = ANY (ARRAY['DEBIT'::text, 'CREDIT'::text])",
             name="recurrences_payment_type_check",
         ),
         CheckConstraint(
+            "source = ANY (ARRAY['MANUAL'::text, 'AI'::text])",
+            name="recurrences_source_check",
+        ),
+        CheckConstraint(
             "type = ANY (ARRAY['REVENUES'::text, 'EXPENSES'::text])",
             name="recurrences_type_check",
+        ),
+        ForeignKeyConstraint(
+            ["household_id"],
+            ["households.id"],
+            ondelete="RESTRICT",
+            name="recurrences_household_id_fkey",
         ),
         ForeignKeyConstraint(
             ["user_id"],
@@ -604,6 +637,11 @@ class Recurrences(Base):
             name="recurrences_user_id_fkey",
         ),
         PrimaryKeyConstraint("id", name="recurrences_pkey"),
+        Index(
+            "idx_recurrences_household_id",
+            "household_id",
+            postgresql_where="(deleted_at IS NULL)",
+        ),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -619,10 +657,23 @@ class Recurrences(Base):
     type: Mapped[str] = mapped_column(
         Text, nullable=False, server_default=text("'EXPENSES'::text")
     )
+    description: Mapped[str] = mapped_column(Text, nullable=False)
+    source: Mapped[str] = mapped_column(
+        Text, nullable=False, server_default=text("'MANUAL'::text")
+    )
+    household_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
     category: Mapped[str | None] = mapped_column(Text)
     updated_at: Mapped[datetime.datetime | None] = mapped_column(DateTime(True))
     deleted_at: Mapped[datetime.datetime | None] = mapped_column(DateTime(True))
     user_id: Mapped[uuid.UUID | None] = mapped_column(Uuid)
     payment_type: Mapped[str | None] = mapped_column(Text)
+    notes: Mapped[str | None] = mapped_column(Text)
+    due_day: Mapped[int | None] = mapped_column(SmallInteger)
 
+    household: Mapped[Households] = relationship(
+        "Households", back_populates="recurrences"
+    )
     user: Mapped[Users | None] = relationship("Users", back_populates="recurrences")
+    financial_entries: Mapped[list[FinancialEntries]] = relationship(
+        "FinancialEntries", back_populates="recurrence"
+    )

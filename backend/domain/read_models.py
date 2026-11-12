@@ -9,7 +9,7 @@ import decimal
 import uuid
 from dataclasses import dataclass, field
 
-from domain.entities import BankAccount, Transaction
+from domain.entities import BankAccount, FinancialEntry, Transaction
 
 
 @dataclass(slots=True)
@@ -71,6 +71,7 @@ class TransactionFilters:
 class RecurrenceFilters:
     """Every field is optional: None means "do not filter by it"."""
 
+    household_id: uuid.UUID | None = None
     user_id: uuid.UUID | None = None
     type: str | None = None  # REVENUES | EXPENSES
     payment_type: str | None = None  # DEBIT | CREDIT
@@ -117,3 +118,12 @@ class FinancialEntrySummary:
 
     revenues: FinancialEntryTotals = field(default_factory=FinancialEntryTotals)
     expenses: FinancialEntryTotals = field(default_factory=FinancialEntryTotals)
+
+
+@dataclass(slots=True)
+class ProvisioningResult:
+    """What the provisioning of a month did: the entries it created and how many it skipped."""
+
+    reference_month: datetime.date
+    created: list[FinancialEntry] = field(default_factory=list)
+    skipped_count: int = 0  # recurrences that already had an entry in the month
