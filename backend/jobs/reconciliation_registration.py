@@ -19,6 +19,7 @@ from services.reconciliations_service import (
     list_reconciliations_by_transactions,
 )
 from services.transactions_service import search_transactions
+from utils.dates import first_day_of_month, start_of_day_utc, today_utc
 
 logger = logging.getLogger(__name__)
 
@@ -28,8 +29,7 @@ _TRANSACTIONS_PAGE_SIZE = 200
 
 def _window_start() -> datetime.date:
     """First day of the month, _MONTHS_WINDOW months ago (UTC). Used by both loaders."""
-    today = datetime.datetime.now(datetime.UTC).date()
-    return today.replace(day=1) - relativedelta(months=_MONTHS_WINDOW)
+    return first_day_of_month(today_utc()) - relativedelta(months=_MONTHS_WINDOW)
 
 
 def _load_transactions(
@@ -38,9 +38,7 @@ def _load_transactions(
     """Every POSTED transaction of the user since the window start (all pages)."""
     filters = TransactionFilters(
         user_id=user_id,
-        date_from=datetime.datetime.combine(
-            window_start, datetime.time.min, tzinfo=datetime.UTC
-        ),
+        date_from=start_of_day_utc(window_start),
         status="POSTED",
     )
 

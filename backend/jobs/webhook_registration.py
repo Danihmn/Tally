@@ -1,17 +1,11 @@
 import logging
 
-import httpx
-
 from infra.database.session import get_session
-from integrations.pluggy.exceptions.pluggy_exception_error import PluggyExceptionError
-from services.common.exceptions import ServiceError
+from jobs._common import JOB_ERRORS, iter_all_users
 from services.pluggy_webhooks_service import ensure_item_webhooks
-from services.users_service import list_users
 from settings import settings
 
 logger = logging.getLogger(__name__)
-
-_USERS_PAGE_SIZE = 20
 
 
 def register_webhooks() -> None:
@@ -23,20 +17,11 @@ def register_webhooks() -> None:
         return
 
     with get_session() as session:
-        offset = 0
-
-        while True:
-            users = list_users(session=session, limit=_USERS_PAGE_SIZE, offset=offset)
-            if len(users) == 0:
-                break
-
-            for user in users:
-                try:
-                    ensure_item_webhooks(session, user, settings.public_base_url)
-                    session.commit()
-                except ServiceError, PluggyExceptionError, httpx.HTTPError, ValueError:
-                    # One user failing must not stop the others
-                    session.rollback()
-                    logger.exception("Webhook registration failed for user %s", user.id)
-
-            offset += _USERS_PAGE_SIZE
+        for user in iter_all_users(session):
+            try:
+                ensure_item_webhooks(session, user, settings.public_base_url)
+                session.commit()
+            except JOB_ERRORS:
+                # One user failing must not stop the others
+                session.rollback()
+                logger.exception("Webhook registration failed for user %s", user.id)

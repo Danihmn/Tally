@@ -1,8 +1,7 @@
 import httpx
 
 from integrations.pluggy.config import base_url
-from integrations.pluggy.exceptions.pluggy_exception_error import PluggyExceptionError
-from integrations.pluggy.schemas.base_error_schema import BaseErrorSchema
+from integrations.pluggy.http_clients._http import api_key_headers, raise_for_pluggy_error
 from integrations.pluggy.schemas.identity.identity_response_schema import (
     IdentityResponseSchema,
 )
@@ -19,15 +18,8 @@ def get_identity(api_key: str, item_id: str) -> IdentityResponseSchema:
     response = httpx.get(
         f"{base_url}/identity",
         params={"itemId": item_id},
-        headers={"X-API-KEY": api_key},
+        headers=api_key_headers(api_key),
     )
-    if response.is_error:
-        try:
-            error = BaseErrorSchema.model_validate(response.json())
-        except ValueError:
-            response.raise_for_status()
-            raise
-
-        raise PluggyExceptionError(error)
+    raise_for_pluggy_error(response)
 
     return IdentityResponseSchema.model_validate(response.json())

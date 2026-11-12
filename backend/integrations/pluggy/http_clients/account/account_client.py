@@ -1,14 +1,17 @@
 import httpx
 
 from integrations.pluggy.config import base_url
-from integrations.pluggy.exceptions.pluggy_exception_error import PluggyExceptionError
+from integrations.pluggy.http_clients._http import (
+    api_key_headers,
+    drop_none,
+    raise_for_pluggy_error,
+)
 from integrations.pluggy.schemas.account.account_response_schema import (
     AccountResponseSchema,
 )
 from integrations.pluggy.schemas.account.balance_response_schema import (
     BalanceResponseSchema,
 )
-from integrations.pluggy.schemas.base_error_schema import BaseErrorSchema
 from integrations.pluggy.schemas.base_response_schema import (
     BaseResponseV1Schema,
 )
@@ -29,23 +32,14 @@ def get_all_accounts(
             type: Filter between bank accounts and credit accounts ('BANK' or 'CREDIT'). None returns both
     """
     params = {"itemId": item_id, "type": type}
-    params = {
-        key: value for key, value in params.items() if value is not None
-    }  # Ignore None values
+    params = drop_none(params)
 
     response = httpx.get(
         f"{base_url}/accounts",
         params=params,
-        headers={"X-API-KEY": api_key},
+        headers=api_key_headers(api_key),
     )
-    if response.is_error:
-        try:
-            error = BaseErrorSchema.model_validate(response.json())
-        except ValueError:
-            response.raise_for_status()
-            raise
-
-        raise PluggyExceptionError(error)
+    raise_for_pluggy_error(response)
 
     return BaseResponseV1Schema[AccountResponseSchema].model_validate(response.json())
 
@@ -62,16 +56,9 @@ def get_real_time_balance(api_key: str, id: str) -> BalanceResponseSchema:
     response = httpx.get(
         f"{base_url}/accounts/{id}/balance",
         params={"id": id},
-        headers={"X-API-KEY": api_key},
+        headers=api_key_headers(api_key),
     )
-    if response.is_error:
-        try:
-            error = BaseErrorSchema.model_validate(response.json())
-        except ValueError:
-            response.raise_for_status()
-            raise
-
-        raise PluggyExceptionError(error)
+    raise_for_pluggy_error(response)
 
     return BalanceResponseSchema.model_validate(response.json())
 
@@ -83,21 +70,14 @@ def get_account_statement(api_key: str, id: str) -> BaseResponseV1Schema:
     Parameters:
             api_key: The authorization API Key
             id: The account primary identifier
-    """  # Ignore None values
+    """
 
     response = httpx.get(
         f"{base_url}/accounts/{id}/statements",
         params={"id": id},
-        headers={"X-API-KEY": api_key},
+        headers=api_key_headers(api_key),
     )
-    if response.is_error:
-        try:
-            error = BaseErrorSchema.model_validate(response.json())
-        except ValueError:
-            response.raise_for_status()
-            raise
-
-        raise PluggyExceptionError(error)
+    raise_for_pluggy_error(response)
 
     return BaseResponseV1Schema[TransactionResponseSchema].model_validate(
         response.json()

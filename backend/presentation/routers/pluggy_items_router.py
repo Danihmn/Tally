@@ -11,6 +11,7 @@ from presentation.schemas.pluggy_item_schemas import (
     PluggyItemResponse,
 )
 from services.pluggy_items_service import create_pluggy_item
+from utils.ids import require_id
 
 router = APIRouter(prefix="/pluggy-items", tags=["pluggy-items"])
 
@@ -25,12 +26,9 @@ def create_pluggy_item_endpoint(
     session: Annotated[Session, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_user)],
 ) -> PluggyItem:
-    if current_user.id is None:
-        raise ValueError("User without id")
-
     # The owner always comes from the JWT, never from the body
     item = PluggyItem(
-        user_id=current_user.id,
+        user_id=require_id(current_user, "User"),
         pluggy_item_id=body.pluggy_item_id,
         consent_expires_at=body.consent_expires_at,
     )

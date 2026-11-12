@@ -2,16 +2,7 @@ from datetime import datetime
 from decimal import Decimal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
-from pydantic.alias_generators import to_camel
-
-
-class PluggyModel(BaseModel):
-    model_config = ConfigDict(
-        alias_generator=to_camel,  # full_name -> fullName
-        validate_by_name=True,  # accepts full_name and fullName
-        validate_by_alias=True,
-    )
+from integrations.pluggy.schemas.pluggy_model import PluggyModel
 
 
 class GeographicCoordinates(PluggyModel):

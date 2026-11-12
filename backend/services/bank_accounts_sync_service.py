@@ -1,7 +1,6 @@
 import logging
 import uuid
 from dataclasses import dataclass
-from typing import Any
 
 from sqlalchemy.orm import Session
 
@@ -23,6 +22,8 @@ from services.credit_datas_service import (
     get_credit_data_by_bank_account_id,
     upsert_credit_data,
 )
+from services.common.sync import diff_fields, log_critical_changes
+from utils.ids import require_id
 
 logger = logging.getLogger(__name__)
 
@@ -136,17 +137,6 @@ def to_credit_data_entity(
     )
 
 
-def diff_fields(
-    stored: Any, incoming: Any, fields: tuple[str, ...]
-) -> dict[str, tuple[Any, Any]]:
-    """Fields that differ, as {field: (stored value, incoming value)}."""
-    return {
-        field: (getattr(stored, field), getattr(incoming, field))
-        for field in fields
-        if getattr(stored, field) != getattr(incoming, field)
-    }
-
-
 def sync_bank_account(
     session: Session,
     pluggy_item_id: uuid.UUID,
@@ -167,19 +157,20 @@ def sync_bank_account(
     else:
         changes = diff_fields(stored, incoming, BANK_ACCOUNT_COMPARED_FIELDS)
         if changes:
-            _log_critical_changes("account", stored.pluggy_account_id, changes)
+            log_critical_changes(
+                logger, "account", stored.pluggy_account_id, changes, _CRITICAL_FIELDS
+            )
             account = upsert_bank_account(session, incoming)
             result.updated = True
         else:
             account = stored
 
-    if account.id is None:
-        raise ValueError("Bank account without id")
+    account_id = require_id(account, "Bank account")
 
     if schema.type == "BANK" and schema.bank_data is not None:
-        _sync_bank_data(session, account.id, schema.bank_data, result)
+        _sync_bank_data(session, account_id, schema.bank_data, result)
     elif schema.type == "CREDIT" and schema.credit_data is not None:
-        _sync_credit_data(session, account.id, schema.credit_data, result)
+        _sync_credit_data(session, account_id, schema.credit_data, result)
 
     return account, result
 
@@ -214,16 +205,3 @@ def _sync_credit_data(
     elif diff_fields(stored, incoming, CREDIT_DATA_COMPARED_FIELDS):
         upsert_credit_data(session, incoming)
         result.data_updated = True
-
-
-def _log_critical_changes(
-    kind: str, pluggy_id: uuid.UUID, changes: dict[str, tuple[Any, Any]]
-) -> None:
-    critical = {f: changes[f] for f in _CRITICAL_FIELDS if f in changes}
-    if critical:
-        logger.warning(
-            "%s %s changed on Pluggy: %s",
-            kind,
-            pluggy_id,
-            {f: f"{old} -> {new}" for f, (old, new) in critical.items()},
-        )

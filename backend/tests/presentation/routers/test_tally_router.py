@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 
 from fastapi.testclient import TestClient
 
-from agents.context import TallyContext
+from agents.tally.context import TallyContext
 from presentation.app import app
 from infra.database.session import get_db
 from presentation.dependencies.auth import get_current_user

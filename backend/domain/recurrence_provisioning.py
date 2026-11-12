@@ -5,6 +5,7 @@ import datetime
 import uuid
 
 from domain.entities import FinancialEntry, Recurrence
+from utils.ids import require_id
 
 
 def due_date_for(
@@ -27,12 +28,11 @@ def build_entry(
     A recurrence without a user (the user was deleted, or it is for the household) gives the entry
     to `fallback_user_id`, the user who asked for the provisioning.
     """
-    if recurrence.id is None:
-        raise ValueError("Recurrence without id")
+    recurrence_id = require_id(recurrence, "Recurrence")
     return FinancialEntry(
         household_id=recurrence.household_id,
         user_id=recurrence.user_id or fallback_user_id,
-        recurrence_id=recurrence.id,
+        recurrence_id=recurrence_id,
         description=recurrence.description,
         notes=recurrence.notes,
         category=recurrence.category,

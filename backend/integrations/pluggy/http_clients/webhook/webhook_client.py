@@ -1,8 +1,11 @@
 import httpx
 
 from integrations.pluggy.config import base_url
-from integrations.pluggy.exceptions.pluggy_exception_error import PluggyExceptionError
-from integrations.pluggy.schemas.base_error_schema import BaseErrorSchema
+from integrations.pluggy.http_clients._http import (
+    api_key_headers,
+    drop_none,
+    raise_for_pluggy_error,
+)
 from integrations.pluggy.schemas.base_response_schema import (
     BaseResponseV1Schema,
 )
@@ -20,16 +23,9 @@ def list_webhooks(api_key: str) -> BaseResponseV1Schema[WebhookResponseSchema]:
     """
     response = httpx.get(
         f"{base_url}/webhooks",
-        headers={"X-API-KEY": api_key},
+        headers=api_key_headers(api_key),
     )
-    if response.is_error:
-        try:
-            error = BaseErrorSchema.model_validate(response.json())
-        except ValueError:
-            response.raise_for_status()
-            raise
-
-        raise PluggyExceptionError(error)
+    raise_for_pluggy_error(response)
 
     return BaseResponseV1Schema[WebhookResponseSchema].model_validate(response.json())
 
@@ -46,23 +42,14 @@ def create_webhook(
             event: The event to subscribe to (e.g. 'item/updated'). One event per webhook
             headers: Extra HTTP headers Pluggy sends on every delivery (e.g. our secret token)
     """
-    body: dict = {"url": url, "event": event}
-    if headers is not None:
-        body["headers"] = headers
+    body = drop_none({"url": url, "event": event, "headers": headers})
 
     response = httpx.post(
         f"{base_url}/webhooks",
         json=body,
-        headers={"X-API-KEY": api_key},
+        headers=api_key_headers(api_key),
     )
-    if response.is_error:
-        try:
-            error = BaseErrorSchema.model_validate(response.json())
-        except ValueError:
-            response.raise_for_status()
-            raise
-
-        raise PluggyExceptionError(error)
+    raise_for_pluggy_error(response)
 
     return WebhookResponseSchema.model_validate(response.json())
 
@@ -82,24 +69,13 @@ def update_webhook(
             headers: New extra HTTP headers (replaces the existing ones)
             enabled: True re-enables a webhook that was disabled
     """
-    body: dict = {}
-    if headers is not None:
-        body["headers"] = headers
-    if enabled is not None:
-        body["enabled"] = enabled
+    body = drop_none({"headers": headers, "enabled": enabled})
 
     response = httpx.patch(
         f"{base_url}/webhooks/{webhook_id}",
         json=body,
-        headers={"X-API-KEY": api_key},
+        headers=api_key_headers(api_key),
     )
-    if response.is_error:
-        try:
-            error = BaseErrorSchema.model_validate(response.json())
-        except ValueError:
-            response.raise_for_status()
-            raise
-
-        raise PluggyExceptionError(error)
+    raise_for_pluggy_error(response)
 
     return WebhookResponseSchema.model_validate(response.json())

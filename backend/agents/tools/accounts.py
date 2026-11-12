@@ -10,20 +10,20 @@ Field meanings follow the Pluggy docs (guide `products/accounts`):
 The holder's CPF (`tax_number`) is never sent to the model.
 """
 
-import datetime
 import decimal
 from collections import defaultdict
 
 from langchain.tools import ToolRuntime, tool
 
-from agents.context import TallyContext
+from agents.common.context import AgentContext
+from agents.common.formatting import day, money, scope_line, text
+from agents.tools._shared import owner_names
 from domain.entities import BankAccount, BankData, CreditData, User
 from domain.read_models import BankAccountWithOwner
 from infra.database.session import get_session
 from services.bank_accounts_service import search_bank_accounts
 from services.bank_datas_service import get_bank_data_by_bank_account_id
 from services.credit_datas_service import get_credit_data_by_bank_account_id
-from services.users_service import list_users_by_household
 
 MAX_ACCOUNTS = 50
 
@@ -32,18 +32,6 @@ _SUBTYPES = {
     "SAVINGS_ACCOUNT": "poupança",
     "CREDIT_CARD": "cartão de crédito",
 }
-
-
-def _money(value: decimal.Decimal | None) -> str:
-    return "-" if value is None else f"{value:.2f}"
-
-
-def _day(value: datetime.datetime | None) -> str:
-    return "-" if value is None else value.date().isoformat()
-
-
-def _text(value: str | None) -> str:
-    return value or "-"
 
 
 def _account_name(account: BankAccount) -> str:
@@ -68,23 +56,13 @@ def _load(
             (item, load_data(session, item.account.id) if item.account.id else None)
             for item in items
         ]
-        names = {
-            u.id: u.first_name for u in list_users_by_household(session, household_id)
-        }
+        names = owner_names(session, household_id)
     return rows, names  # type: ignore
-
-
-def _scope_line(only_mine: bool) -> str:
-    return (
-        "Scope: only the logged user's accounts"
-        if only_mine
-        else "Scope: the whole household"
-    )
 
 
 def _bank_accounts(user: User, only_mine: bool) -> str:
     rows, names = _load(user, only_mine, "BANK", get_bank_data_by_bank_account_id)
-    lines = [_scope_line(only_mine)]
+    lines = [scope_line(only_mine, "accounts")]
     if not rows:
         lines.append("No bank accounts found.")
         return "\n".join(lines)
@@ -103,22 +81,22 @@ def _bank_accounts(user: User, only_mine: bool) -> str:
         lines.append(
             " | ".join([
                 names.get(item.user_id, "?"),
-                _text(account.owner),
+                text(account.owner),
                 _account_name(account),
                 _SUBTYPES.get(account.subtype, account.subtype),
                 account.number,
-                _money(account.balance),
-                _money(bank.closing_balance if bank else None),
-                _money(bank.automatically_invested_balance if bank else None),
-                _money(bank.overdraft_contracted_limit if bank else None),
-                _money(bank.overdraft_used_limit if bank else None),
+                money(account.balance),
+                money(bank.closing_balance if bank else None),
+                money(bank.automatically_invested_balance if bank else None),
+                money(bank.overdraft_contracted_limit if bank else None),
+                money(bank.overdraft_used_limit if bank else None),
                 account.currency_code,
-                _day(account.updated_at),
+                day(account.updated_at),
             ])
         )
     lines.append(f"{len(rows)} bank accounts.")
     for currency, total in sorted(totals.items()):
-        lines.append(f"Total available balance ({currency}): {_money(total)}")
+        lines.append(f"Total available balance ({currency}): {money(total)}")
     lines.append(
         "Notes: available balance is what can be spent (negative = overdraft in use). "
         "Accounting balance includes blocked amounts. Auto-invested is already inside the "
@@ -134,7 +112,7 @@ def _counts_for_limit(credit: CreditData | None) -> bool:
 
 def _credit_cards(user: User, only_mine: bool) -> str:
     rows, names = _load(user, only_mine, "CREDIT", get_credit_data_by_bank_account_id)
-    lines = [_scope_line(only_mine)]
+    lines = [scope_line(only_mine, "accounts")]
     if not rows:
         lines.append("No credit cards found.")
         return "\n".join(lines)
@@ -162,30 +140,30 @@ def _credit_cards(user: User, only_mine: bool) -> str:
         lines.append(
             " | ".join([
                 names.get(item.user_id, "?"),
-                _text(account.owner),
+                text(account.owner),
                 _account_name(account),
-                _text(credit.brand if credit else None),
-                _text(credit.level if credit else None),
+                text(credit.brand if credit else None),
+                text(credit.level if credit else None),
                 account.number,
-                _text(credit.holder_type if credit else None),
-                _text(credit.status if credit else None),
-                _money(account.balance),
-                _money(credit.credit_limit if credit else None),
-                _money(credit.available_credit_limit if credit else None),
-                _money(credit.minimum_payment if credit else None),
-                _day(credit.balance_close_date if credit else None),
-                _day(credit.balance_due_date if credit else None),
+                text(credit.holder_type if credit else None),
+                text(credit.status if credit else None),
+                money(account.balance),
+                money(credit.credit_limit if credit else None),
+                money(credit.available_credit_limit if credit else None),
+                money(credit.minimum_payment if credit else None),
+                day(credit.balance_close_date if credit else None),
+                day(credit.balance_due_date if credit else None),
                 currency,
-                _day(account.updated_at),
+                day(account.updated_at),
             ])
         )
     lines.append(f"{len(rows)} credit cards.")
     for currency in sorted(invoices):
-        lines.append(f"Total open invoice ({currency}): {_money(invoices[currency])}")
+        lines.append(f"Total open invoice ({currency}): {money(invoices[currency])}")
     for currency in sorted(limits.keys() | available.keys()):
         lines.append(
-            f"Total credit limit ({currency}): {_money(limits[currency])}; "
-            f"total available limit ({currency}): {_money(available[currency])}"
+            f"Total credit limit ({currency}): {money(limits[currency])}; "
+            f"total available limit ({currency}): {money(available[currency])}"
         )
     lines.append(
         "Notes: open invoice is the amount owed on the current invoice, not money the person "
@@ -213,7 +191,7 @@ _CREDIT_HELP = (
         "'quanto eu tenho'. Never use it for the couple or the house. " + _BANK_HELP
     ),
 )
-def get_my_bank_accounts(runtime: ToolRuntime[TallyContext]) -> str:
+def get_my_bank_accounts(runtime: ToolRuntime[AgentContext]) -> str:
     return _bank_accounts(runtime.context.user, True)
 
 
@@ -225,7 +203,7 @@ def get_my_bank_accounts(runtime: ToolRuntime[TallyContext]) -> str:
         "or to compare the people. " + _BANK_HELP
     ),
 )
-def get_household_bank_accounts(runtime: ToolRuntime[TallyContext]) -> str:
+def get_household_bank_accounts(runtime: ToolRuntime[AgentContext]) -> str:
     return _bank_accounts(runtime.context.user, False)
 
 
@@ -236,7 +214,7 @@ def get_household_bank_accounts(runtime: ToolRuntime[TallyContext]) -> str:
         "'meu limite'. Never use it for the couple or the house. " + _CREDIT_HELP
     ),
 )
-def get_my_credit_cards(runtime: ToolRuntime[TallyContext]) -> str:
+def get_my_credit_cards(runtime: ToolRuntime[AgentContext]) -> str:
     return _credit_cards(runtime.context.user, True)
 
 
@@ -248,5 +226,5 @@ def get_my_credit_cards(runtime: ToolRuntime[TallyContext]) -> str:
         "or to compare the people. " + _CREDIT_HELP
     ),
 )
-def get_household_credit_cards(runtime: ToolRuntime[TallyContext]) -> str:
+def get_household_credit_cards(runtime: ToolRuntime[AgentContext]) -> str:
     return _credit_cards(runtime.context.user, False)

@@ -4,7 +4,7 @@ from decimal import Decimal
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
-from agents.context import TallyContext
+from agents.common.context import AgentContext
 from agents.tools.accounts import (
     get_household_bank_accounts,
     get_household_credit_cards,
@@ -51,14 +51,14 @@ class ToolTestCase(unittest.TestCase):
     def setUp(self):
         self.user = make_user(first_name="Ana")
         self.partner = make_user(id=PARTNER_ID, first_name="Bia")
-        self.runtime = SimpleNamespace(context=TallyContext(user=self.user))
+        self.runtime = SimpleNamespace(context=AgentContext(user=self.user))
 
         self.mocks = {}
         for name in (
             "search_bank_accounts",
             "get_bank_data_by_bank_account_id",
             "get_credit_data_by_bank_account_id",
-            "list_users_by_household",
+            "owner_names",
         ):
             patcher = patch(f"{MODULE}.{name}")
             self.mocks[name] = patcher.start()
@@ -70,7 +70,10 @@ class ToolTestCase(unittest.TestCase):
         self.mocks["search_bank_accounts"].return_value = []
         self.mocks["get_bank_data_by_bank_account_id"].return_value = None
         self.mocks["get_credit_data_by_bank_account_id"].return_value = None
-        self.mocks["list_users_by_household"].return_value = [self.user, self.partner]
+        self.mocks["owner_names"].return_value = {
+            self.user.id: "Ana",
+            self.partner.id: "Bia",
+        }
 
     def search_kwargs(self):
         return self.mocks["search_bank_accounts"].call_args.kwargs

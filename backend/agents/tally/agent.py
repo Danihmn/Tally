@@ -2,11 +2,10 @@ from functools import cache
 
 from langchain.agents import create_agent
 from langchain.agents.middleware import ModelRequest, dynamic_prompt
-from langchain_ollama import ChatOllama
-from langchain_openai import ChatOpenAI
 
-from agents.clock import today
-from agents.context import TallyContext
+from agents.common.chat_model import build_chat_model
+from agents.common.clock import today
+from agents.tally.context import TallyContext
 from agents.tools.accounts import (
     get_household_bank_accounts,
     get_household_credit_cards,
@@ -21,7 +20,6 @@ from agents.tools.transactions import (
     get_my_spending_summary,
     get_my_transactions,
 )
-from settings import settings
 
 TALLY_AI_SYSTEM_PROMPT = (
     "You are Tally AI, a personal finance assistant for a couple. "
@@ -94,28 +92,10 @@ def _system_prompt(request: ModelRequest[TallyContext]) -> str:
     )
 
 
-def _build_chat_model():
-    """OpenAI model on Bedrock when BEDROCK_API_KEY is filled (production), Ollama otherwise (dev)."""
-    if not settings.bedrock_api_key:
-        return ChatOllama(
-            model=settings.ollama_model, base_url=settings.ollama_base_url
-        )
-
-    if not settings.bedrock_model or not settings.bedrock_base_url:
-        raise ValueError(
-            "BEDROCK_API_KEY is set, so BEDROCK_MODEL and BEDROCK_BASE_URL must be set too"
-        )
-    return ChatOpenAI(
-        model=settings.bedrock_model,
-        api_key=settings.bedrock_api_key,  # type: ignore
-        base_url=settings.bedrock_base_url,
-    )
-
-
 def build_tally_ai():
     """Builds the Tally AI orchestrator agent."""
     return create_agent(
-        model=_build_chat_model(),
+        model=build_chat_model(),
         tools=[
             get_my_transactions,
             get_household_transactions,

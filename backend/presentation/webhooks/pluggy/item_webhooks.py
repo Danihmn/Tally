@@ -21,6 +21,7 @@ from services.pluggy_items_service import (
     mark_pluggy_item_deleted,
 )
 from services.users_service import get_user_by_webhook_secret_hash
+from utils.ids import require_id
 
 router = APIRouter(tags=["pluggy-webhooks"])
 
@@ -48,11 +49,10 @@ def item_created_webhook(
     background_tasks: BackgroundTasks,
     user: Annotated[User, Depends(_get_webhook_user)],
 ) -> None:
-    if user.id is None:
-        raise ValueError("User without id")
+    user_id = require_id(user, "User")
 
     # Pluggy needs a 2XX within 10 seconds: reading the item and the first sync run after the response
-    background_tasks.add_task(register_user_item, user.id, body.item_id)
+    background_tasks.add_task(register_user_item, user_id, body.item_id)
 
 
 @router.post(item_updated_webhook_path, status_code=status.HTTP_202_ACCEPTED)
@@ -62,24 +62,23 @@ def item_updated_webhook(
     session: Annotated[Session, Depends(get_db)],
     user: Annotated[User, Depends(_get_webhook_user)],
 ) -> None:
-    if user.id is None:
-        raise ValueError("User without id")
+    user_id = require_id(user, "User")
 
     item = get_pluggy_item_by_pluggy_item_id(session, body.item_id)
     if item is None:
         # The 'item/created' was lost (the backend was down...): the update registers the item
-        background_tasks.add_task(register_user_item, user.id, body.item_id)
+        background_tasks.add_task(register_user_item, user_id, body.item_id)
         return
 
     # The item must belong to the application that sent the webhook
-    if item.user_id != user.id:
+    if item.user_id != user_id:
         raise NotFoundError("Pluggy item not found for this user")
 
     if item.deleted_at is not None:
         return
 
     # Pluggy needs a 2XX within 10 seconds: the sync runs after the response
-    background_tasks.add_task(launch_user_transactions, user.id)
+    background_tasks.add_task(launch_user_transactions, user_id)
 
 
 @router.post(item_deleted_webhook_path, status_code=status.HTTP_202_ACCEPTED)

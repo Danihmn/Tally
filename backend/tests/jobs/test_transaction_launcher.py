@@ -8,7 +8,6 @@ import httpx
 
 from integrations.pluggy.exceptions.pluggy_exception_error import PluggyExceptionError
 from integrations.pluggy.schemas.base_error_schema import BaseErrorSchema
-from jobs import transaction_launcher
 from jobs.transaction_launcher import (
     _sync_and_commit_user,
     _sync_user_transactions,
@@ -52,8 +51,7 @@ class SyncUserTransactionsTests(unittest.TestCase):
 
         self.mocks = {}
         for name in (
-            "authenticate",
-            "decrypt",
+            "authenticate_user",
             "list_pluggy_items_by_user",
             "get_all_accounts",
             "sync_bank_account",
@@ -67,8 +65,7 @@ class SyncUserTransactionsTests(unittest.TestCase):
         date_patcher.start()
         self.addCleanup(date_patcher.stop)
 
-        self.mocks["authenticate"].return_value = "api-key"
-        self.mocks["decrypt"].return_value = "client-secret"
+        self.mocks["authenticate_user"].return_value = "api-key"
         self.mocks["list_pluggy_items_by_user"].return_value = [self.item]
         self.mocks["get_all_accounts"].return_value = page(
             [SimpleNamespace(id="acc-1")]
@@ -80,17 +77,12 @@ class SyncUserTransactionsTests(unittest.TestCase):
         self.mocks["sync_account_transactions"].assert_called_once()
         return self.mocks["sync_account_transactions"].call_args.args[2]
 
-    def test_authenticates_with_the_decrypted_secret(self):
+    def test_logs_in_to_pluggy_as_the_user(self):
         self.mocks["get_all_transactions"].return_value = page([])
 
         _sync_user_transactions(self.session, self.user)
 
-        self.mocks["decrypt"].assert_called_once_with(
-            self.user.pluggy_client_secret_crypto
-        )
-        self.mocks["authenticate"].assert_called_once_with(
-            client_id=self.user.pluggy_client_id, client_secret="client-secret"
-        )
+        self.mocks["authenticate_user"].assert_called_once_with(self.user)
         self.mocks["get_all_accounts"].assert_called_once_with(
             "api-key", str(self.item.pluggy_item_id)
         )
@@ -191,7 +183,7 @@ class SyncUserTransactionsTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             _sync_user_transactions(self.session, make_user(id=None))
 
-        self.mocks["authenticate"].assert_not_called()
+        self.mocks["authenticate_user"].assert_not_called()
 
 
 class SyncAndCommitUserTests(unittest.TestCase):
@@ -256,36 +248,27 @@ class LaunchTransactionsTests(unittest.TestCase):
         for name, value in (
             ("get_session", fake_get_session(self.session)),
             ("_sync_and_commit_user", MagicMock()),
-            ("list_users", MagicMock()),
+            ("iter_all_users", MagicMock()),
             ("get_user_by_id", MagicMock()),
         ):
             patcher = patch(f"{MODULE}.{name}", value)
             setattr(self, name, patcher.start())
             self.addCleanup(patcher.stop)
 
-    def test_syncs_every_user_page_by_page(self):
-        size = transaction_launcher._USERS_PAGE_SIZE
-        first_page = [make_user(id=uuid.uuid4()) for _ in range(size)]
-        second_page = [make_user(id=uuid.uuid4())]
-        self.list_users.side_effect = [first_page, second_page, []]
+    def test_syncs_every_user(self):
+        users = [make_user(id=uuid.uuid4()) for _ in range(3)]
+        self.iter_all_users.return_value = iter(users)
 
         launch_transactions()
 
-        self.assertEqual(
-            self.list_users.call_args_list,
-            [
-                call(session=self.session, limit=size, offset=0),
-                call(session=self.session, limit=size, offset=size),
-                call(session=self.session, limit=size, offset=2 * size),
-            ],
-        )
+        self.iter_all_users.assert_called_once_with(self.session)
         self.assertEqual(
             self._sync_and_commit_user.call_args_list,
-            [call(self.session, u) for u in first_page + second_page],
+            [call(self.session, u) for u in users],
         )
 
     def test_no_users_does_nothing(self):
-        self.list_users.return_value = []
+        self.iter_all_users.return_value = iter([])
 
         launch_transactions()
 

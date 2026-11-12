@@ -1,11 +1,13 @@
 from datetime import datetime
-from decimal import ROUND_HALF_UP, Decimal
+from decimal import Decimal
 from enum import StrEnum
 from typing import Annotated, Any
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
-from pydantic.alias_generators import to_camel
+from pydantic import Field, field_validator
+
+from integrations.pluggy.schemas.pluggy_model import PluggyModel
+from utils.money import round_to_cents_or_none
 
 
 class TransactionStatus(StrEnum):
@@ -18,13 +20,7 @@ class TransactionType(StrEnum):
     CREDIT = "CREDIT"
 
 
-class TransactionResponseSchema(BaseModel):
-    model_config = ConfigDict(
-        alias_generator=to_camel,  # created_at -> createdAt
-        validate_by_name=True,  # accepts created_at and createdAt
-        validate_by_alias=True,
-    )
-
+class TransactionResponseSchema(PluggyModel):
     id: UUID
     account_id: UUID
     created_at: datetime
@@ -53,6 +49,4 @@ class TransactionResponseSchema(BaseModel):
     def _round_to_cents(cls, value: Decimal | None) -> Decimal | None:
         # The database columns are numeric(18, 2); keeping the same scale (and the
         # same tie rounding as Postgres) avoids false differences when comparing.
-        if value is None:
-            return None
-        return value.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        return round_to_cents_or_none(value)

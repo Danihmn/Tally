@@ -9,11 +9,12 @@ from domain.read_models import ProvisioningResult, RecurrenceFilters
 from domain.recurrence_provisioning import build_entry
 from infra.repositories import recurrences_repository
 from services.common.exceptions import translate_repository_errors
-from services.common.mappers import to_entity, to_values
+from services.common.mappers import to_entities, to_entity, to_values
 from services.financial_entries_service import (
     create_financial_entry,
     list_financial_entries_by_household,
 )
+from utils.dates import first_day_of_month
 
 
 @translate_repository_errors
@@ -32,7 +33,7 @@ def search_recurrences(
     """A page of recurrences (newest first) and the total that match the filters."""
     rows = recurrences_repository.search_recurrences(session, filters, limit, offset)
     total = recurrences_repository.count_recurrences(session, filters)
-    return [to_entity(Recurrence, r) for r in rows], total
+    return to_entities(Recurrence, rows), total
 
 
 @translate_repository_errors
@@ -40,7 +41,7 @@ def list_recurrences_by_household(
     session: Session, household_id: uuid.UUID
 ) -> list[Recurrence]:
     rows = recurrences_repository.list_recurrences_by_household(session, household_id)
-    return [to_entity(Recurrence, r) for r in rows]
+    return to_entities(Recurrence, rows)
 
 
 @translate_repository_errors
@@ -61,7 +62,7 @@ def provision_entries_from_recurrences(
     so cancelling an entry skips that month) points to it. Soft deleted entries do not count.
     `fallback_user_id` owns the entries of recurrences without a user. It does not commit.
     """
-    month = reference_month.replace(day=1)
+    month = first_day_of_month(reference_month)
     recurrences = list_recurrences_by_household(session, household_id)
     result = ProvisioningResult(reference_month=month)
     if not recurrences:

@@ -1,19 +1,10 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
-from pydantic.alias_generators import to_camel
-
-_CAMEL_CONFIG = ConfigDict(
-    alias_generator=to_camel,  # created_at -> createdAt
-    validate_by_name=True,  # accepts created_at and createdAt
-    validate_by_alias=True,
-)
+from integrations.pluggy.schemas.pluggy_model import PluggyModel
 
 
-class WebhookResponseSchema(BaseModel):
-    model_config = _CAMEL_CONFIG
-
+class WebhookResponseSchema(PluggyModel):
     id: UUID
     url: str
     event: str

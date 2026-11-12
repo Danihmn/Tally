@@ -1,3 +1,4 @@
+from collections.abc import Collection, Iterable
 from dataclasses import fields
 from typing import Any
 
@@ -10,10 +11,23 @@ def to_entity[T](entity_cls: type[T], model: Any) -> T:
     return entity_cls(**{f.name: getattr(model, f.name) for f in fields(entity_cls)})  # type: ignore[call-arg]
 
 
-def to_values(entity: Any) -> dict[str, Any]:
-    """Entity -> dict of column values for the repositories' upsert/create functions."""
+def to_entity_or_none[T](entity_cls: type[T], model: Any | None) -> T | None:
+    """`to_entity` for a lookup that may find nothing."""
+    return None if model is None else to_entity(entity_cls, model)
+
+
+def to_entities[T](entity_cls: type[T], models: Iterable[Any]) -> list[T]:
+    """`to_entity` for each model of a list."""
+    return [to_entity(entity_cls, m) for m in models]
+
+
+def to_values(entity: Any, exclude: Collection[str] = ()) -> dict[str, Any]:
+    """Entity -> dict of column values for the repositories' upsert/create functions.
+
+    `exclude` leaves out columns the caller must not send (always, even when set)."""
     return {
         f.name: getattr(entity, f.name)
         for f in fields(entity)
-        if not (f.name in _DB_GENERATED and getattr(entity, f.name) is None)
+        if f.name not in exclude
+        and not (f.name in _DB_GENERATED and getattr(entity, f.name) is None)
     }

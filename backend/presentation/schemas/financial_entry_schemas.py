@@ -10,7 +10,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from domain.entities import FinancialEntry
 from domain.read_models import FinancialEntryFilters
 from presentation.schemas._validators import check_amount_range, check_date_range
-from presentation.schemas.common_schemas import first_day_of_month
+from utils.dates import first_day_of_month
 
 
 class FinancialEntryQuery(BaseModel):

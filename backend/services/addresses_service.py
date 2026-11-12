@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from domain.entities import Address
 from infra.repositories import addresses_repository
 from services.common.exceptions import translate_repository_errors
-from services.common.mappers import to_entity, to_values
+from services.common.mappers import to_entities, to_values
 
 
 @translate_repository_errors
@@ -15,18 +15,15 @@ def list_addresses_by_identity_data(
     addresses = addresses_repository.list_addresses_by_identity_data(
         session, identity_data_id
     )
-    return [to_entity(Address, a) for a in addresses]
+    return to_entities(Address, addresses)
 
 
 @translate_repository_errors
 def replace_addresses_for_identity_data(
     session: Session, identity_data_id: uuid.UUID, addresses: list[Address]
 ) -> list[Address]:
-    values = [
-        {k: v for k, v in to_values(a).items() if k != "identity_data_id"}
-        for a in addresses
-    ]
+    values = [to_values(a, exclude=("identity_data_id",)) for a in addresses]
     saved = addresses_repository.replace_addresses_for_identity_data(
         session, identity_data_id, values
     )
-    return [to_entity(Address, a) for a in saved]
+    return to_entities(Address, saved)

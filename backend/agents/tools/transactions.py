@@ -4,18 +4,19 @@ from typing import Literal
 
 from langchain.tools import ToolRuntime, tool
 
-from agents.clock import today
-from agents.context import TallyContext
+from agents.common.clock import today
+from agents.common.context import AgentContext
+from agents.common.formatting import clamp_limit, day, money, period_note, scope_line, text
+from agents.tools._shared import owner_names, tool_errors
 from domain.entities import User
-from domain.read_models import TransactionFilters
+from domain.read_models import TransactionFilters, TransactionSummary
 from infra.database.session import get_session
-from presentation.schemas.common_schemas import end_of_day_utc, start_of_day_utc
 from services.transactions_service import (
     search_transactions,
     summarize_transactions,
     summarize_transactions_by,
 )
-from services.users_service import list_users_by_household
+from utils.dates import end_of_day_utc, first_day_of_month, start_of_day_utc
 
 DEFAULT_LIMIT = 20
 MAX_LIMIT = 50
@@ -44,13 +45,13 @@ def _resolve_period(
     if date_from is None and date_to is None:
         now = today()
         last_day = calendar.monthrange(now.year, now.month)[1]
-        return now.replace(day=1), now.replace(day=last_day), True
+        return first_day_of_month(now), now.replace(day=last_day), True
 
     start = _parse_day(date_from, "date_from") if date_from else None
     end = _parse_day(date_to, "date_to") if date_to else None
     if start is None:
         assert end is not None
-        start = end.replace(day=1)
+        start = first_day_of_month(end)
     if end is None:
         end = max(today(), start)
     if start > end:
@@ -58,8 +59,41 @@ def _resolve_period(
     return start, end, False
 
 
-def _money(value) -> str:
-    return f"{value:.2f}"
+def _filters(
+    user: User,
+    only_mine: bool,
+    start: datetime.date,
+    end: datetime.date,
+    type: str | None,
+    category: str | None,
+    search: str | None,
+) -> TransactionFilters:
+    """The same filters for the list and the summary tools (the period is in whole UTC days)."""
+    return TransactionFilters(
+        household_id=user.household_id,
+        user_id=user.id if only_mine else None,
+        date_from=start_of_day_utc(start),
+        date_to=end_of_day_utc(end),
+        type=type,
+        category=category or None,
+        search=search or None,
+    )
+
+
+def _header(
+    start: datetime.date, end: datetime.date, defaulted: bool, only_mine: bool
+) -> list[str]:
+    return [
+        f"Period: {start.isoformat()} to {end.isoformat()}{period_note(defaulted)}",
+        scope_line(only_mine, "transactions"),
+    ]
+
+
+def _totals_lines(summary: TransactionSummary) -> list[str]:
+    return [
+        f"Total debits: {money(summary.debit_total)} ({summary.debit_count} transactions)",
+        f"Total credits: {money(summary.credit_total)} ({summary.credit_count} transactions)",
+    ]
 
 
 def _find_transactions(
@@ -73,33 +107,15 @@ def _find_transactions(
     limit: int,
 ) -> str:
     start, end, defaulted = _resolve_period(date_from, date_to)
-    limit = max(1, min(limit, MAX_LIMIT))
-    household_id = user.household_id
-    filters = TransactionFilters(
-        household_id=household_id,
-        user_id=user.id if only_mine else None,
-        date_from=start_of_day_utc(start),
-        date_to=end_of_day_utc(end),
-        type=type,
-        category=category or None,
-        search=search or None,
-    )
+    limit = clamp_limit(limit, MAX_LIMIT)
+    filters = _filters(user, only_mine, start, end, type, category, search)
 
     with get_session() as session:
         items, total = search_transactions(session, filters, limit=limit)
         summary = summarize_transactions(session, filters)
-        names = {
-            u.id: u.first_name for u in list_users_by_household(session, household_id)
-        }
+        names = owner_names(session, user.household_id)
 
-    period = f"{start.isoformat()} to {end.isoformat()}"
-    lines = [
-        f"Period: {period}"
-        + (" (current month, no period was given)" if defaulted else ""),
-        "Scope: only the logged user's transactions"
-        if only_mine
-        else "Scope: the whole household",
-    ]
+    lines = _header(start, end, defaulted, only_mine)
     if not items:
         lines.append("No transactions found for these filters.")
         return "\n".join(lines)
@@ -109,20 +125,15 @@ def _find_transactions(
         t = item.transaction
         lines.append(
             " | ".join([
-                t.date.date().isoformat(),
-                _money(t.amount),
+                day(t.date),
+                money(t.amount),
                 t.type,
-                t.description or "-",
+                text(t.description),
                 names.get(item.user_id, "?"),
             ])
         )
     lines.append(f"Showing {len(items)} of {total} transactions (newest first).")
-    lines.append(
-        f"Total debits: {_money(summary.debit_total)} ({summary.debit_count} transactions)"
-    )
-    lines.append(
-        f"Total credits: {_money(summary.credit_total)} ({summary.credit_count} transactions)"
-    )
+    lines.extend(_totals_lines(summary))
     return "\n".join(lines)
 
 
@@ -134,8 +145,9 @@ def _find_transactions(
         + _FILTERS_HELP
     ),
 )
+@tool_errors
 def get_my_transactions(
-    runtime: ToolRuntime[TallyContext],
+    runtime: ToolRuntime[AgentContext],
     date_from: str | None = None,
     date_to: str | None = None,
     type: Literal["DEBIT", "CREDIT"] | None = None,
@@ -143,19 +155,16 @@ def get_my_transactions(
     search: str | None = None,
     limit: int = DEFAULT_LIMIT,
 ) -> str:
-    try:
-        return _find_transactions(
-            runtime.context.user,
-            True,
-            date_from,
-            date_to,
-            type,
-            category,
-            search,
-            limit,
-        )
-    except ValueError as error:
-        return f"Error: {error}"
+    return _find_transactions(
+        runtime.context.user,
+        True,
+        date_from,
+        date_to,
+        type,
+        category,
+        search,
+        limit,
+    )
 
 
 @tool(
@@ -166,8 +175,9 @@ def get_my_transactions(
         "'por pessoa', 'quem gastou mais', or to compare the people. " + _FILTERS_HELP
     ),
 )
+@tool_errors
 def get_household_transactions(
-    runtime: ToolRuntime[TallyContext],
+    runtime: ToolRuntime[AgentContext],
     date_from: str | None = None,
     date_to: str | None = None,
     type: Literal["DEBIT", "CREDIT"] | None = None,
@@ -175,19 +185,16 @@ def get_household_transactions(
     search: str | None = None,
     limit: int = DEFAULT_LIMIT,
 ) -> str:
-    try:
-        return _find_transactions(
-            runtime.context.user,
-            False,
-            date_from,
-            date_to,
-            type,
-            category,
-            search,
-            limit,
-        )
-    except ValueError as error:
-        return f"Error: {error}"
+    return _find_transactions(
+        runtime.context.user,
+        False,
+        date_from,
+        date_to,
+        type,
+        category,
+        search,
+        limit,
+    )
 
 
 GroupBy = Literal["owner", "category", "owner_and_category"]
@@ -219,32 +226,15 @@ def _summarize(
     by_owner = group_by in ("owner", "owner_and_category")
     by_category = group_by in ("category", "owner_and_category")
     start, end, defaulted = _resolve_period(date_from, date_to)
-    household_id = user.household_id
-    filters = TransactionFilters(
-        household_id=household_id,
-        user_id=user.id if only_mine else None,
-        date_from=start_of_day_utc(start),
-        date_to=end_of_day_utc(end),
-        type=type,
-        category=category or None,
-        search=search or None,
-    )
+    filters = _filters(user, only_mine, start, end, type, category, search)
 
     with get_session() as session:
         groups = summarize_transactions_by(session, filters, by_owner, by_category)
         summary = summarize_transactions(session, filters)
-        names = {
-            u.id: u.first_name for u in list_users_by_household(session, household_id)
-        }
+        names = owner_names(session, user.household_id)
 
-    lines = [
-        f"Period: {start.isoformat()} to {end.isoformat()}"
-        + (" (current month, no period was given)" if defaulted else ""),
-        "Scope: only the logged user's transactions"
-        if only_mine
-        else "Scope: the whole household",
-        f"Grouped by: {group_by}",
-    ]
+    lines = _header(start, end, defaulted, only_mine)
+    lines.append(f"Grouped by: {group_by}")
     if not groups:
         lines.append("No transactions found for these filters.")
         return "\n".join(lines)
@@ -263,20 +253,15 @@ def _summarize(
             " | ".join(
                 keys
                 + [
-                    _money(group.debit_total),
+                    money(group.debit_total),
                     str(group.debit_count),
-                    _money(group.credit_total),
+                    money(group.credit_total),
                     str(group.credit_count),
                 ]
             )
         )
     lines.append(f"{len(groups)} groups (biggest debit total first).")
-    lines.append(
-        f"Total debits: {_money(summary.debit_total)} ({summary.debit_count} transactions)"
-    )
-    lines.append(
-        f"Total credits: {_money(summary.credit_total)} ({summary.credit_count} transactions)"
-    )
+    lines.extend(_totals_lines(summary))
     lines.append(
         "Notes: debits are money out, credits are money in. Card bill payments and transfers "
         "between the couple's own accounts are inside these totals; filter by category to "
@@ -293,8 +278,9 @@ def _summarize(
         "'com o que eu gastei'. Never use it for the couple or the house. " + _SUMMARY_HELP
     ),
 )
+@tool_errors
 def get_my_spending_summary(
-    runtime: ToolRuntime[TallyContext],
+    runtime: ToolRuntime[AgentContext],
     group_by: GroupBy = "category",
     date_from: str | None = None,
     date_to: str | None = None,
@@ -302,19 +288,16 @@ def get_my_spending_summary(
     category: str | None = None,
     search: str | None = None,
 ) -> str:
-    try:
-        return _summarize(
-            runtime.context.user,
-            True,
-            group_by,
-            date_from,
-            date_to,
-            type,
-            category,
-            search,
-        )
-    except ValueError as error:
-        return f"Error: {error}"
+    return _summarize(
+        runtime.context.user,
+        True,
+        group_by,
+        date_from,
+        date_to,
+        type,
+        category,
+        search,
+    )
 
 
 @tool(
@@ -326,8 +309,9 @@ def get_my_spending_summary(
         + _SUMMARY_HELP
     ),
 )
+@tool_errors
 def get_household_spending_summary(
-    runtime: ToolRuntime[TallyContext],
+    runtime: ToolRuntime[AgentContext],
     group_by: GroupBy = "owner",
     date_from: str | None = None,
     date_to: str | None = None,
@@ -335,16 +319,13 @@ def get_household_spending_summary(
     category: str | None = None,
     search: str | None = None,
 ) -> str:
-    try:
-        return _summarize(
-            runtime.context.user,
-            False,
-            group_by,
-            date_from,
-            date_to,
-            type,
-            category,
-            search,
-        )
-    except ValueError as error:
-        return f"Error: {error}"
+    return _summarize(
+        runtime.context.user,
+        False,
+        group_by,
+        date_from,
+        date_to,
+        type,
+        category,
+        search,
+    )

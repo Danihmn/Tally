@@ -7,7 +7,7 @@ from domain.entities import BankAccount
 from domain.read_models import BankAccountWithOwner
 from infra.repositories import bank_account_repository
 from services.common.exceptions import translate_repository_errors
-from services.common.mappers import to_entity, to_values
+from services.common.mappers import to_entities, to_entity, to_entity_or_none, to_values
 
 
 @translate_repository_errors
@@ -17,7 +17,7 @@ def get_all_stored_bank_accounts(
     accounts = bank_account_repository.get_all_stored_bank_accounts(
         session, limit=limit, offset=offset
     )
-    return [to_entity(BankAccount, a) for a in accounts]
+    return to_entities(BankAccount, accounts)
 
 
 @translate_repository_errors
@@ -33,7 +33,7 @@ def get_bank_account_by_pluggy_account_id(
     account = bank_account_repository.get_bank_account_by_pluggy_account_id(
         session, pluggy_account_id
     )
-    return to_entity(BankAccount, account) if account else None
+    return to_entity_or_none(BankAccount, account)
 
 
 @translate_repository_errors
@@ -43,7 +43,7 @@ def list_bank_accounts_by_item(
     accounts = bank_account_repository.list_bank_accounts_by_item(
         session, pluggy_item_id
     )
-    return [to_entity(BankAccount, a) for a in accounts]
+    return to_entities(BankAccount, accounts)
 
 
 @translate_repository_errors
@@ -53,7 +53,7 @@ def list_bank_accounts_by_household(
     accounts = bank_account_repository.list_bank_accounts_by_household(
         session, household_id
     )
-    return [to_entity(BankAccount, a) for a in accounts]
+    return to_entities(BankAccount, accounts)
 
 
 @translate_repository_errors

@@ -1,8 +1,7 @@
 import httpx
 
 from integrations.pluggy.config import base_url
-from integrations.pluggy.exceptions.pluggy_exception_error import PluggyExceptionError
-from integrations.pluggy.schemas.base_error_schema import BaseErrorSchema
+from integrations.pluggy.http_clients._http import api_key_headers, raise_for_pluggy_error
 from integrations.pluggy.schemas.item.item_response_schema import ItemResponseSchema
 
 
@@ -16,15 +15,8 @@ def get_item(api_key: str, item_id: str) -> ItemResponseSchema:
     """
     response = httpx.get(
         f"{base_url}/items/{item_id}",
-        headers={"X-API-KEY": api_key},
+        headers=api_key_headers(api_key),
     )
-    if response.is_error:
-        try:
-            error = BaseErrorSchema.model_validate(response.json())
-        except ValueError:
-            response.raise_for_status()
-            raise
-
-        raise PluggyExceptionError(error)
+    raise_for_pluggy_error(response)
 
     return ItemResponseSchema.model_validate(response.json())

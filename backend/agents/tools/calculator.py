@@ -11,11 +11,11 @@ import decimal
 
 from langchain.tools import tool
 
+from utils.money import round_to_cents
+
 MAX_LENGTH = 200
-_CENTS = decimal.Decimal("0.01")
-# 28 significant digits for the math; rounding to cents needs room for the integer part too.
+# 28 significant digits for the math (rounding to cents is done by utils.money)
 _CONTEXT = decimal.Context(prec=28, rounding=decimal.ROUND_HALF_EVEN)
-_ROUNDING_CONTEXT = decimal.Context(prec=60, rounding=decimal.ROUND_HALF_UP)
 
 _BINARY = {
     ast.Add: lambda a, b: a + b,
@@ -72,16 +72,6 @@ def calculate_expression(expression: str) -> decimal.Decimal:
             raise ValueError("division by zero") from None
         except decimal.Overflow:
             raise ValueError("the result is too large") from None
-
-
-def round_to_cents(value: decimal.Decimal) -> decimal.Decimal:
-    """Half up, like money is usually rounded. Never '-0.00'."""
-    with decimal.localcontext(_ROUNDING_CONTEXT):
-        try:
-            rounded = value.quantize(_CENTS)
-        except decimal.InvalidOperation:
-            raise ValueError("the result is too large") from None
-    return abs(rounded) if rounded == 0 else rounded
 
 
 @tool(

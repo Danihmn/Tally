@@ -1,60 +1,53 @@
 import logging
 import uuid
-from datetime import UTC, date, datetime, time
+from datetime import date
 
-import httpx
 from dateutil.relativedelta import relativedelta
 from sqlalchemy.orm import Session
 
 from domain.entities import Transaction, User
 from infra.database.session import get_session
-from infra.security.encryption import decrypt
 from integrations.pluggy.exceptions.pluggy_exception_error import PluggyExceptionError
 from integrations.pluggy.http_clients.account.account_client import get_all_accounts
-from integrations.pluggy.http_clients.auth.auth_client import authenticate
 from integrations.pluggy.http_clients.transaction.transaction_client import (
     get_all_transactions,
 )
 from integrations.pluggy.schemas.base_error_schema import BaseErrorSchema
+from jobs._common import JOB_ERRORS, iter_all_users
 from jobs.reconciliation_registration import reconciliate_financial_entries
 from services.bank_accounts_sync_service import sync_bank_account
 from services.common.exceptions import ServiceError
+from services.pluggy_auth_service import authenticate_user
 from services.pluggy_items_service import list_pluggy_items_by_user
 from services.transactions_sync_service import (
     sync_account_transactions,
     to_transaction_entity,
 )
-from services.users_service import get_user_by_id, list_users
+from services.users_service import get_user_by_id
+from utils.dates import start_of_day_utc
+from utils.ids import require_id
 
 logger = logging.getLogger(__name__)
 
-_USERS_PAGE_SIZE = 20
-
 
 def _sync_user_transactions(session: Session, user: User) -> None:
-    if user.id is None:
-        raise ValueError("User without id")
+    user_id = require_id(user, "User")
 
-    api_key = authenticate(
-        client_id=user.pluggy_client_id,
-        client_secret=decrypt(user.pluggy_client_secret_crypto),
-    )
-    pluggy_items = list_pluggy_items_by_user(session, user.id)
+    api_key = authenticate_user(user)
+    pluggy_items = list_pluggy_items_by_user(session, user_id)
 
     for item in pluggy_items:
         try:
-            if item.id is None:
-                raise ValueError("Pluggy item without id")
+            item_id = require_id(item, "Pluggy item")
 
             # Both BANK and CREDIT accounts: the transactions logic is the same
             accounts = get_all_accounts(api_key, str(item.pluggy_item_id))
             for account in accounts.results:
                 # Our own pluggy_items id, not Pluggy's item id
                 stored_account, _ = sync_bank_account(
-                    session, item.id, account, user.household_id
+                    session, item_id, account, user.household_id
                 )
-                if stored_account.id is None:
-                    raise ValueError("Bank account without id")
+                account_id = require_id(stored_account, "Bank account")
 
                 next = None  # Pluggy's pagination approach
                 date_from = date.today() - relativedelta(
@@ -72,7 +65,7 @@ def _sync_user_transactions(session: Session, user: User) -> None:
                     )
                     incoming.extend(
                         to_transaction_entity(
-                            t, stored_account.id, stored_account.household_id
+                            t, account_id, stored_account.household_id
                         )
                         for t in transactions_response.results
                     )
@@ -98,9 +91,9 @@ def _sync_user_transactions(session: Session, user: User) -> None:
 
                 sync_account_transactions(
                     session,
-                    stored_account.id,
+                    account_id,
                     incoming,
-                    datetime.combine(date_from, time.min, tzinfo=UTC),
+                    start_of_day_utc(date_from),
                 )
         except PluggyExceptionError:
             logger.warning(
@@ -114,7 +107,7 @@ def _sync_and_commit_user(session: Session, user: User) -> None:
     try:
         _sync_user_transactions(session, user)
         session.commit()
-    except ServiceError, PluggyExceptionError, httpx.HTTPError, ValueError:
+    except JOB_ERRORS:
         # One user failing must not stop the others
         session.rollback()
         logger.exception("Transactions job failed for user %s", user.id)
@@ -128,17 +121,8 @@ def _sync_and_commit_user(session: Session, user: User) -> None:
 
 def launch_transactions():
     with get_session() as session:
-        offset = 0
-
-        while True:
-            users = list_users(session=session, limit=_USERS_PAGE_SIZE, offset=offset)
-            if len(users) == 0:
-                break
-
-            for user in users:
-                _sync_and_commit_user(session, user)
-
-            offset += _USERS_PAGE_SIZE
+        for user in iter_all_users(session):
+            _sync_and_commit_user(session, user)
 
 
 def launch_user_transactions(user_id: uuid.UUID) -> None:
