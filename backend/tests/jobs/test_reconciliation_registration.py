@@ -1,5 +1,4 @@
 import datetime
-import types
 import unittest
 import uuid
 from decimal import Decimal
@@ -26,22 +25,6 @@ MODULE = "jobs.reconciliation_registration"
 WINDOW_START = datetime.date(2026, 9, 1)
 
 
-def _frozen_datetime_module(now: datetime.datetime) -> types.SimpleNamespace:
-    """The `datetime` module as the job sees it, with `datetime.now()` frozen."""
-
-    class FrozenDatetime(datetime.datetime):
-        @classmethod
-        def now(cls, tz=None):
-            return now
-
-    return types.SimpleNamespace(
-        datetime=FrozenDatetime,
-        date=datetime.date,
-        time=datetime.time,
-        UTC=datetime.UTC,
-    )
-
-
 def _owned(transactions):
     return [TransactionWithOwner(transaction=t, user_id=USER_ID) for t in transactions]
 
@@ -49,20 +32,14 @@ def _owned(transactions):
 class WindowStartTests(unittest.TestCase):
     def test_first_day_of_the_month_two_months_ago(self):
         cases = {
-            datetime.datetime(2026, 11, 10, tzinfo=datetime.UTC): datetime.date(
-                2026, 9, 1
-            ),
-            datetime.datetime(2026, 1, 31, tzinfo=datetime.UTC): datetime.date(
-                2025, 11, 1
-            ),
-            datetime.datetime(2026, 3, 1, tzinfo=datetime.UTC): datetime.date(
-                2026, 1, 1
-            ),
+            datetime.date(2026, 11, 10): datetime.date(2026, 9, 1),
+            datetime.date(2026, 1, 31): datetime.date(2025, 11, 1),
+            datetime.date(2026, 3, 1): datetime.date(2026, 1, 1),
         }
-        for now, expected in cases.items():
+        for today, expected in cases.items():
             with (
-                self.subTest(now=now),
-                patch(f"{MODULE}.datetime", _frozen_datetime_module(now)),
+                self.subTest(today=today),
+                patch(f"{MODULE}.today_utc", return_value=today),
             ):
                 self.assertEqual(_window_start(), expected)
 

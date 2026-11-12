@@ -3,8 +3,11 @@ from datetime import datetime
 import httpx
 
 from integrations.pluggy.config import base_url
-from integrations.pluggy.exceptions.pluggy_exception_error import PluggyExceptionError
-from integrations.pluggy.schemas.base_error_schema import BaseErrorSchema
+from integrations.pluggy.http_clients._http import (
+    api_key_headers,
+    drop_none,
+    raise_for_pluggy_error,
+)
 from integrations.pluggy.schemas.base_response_schema import (
     BaseResponseV2Schema,
 )
@@ -46,9 +49,7 @@ def get_all_transactions(
         "dateTo": _to_str(date_to),
         "createdAtFrom": _to_str(created_at_from),
     }
-    params = {
-        key: value for key, value in params.items() if value is not None
-    }  # Ignore None values
+    params = drop_none(params)
 
     # `next` is a ready-to-use query string that already carries the filters and the cursor.
     # httpx replaces the URL's query string with `params`, so passing both would drop the cursor
@@ -56,16 +57,9 @@ def get_all_transactions(
     response = httpx.get(
         f"{base_url}/v2/transactions{next}" if next else f"{base_url}/v2/transactions",
         params=None if next else params,
-        headers={"X-API-KEY": api_key},
+        headers=api_key_headers(api_key),
     )
-    if response.is_error:
-        try:
-            error = BaseErrorSchema.model_validate(response.json())
-        except ValueError:
-            response.raise_for_status()
-            raise
-
-        raise PluggyExceptionError(error)
+    raise_for_pluggy_error(response)
 
     return BaseResponseV2Schema[TransactionResponseSchema].model_validate(
         response.json()

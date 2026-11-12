@@ -11,6 +11,7 @@ from domain.entities import Transaction
 from integrations.pluggy.schemas.transaction.transaction_response_schema import (
     TransactionResponseSchema,
 )
+from services.common.sync import diff_fields, log_critical_changes
 from services.reconciliations_service import undo_reconciliations_of_transactions
 from services.transactions_service import (
     list_transactions_since,
@@ -96,11 +97,7 @@ def diff_transaction(
     stored: Transaction, incoming: Transaction
 ) -> dict[str, tuple[Any, Any]]:
     """Fields that differ, as {field: (stored value, incoming value)}."""
-    return {
-        field: (getattr(stored, field), getattr(incoming, field))
-        for field in COMPARED_FIELDS
-        if getattr(stored, field) != getattr(incoming, field)
-    }
+    return diff_fields(stored, incoming, COMPARED_FIELDS)
 
 
 def sync_account_transactions(
@@ -224,12 +221,10 @@ def _find_stale_transactions(
 
 def _log_critical_changes(stored: Transaction, incoming: Transaction) -> bool:
     """Logs the changes that invalidate a reconciliation. True when there was any."""
-    changes = diff_transaction(stored, incoming)
-    critical = {f: changes[f] for f in _CRITICAL_FIELDS if f in changes}
-    if critical:
-        logger.warning(
-            "transaction %s changed on Pluggy: %s",
-            stored.pluggy_transaction_id,
-            {f: f"{old} -> {new}" for f, (old, new) in critical.items()},
-        )
-    return bool(critical)
+    return log_critical_changes(
+        logger,
+        "transaction",
+        stored.pluggy_transaction_id,
+        diff_transaction(stored, incoming),
+        _CRITICAL_FIELDS,
+    )

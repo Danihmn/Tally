@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from domain.entities import User
 from infra.repositories import users_repository
 from services.common.exceptions import translate_repository_errors
-from services.common.mappers import to_entity
+from services.common.mappers import to_entities, to_entity, to_entity_or_none
 
 
 @translate_repository_errors
@@ -16,25 +16,25 @@ def get_user_by_id(session: Session, user_id: uuid.UUID) -> User:
 @translate_repository_errors
 def get_user_by_email(session: Session, email: str) -> User | None:
     user = users_repository.get_user_by_email(session, email)
-    return to_entity(User, user) if user else None
+    return to_entity_or_none(User, user)
 
 
 @translate_repository_errors
 def get_user_by_webhook_secret_hash(session: Session, secret_hash: str) -> User | None:
     user = users_repository.get_user_by_pluggy_webhook_secret_hash(session, secret_hash)
-    return to_entity(User, user) if user else None
+    return to_entity_or_none(User, user)
 
 
 @translate_repository_errors
 def list_users(session: Session, limit: int = 10, offset: int = 0) -> list[User]:
     users = users_repository.list_users(session, limit=limit, offset=offset)
-    return [to_entity(User, u) for u in users]
+    return to_entities(User, users)
 
 
 @translate_repository_errors
 def list_users_by_household(session: Session, household_id: uuid.UUID) -> list[User]:
     users = users_repository.list_users_by_household(session, household_id)
-    return [to_entity(User, u) for u in users]
+    return to_entities(User, users)
 
 
 @translate_repository_errors

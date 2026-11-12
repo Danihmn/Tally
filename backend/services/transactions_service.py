@@ -12,7 +12,7 @@ from domain.read_models import (
 )
 from infra.repositories import transactions_repository
 from services.common.exceptions import translate_repository_errors
-from services.common.mappers import to_entity, to_values
+from services.common.mappers import to_entities, to_entity, to_entity_or_none, to_values
 
 
 @translate_repository_errors
@@ -28,7 +28,7 @@ def get_transaction_by_pluggy_transaction_id(
     transaction = transactions_repository.get_transaction_by_pluggy_transaction_id(
         session, pluggy_transaction_id
     )
-    return to_entity(Transaction, transaction) if transaction else None
+    return to_entity_or_none(Transaction, transaction)
 
 
 @translate_repository_errors
@@ -38,7 +38,7 @@ def list_transactions_by_provider_id(
     transactions = transactions_repository.list_transactions_by_provider_id(
         session, bank_account_id, provider_id
     )
-    return [to_entity(Transaction, t) for t in transactions]
+    return to_entities(Transaction, transactions)
 
 
 @translate_repository_errors
@@ -53,7 +53,7 @@ def list_transactions_by_account(
     transactions = transactions_repository.list_transactions_by_account(
         session, bank_account_id, date_from, date_to, limit, offset
     )
-    return [to_entity(Transaction, t) for t in transactions]
+    return to_entities(Transaction, transactions)
 
 
 @translate_repository_errors
@@ -68,7 +68,7 @@ def list_transactions_by_household(
     transactions = transactions_repository.list_transactions_by_household(
         session, household_id, date_from, date_to, limit, offset
     )
-    return [to_entity(Transaction, t) for t in transactions]
+    return to_entities(Transaction, transactions)
 
 
 @translate_repository_errors
@@ -78,7 +78,7 @@ def upsert_transactions(
     saved = transactions_repository.upsert_transactions(
         session, [to_values(t) for t in transactions]
     )
-    return [to_entity(Transaction, t) for t in saved]
+    return to_entities(Transaction, saved)
 
 
 @translate_repository_errors
@@ -91,7 +91,7 @@ def list_transactions_since(
     transactions = transactions_repository.list_transactions_since(
         session, bank_account_id, date_from, include_deleted
     )
-    return [to_entity(Transaction, t) for t in transactions]
+    return to_entities(Transaction, transactions)
 
 
 @translate_repository_errors

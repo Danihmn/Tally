@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from domain.entities import Reconciliation
 from infra.repositories import reconciliations_repository
 from services.common.exceptions import translate_repository_errors
-from services.common.mappers import to_entity, to_values
+from services.common.mappers import to_entities, to_entity, to_values
 from services.financial_entries_service import mark_financial_entries_status
 
 
@@ -36,7 +36,7 @@ def list_reconciliations_by_entries(
     reconciliations = reconciliations_repository.list_reconciliations_by_entries(
         session, entry_ids
     )
-    return [to_entity(Reconciliation, r) for r in reconciliations]
+    return to_entities(Reconciliation, reconciliations)
 
 
 @translate_repository_errors
@@ -46,7 +46,7 @@ def list_reconciliations_by_transactions(
     reconciliations = reconciliations_repository.list_reconciliations_by_transactions(
         session, transaction_ids
     )
-    return [to_entity(Reconciliation, r) for r in reconciliations]
+    return to_entities(Reconciliation, reconciliations)
 
 
 @translate_repository_errors

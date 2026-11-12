@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from domain.entities import PluggyItem
 from infra.repositories import pluggy_items_repository
 from services.common.exceptions import AlreadyExistsError, translate_repository_errors
-from services.common.mappers import to_entity
+from services.common.mappers import to_entities, to_entity, to_entity_or_none
 
 
 @translate_repository_errors
@@ -22,13 +22,13 @@ def get_pluggy_item_by_pluggy_item_id(
     item = pluggy_items_repository.get_pluggy_item_by_pluggy_item_id(
         session, pluggy_item_id
     )
-    return to_entity(PluggyItem, item) if item else None
+    return to_entity_or_none(PluggyItem, item)
 
 
 @translate_repository_errors
 def list_pluggy_items_by_user(session: Session, user_id: uuid.UUID) -> list[PluggyItem]:
     items = pluggy_items_repository.list_pluggy_items_by_user(session, user_id)
-    return [to_entity(PluggyItem, i) for i in items]
+    return to_entities(PluggyItem, items)
 
 
 @translate_repository_errors
@@ -38,7 +38,7 @@ def list_pluggy_items_expiring_before(
     items = pluggy_items_repository.list_pluggy_items_expiring_before(
         session, limit_date
     )
-    return [to_entity(PluggyItem, i) for i in items]
+    return to_entities(PluggyItem, items)
 
 
 @translate_repository_errors

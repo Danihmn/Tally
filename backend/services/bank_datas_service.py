@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from domain.entities import BankData
 from infra.repositories import bank_datas_repository
 from services.common.exceptions import translate_repository_errors
-from services.common.mappers import to_entity, to_values
+from services.common.mappers import to_entity, to_entity_or_none, to_values
 
 
 @translate_repository_errors
@@ -15,7 +15,7 @@ def get_bank_data_by_bank_account_id(
     data = bank_datas_repository.get_bank_data_by_bank_account_id(
         session, bank_account_id
     )
-    return to_entity(BankData, data) if data else None
+    return to_entity_or_none(BankData, data)
 
 
 @translate_repository_errors

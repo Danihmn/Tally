@@ -11,7 +11,7 @@ from domain.read_models import (
 )
 from infra.repositories import financial_entries_repository
 from services.common.exceptions import translate_repository_errors
-from services.common.mappers import to_entity, to_values
+from services.common.mappers import to_entities, to_entity, to_values
 
 
 @translate_repository_errors
@@ -37,7 +37,7 @@ def list_financial_entries_by_user(
         status,
         bank_account_id,
     )
-    return [to_entity(FinancialEntry, e) for e in entries]
+    return to_entities(FinancialEntry, entries)
 
 
 @translate_repository_errors
@@ -57,7 +57,7 @@ def list_financial_entries_by_household(
         status,
         bank_account_id,
     )
-    return [to_entity(FinancialEntry, e) for e in entries]
+    return to_entities(FinancialEntry, entries)
 
 
 @translate_repository_errors
@@ -73,9 +73,7 @@ def update_financial_entry(
     session: Session, entry_id: uuid.UUID, entry: FinancialEntry
 ) -> FinancialEntry:
     """Overwrites every column with the entity's values (id and created_at are kept)."""
-    values = {
-        k: v for k, v in to_values(entry).items() if k not in ("id", "created_at")
-    }
+    values = to_values(entry, exclude=("id", "created_at"))
     updated = financial_entries_repository.update_financial_entry(
         session, entry_id, values
     )
@@ -124,7 +122,7 @@ def search_financial_entries(
         session, filters, limit, offset
     )
     total = financial_entries_repository.count_financial_entries(session, filters)
-    return [to_entity(FinancialEntry, e) for e in rows], total
+    return to_entities(FinancialEntry, rows), total
 
 
 _STATUS_FIELDS = {

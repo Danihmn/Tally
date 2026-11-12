@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from domain.entities import IdentityData
 from infra.repositories import identity_datas_repository
 from services.common.exceptions import translate_repository_errors
-from services.common.mappers import to_entity, to_values
+from services.common.mappers import to_entity, to_entity_or_none, to_values
 
 
 @translate_repository_errors
@@ -15,7 +15,7 @@ def get_identity_data_by_pluggy_item_id(
     identity = identity_datas_repository.get_identity_data_by_pluggy_item_id(
         session, pluggy_item_id
     )
-    return to_entity(IdentityData, identity) if identity else None
+    return to_entity_or_none(IdentityData, identity)
 
 
 @translate_repository_errors

@@ -34,8 +34,7 @@ class EnsureItemWebhooksTests(unittest.TestCase):
         )
         self.mocks = {}
         for name in (
-            "authenticate",
-            "decrypt",
+            "authenticate_user",
             "list_webhooks",
             "create_webhook",
             "update_webhook",
@@ -45,8 +44,7 @@ class EnsureItemWebhooksTests(unittest.TestCase):
             patcher = patch(f"{MODULE}.{name}")
             self.mocks[name] = patcher.start()
             self.addCleanup(patcher.stop)
-        self.mocks["authenticate"].return_value = "api-key"
-        self.mocks["decrypt"].return_value = "client-secret"
+        self.mocks["authenticate_user"].return_value = "api-key"
         self.mocks["generate_webhook_secret"].return_value = NEW_SECRET
 
     def _run(self, registered, base_url=BASE_URL):
@@ -58,13 +56,11 @@ class EnsureItemWebhooksTests(unittest.TestCase):
             self.session, self.user.id, hash_webhook_secret(NEW_SECRET)
         )
 
-    def test_authenticates_with_the_decrypted_secret(self):
+    def test_logs_in_to_pluggy_as_the_user(self):
         self._run(_webhooks())
 
-        self.mocks["decrypt"].assert_called_once_with("secret-crypto")
-        self.mocks["authenticate"].assert_called_once_with(
-            client_id=self.user.pluggy_client_id, client_secret="client-secret"
-        )
+        self.mocks["authenticate_user"].assert_called_once_with(self.user)
+        self.mocks["list_webhooks"].assert_called_once_with("api-key")
 
     def test_everything_in_place_changes_nothing(self):
         self._run(_webhooks())
@@ -192,7 +188,7 @@ class EnsureItemWebhooksTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self._run(_webhooks())
 
-        self.mocks["authenticate"].assert_not_called()
+        self.mocks["authenticate_user"].assert_not_called()
 
 
 if __name__ == "__main__":

@@ -3,14 +3,12 @@ import logging
 from sqlalchemy.orm import Session
 
 from domain.entities import User
-from infra.security.encryption import decrypt
 from infra.security.webhook_secret import (
     generate_webhook_secret,
     hash_webhook_secret,
     verify_webhook_secret,
 )
 from integrations.pluggy.config import item_webhook_paths, webhook_token_header
-from integrations.pluggy.http_clients.auth.auth_client import authenticate
 from integrations.pluggy.http_clients.webhook.webhook_client import (
     create_webhook,
     list_webhooks,
@@ -19,7 +17,9 @@ from integrations.pluggy.http_clients.webhook.webhook_client import (
 from integrations.pluggy.schemas.webhook.webhook_response_schema import (
     WebhookResponseSchema,
 )
+from services.pluggy_auth_service import authenticate_user
 from services.users_service import update_user_webhook_secret_hash
+from utils.ids import require_id
 
 logger = logging.getLogger(__name__)
 
@@ -51,14 +51,10 @@ def ensure_item_webhooks(session: Session, user: User, public_base_url: str) -> 
     commit...), and it rewrites the header of every webhook. Pluggy is called first and the database
     after: a failure in between is detected (and fixed) on the next run.
     """
-    if user.id is None:
-        raise ValueError("User without id")
+    user_id = require_id(user, "User")
 
     base_url = public_base_url.rstrip("/")
-    api_key = authenticate(
-        client_id=user.pluggy_client_id,
-        client_secret=decrypt(user.pluggy_client_secret_crypto),
-    )
+    api_key = authenticate_user(user)
 
     registered = list_webhooks(api_key).results
     # event -> its webhook in Pluggy (None when missing)
@@ -88,7 +84,7 @@ def ensure_item_webhooks(session: Session, user: User, public_base_url: str) -> 
                 create_webhook(
                     api_key, base_url + item_webhook_paths[event], event, headers
                 )
-                logger.info("Created the %s webhook for user %s", event, user.id)
+                logger.info("Created the %s webhook for user %s", event, user_id)
             else:
                 update_webhook(
                     api_key,
@@ -96,11 +92,11 @@ def ensure_item_webhooks(session: Session, user: User, public_base_url: str) -> 
                     headers=headers,
                     enabled=True if webhook.disabled_at is not None else None,
                 )
-                logger.info("Rotated the %s webhook secret for user %s", event, user.id)
-        update_user_webhook_secret_hash(session, user.id, hash_webhook_secret(secret))
+                logger.info("Rotated the %s webhook secret for user %s", event, user_id)
+        update_user_webhook_secret_hash(session, user_id, hash_webhook_secret(secret))
         return
 
     for event, webhook in webhooks.items():
         if webhook is not None and webhook.disabled_at is not None:
             update_webhook(api_key, str(webhook.id), enabled=True)
-            logger.info("Re-enabled the %s webhook for user %s", event, user.id)
+            logger.info("Re-enabled the %s webhook for user %s", event, user_id)
