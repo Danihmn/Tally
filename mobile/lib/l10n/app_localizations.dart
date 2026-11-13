@@ -220,6 +220,78 @@ abstract class AppLocalizations {
   /// **'Algo deu errado. Tente novamente.'**
   String get failureUnknown;
 
+  /// No description provided for @loginTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Entre na sua conta'**
+  String get loginTitle;
+
+  /// No description provided for @loginSubtitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Veja o dinheiro da casa em um só lugar, sem planilha.'**
+  String get loginSubtitle;
+
+  /// No description provided for @loginEmail.
+  ///
+  /// In pt, this message translates to:
+  /// **'E-mail'**
+  String get loginEmail;
+
+  /// No description provided for @loginPassword.
+  ///
+  /// In pt, this message translates to:
+  /// **'Senha'**
+  String get loginPassword;
+
+  /// No description provided for @loginShowPassword.
+  ///
+  /// In pt, this message translates to:
+  /// **'Mostrar senha'**
+  String get loginShowPassword;
+
+  /// No description provided for @loginHidePassword.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ocultar senha'**
+  String get loginHidePassword;
+
+  /// No description provided for @loginSubmit.
+  ///
+  /// In pt, this message translates to:
+  /// **'Entrar'**
+  String get loginSubmit;
+
+  /// No description provided for @loginSubmitting.
+  ///
+  /// In pt, this message translates to:
+  /// **'Entrando…'**
+  String get loginSubmitting;
+
+  /// No description provided for @loginSessionExpired.
+  ///
+  /// In pt, this message translates to:
+  /// **'Sua sessão expirou, entre novamente.'**
+  String get loginSessionExpired;
+
+  /// No description provided for @loginWrongCredentials.
+  ///
+  /// In pt, this message translates to:
+  /// **'E-mail ou senha incorretos. Confira e tente de novo.'**
+  String get loginWrongCredentials;
+
+  /// No description provided for @loginMissingFields.
+  ///
+  /// In pt, this message translates to:
+  /// **'Digite o e-mail e a senha para entrar.'**
+  String get loginMissingFields;
+
+  /// No description provided for @loginAdminNote.
+  ///
+  /// In pt, this message translates to:
+  /// **'As contas são criadas por um administrador da casa, dentro do app.'**
+  String get loginAdminNote;
+
   /// No description provided for @configErrorTitle.
   ///
   /// In pt, this message translates to:

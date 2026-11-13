@@ -21,6 +21,18 @@
   "failureNetwork": "Sem conexão. Verifique sua internet e tente de novo.",
   "failureTimeout": "A resposta demorou demais. Tente novamente.",
   "failureUnknown": "Algo deu errado. Tente novamente.",
+  "loginTitle": "Entre na sua conta",
+  "loginSubtitle": "Veja o dinheiro da casa em um só lugar, sem planilha.",
+  "loginEmail": "E-mail",
+  "loginPassword": "Senha",
+  "loginShowPassword": "Mostrar senha",
+  "loginHidePassword": "Ocultar senha",
+  "loginSubmit": "Entrar",
+  "loginSubmitting": "Entrando…",
+  "loginSessionExpired": "Sua sessão expirou, entre novamente.",
+  "loginWrongCredentials": "E-mail ou senha incorretos. Confira e tente de novo.",
+  "loginMissingFields": "Digite o e-mail e a senha para entrar.",
+  "loginAdminNote": "As contas são criadas por um administrador da casa, dentro do app.",
   "configErrorTitle": "Configuração ausente",
   "configErrorMessage": "O app não foi iniciado com uma URL de API válida. Rode com --dart-define=API_BASE_URL=<url>."
 }

@@ -14,6 +14,8 @@ void main() {
     String? Function(BuildContext, Object)? redirect,
   }) {
     final router = createAppRouter(
+      home: const SizedBox(),
+      login: const SizedBox(),
       redirect: redirect == null
           ? null
           : (context, state) => redirect(context, state),

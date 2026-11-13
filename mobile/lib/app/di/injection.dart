@@ -4,9 +4,12 @@ import 'package:mobile/app/theme/theme_controller.dart';
 import 'package:mobile/core/config/app_config.dart';
 import 'package:mobile/core/network/dio_factory.dart';
 import 'package:mobile/core/network/session_expired_notifier.dart';
+import 'package:mobile/core/session/session_controller.dart';
 import 'package:mobile/core/storage/preferences_storage.dart';
 import 'package:mobile/core/storage/secure_storage.dart';
 import 'package:mobile/core/storage/session_token_store.dart';
+import 'package:mobile/features/auth/auth_dependencies.dart';
+import 'package:mobile/features/household/household_dependencies.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// The app's service locator. Services are lazy singletons. ViewModels are
@@ -22,6 +25,14 @@ Future<void> configureDependencies(AppConfig config) async {
     secureStorage: PlatformSecureStorage(),
     preferences: SharedPreferencesStorage(preferences),
   );
+  registerFeatureDependencies(getIt);
+}
+
+/// Registers what each feature needs. Kept apart so tests can build a fresh
+/// container with the core services and then add the features.
+void registerFeatureDependencies(GetIt container) {
+  registerAuthDependencies(container);
+  registerHouseholdDependencies(container);
 }
 
 /// Registration kept apart from [configureDependencies] so tests can pass
@@ -42,6 +53,13 @@ void registerCoreDependencies(
     ..registerLazySingleton<SessionExpiredNotifier>(
       SessionExpiredNotifier.new,
       dispose: (notifier) => notifier.dispose(),
+    )
+    ..registerLazySingleton<SessionController>(
+      () => SessionController(
+        tokenStore: container<SessionTokenStore>(),
+        expiredNotifier: container<SessionExpiredNotifier>(),
+      ),
+      dispose: (controller) => controller.dispose(),
     )
     ..registerLazySingleton<Dio>(
       () => DioFactory.create(

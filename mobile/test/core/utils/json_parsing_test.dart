@@ -32,4 +32,16 @@ void main() {
       expect(() => parseDateTime(5), throwsFormatException);
     });
   });
+
+  group('requireString', () {
+    test('returns_a_non_empty_text', () {
+      expect(requireString('abc', 'name'), 'abc');
+    });
+
+    test('throws_a_format_exception_for_empty_or_other_types', () {
+      expect(() => requireString('', 'name'), throwsFormatException);
+      expect(() => requireString(null, 'name'), throwsFormatException);
+      expect(() => requireString(5, 'name'), throwsFormatException);
+    });
+  });
 }

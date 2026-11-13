@@ -77,6 +77,45 @@ class AppLocalizationsPt extends AppLocalizations {
   String get failureUnknown => 'Algo deu errado. Tente novamente.';
 
   @override
+  String get loginTitle => 'Entre na sua conta';
+
+  @override
+  String get loginSubtitle =>
+      'Veja o dinheiro da casa em um só lugar, sem planilha.';
+
+  @override
+  String get loginEmail => 'E-mail';
+
+  @override
+  String get loginPassword => 'Senha';
+
+  @override
+  String get loginShowPassword => 'Mostrar senha';
+
+  @override
+  String get loginHidePassword => 'Ocultar senha';
+
+  @override
+  String get loginSubmit => 'Entrar';
+
+  @override
+  String get loginSubmitting => 'Entrando…';
+
+  @override
+  String get loginSessionExpired => 'Sua sessão expirou, entre novamente.';
+
+  @override
+  String get loginWrongCredentials =>
+      'E-mail ou senha incorretos. Confira e tente de novo.';
+
+  @override
+  String get loginMissingFields => 'Digite o e-mail e a senha para entrar.';
+
+  @override
+  String get loginAdminNote =>
+      'As contas são criadas por um administrador da casa, dentro do app.';
+
+  @override
   String get configErrorTitle => 'Configuração ausente';
 
   @override

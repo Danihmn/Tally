@@ -25,3 +25,9 @@ DateTime parseDateTime(Object? value) {
 /// Like [parseDateTime] but allows `null`.
 DateTime? parseDateTimeOrNull(Object? value) =>
     value == null ? null : parseDateTime(value);
+
+/// A required, non-empty text field. [field] only names it in the error.
+String requireString(Object? value, String field) {
+  if (value is String && value.isNotEmpty) return value;
+  throw FormatException('Expected a text for "$field".');
+}

@@ -34,6 +34,14 @@ Interceptor order: `AuthInterceptor` (adds `Bearer`, on 401 clears the token and
 API error shape: `{"detail": "<English text>"}`, except request validation (422) where `detail` is a **list** of `{loc, msg, type}`. `ErrorInterceptor` reads only the field names.
 401 on `/auth/login` = wrong credentials; 401 anywhere else = expired session. There is no refresh token.
 
+## Session and login
+
+`SessionController` (`core/session`) says whether somebody is logged in. A token in secure storage means logged in; `main.dart` calls `restore()` before the router is built. When the API answers 401 outside of login, `AuthInterceptor` clears the token and tells `SessionExpiredNotifier`, and the controller turns to logged out and remembers that the session expired (the login screen shows a notice).
+
+The router (`createAppRouter`) gets `redirect: sessionRedirect(session)` and `refreshListenable: session`: without a session every route goes to `/login`, and with one `/login` goes to `/home`. The login screen and the home are passed in by the caller (they need a ViewModel from the DI container), so tests can use plain widgets.
+
+Login: `LoginView` creates its own `LoginViewModel` (fresh state on each visit). On success the repository has already saved the token, and the ViewModel calls `session.onLoggedIn()`.
+
 ## State and lists
 
 `PaginatedViewModel<T>` (`core/pagination`) gives `load / refresh / loadMore` with `limit/offset`. Late answers of an older request (for example an old search text) are ignored. `AsyncStateView` renders every `UiState` the same way (skeleton, empty, error + retry).
