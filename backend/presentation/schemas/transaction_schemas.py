@@ -70,6 +70,41 @@ class TransactionPeriodQuery(BaseModel):
         return self
 
 
+class TopExpensesQuery(TransactionPeriodQuery):
+    """Same period filters as the totals, plus how many transactions to list."""
+
+    limit: int = Field(default=5, ge=1, le=50)
+
+
+class TopExpenseItem(BaseModel):
+    date: datetime.date  # UTC day
+    amount: decimal.Decimal
+    description: str | None
+
+
+class TopExpensesResponse(BaseModel):
+    date_from: datetime.date
+    date_to: datetime.date
+    items: list[TopExpenseItem]  # Biggest amount first
+
+
+class DailyExpenseItem(BaseModel):
+    date: datetime.date  # UTC day
+    total: decimal.Decimal
+
+
+class DailyExpensesResponse(BaseModel):
+    date_from: datetime.date
+    date_to: datetime.date
+    items: list[DailyExpenseItem]  # Every day of the period, oldest first. 0 when nothing was spent
+
+
+class AverageResponse(BaseModel):
+    date_from: datetime.date
+    date_to: datetime.date
+    average: decimal.Decimal
+
+
 class TotalResponse(BaseModel):
     date_from: datetime.date  # The period that was used (the default one when none was sent)
     date_to: datetime.date

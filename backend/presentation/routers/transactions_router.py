@@ -11,14 +11,23 @@ from infra.database.session import get_db
 from presentation.dependencies.auth import get_current_user
 from presentation.schemas.common_schemas import Page
 from presentation.schemas.transaction_schemas import (
+    AverageResponse,
     BalanceResponse,
+    DailyExpenseItem,
+    DailyExpensesResponse,
+    TopExpenseItem,
+    TopExpensesQuery,
+    TopExpensesResponse,
     TotalResponse,
     TransactionPeriodQuery,
     TransactionQuery,
     TransactionResponse,
 )
 from services.transactions_service import (
+    get_average_daily_expenses,
     get_balance,
+    get_daily_expenses,
+    get_top_expenses,
     get_total_expenses,
     get_total_revenues,
     get_transaction_with_owner,
@@ -135,6 +144,54 @@ def balance_endpoint(
         date_from=date_from,
         date_to=date_to,
         balance=get_balance(session, filters),
+    )
+
+
+@router.get("/top-expenses", response_model=TopExpensesResponse)
+def top_expenses_endpoint(
+    query: Annotated[TopExpensesQuery, Query()],
+    session: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
+) -> TopExpensesResponse:
+    date_from, date_to, filters = _period_filters(query, current_user)
+    return TopExpensesResponse(
+        date_from=date_from,
+        date_to=date_to,
+        items=[
+            TopExpenseItem(date=e.date, amount=e.amount, description=e.description)
+            for e in get_top_expenses(session, filters, query.limit)
+        ],
+    )
+
+
+@router.get("/daily-expenses", response_model=DailyExpensesResponse)
+def daily_expenses_endpoint(
+    query: Annotated[TransactionPeriodQuery, Query()],
+    session: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
+) -> DailyExpensesResponse:
+    date_from, date_to, filters = _period_filters(query, current_user)
+    return DailyExpensesResponse(
+        date_from=date_from,
+        date_to=date_to,
+        items=[
+            DailyExpenseItem(date=d.day, total=d.total)
+            for d in get_daily_expenses(session, filters)
+        ],
+    )
+
+
+@router.get("/average-daily-expenses", response_model=AverageResponse)
+def average_daily_expenses_endpoint(
+    query: Annotated[TransactionPeriodQuery, Query()],
+    session: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
+) -> AverageResponse:
+    date_from, date_to, filters = _period_filters(query, current_user)
+    return AverageResponse(
+        date_from=date_from,
+        date_to=date_to,
+        average=get_average_daily_expenses(session, filters),
     )
 
 

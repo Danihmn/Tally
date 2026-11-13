@@ -17,6 +17,9 @@ from presentation.schemas.financial_entry_schemas import (
     FinancialEntryQuery,
     FinancialEntryResponse,
     ReconciliationCountsResponse,
+    UpcomingEntriesQuery,
+    UpcomingEntriesResponse,
+    UpcomingEntryItem,
 )
 from services.common.exceptions import NotFoundError
 from services.financial_entries_service import (
@@ -26,6 +29,7 @@ from services.financial_entries_service import (
     get_active_financial_entry_by_id,
     get_total_planned,
     get_total_reconciled,
+    list_upcoming_entries,
     search_financial_entries,
 )
 from services.users_service import get_user_by_id
@@ -122,6 +126,35 @@ def reconciliation_counts_endpoint(
         reconciled=count_reconciled_entries(session, filters),
         not_reconciled=count_not_reconciled_entries(session, filters),
     )
+
+
+@router.get("/upcoming", response_model=UpcomingEntriesResponse)
+def upcoming_entries_endpoint(
+    query: Annotated[UpcomingEntriesQuery, Query()],
+    session: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
+) -> UpcomingEntriesResponse:
+    """Entries not reconciled yet that are due from today until today + `days` (both inclusive)."""
+    date_from = today_local()
+    date_to = date_from + datetime.timedelta(days=query.days)
+    filters = FinancialEntryFilters(
+        household_id=current_user.household_id,
+        user_id=query.user_id,
+        due_date_from=date_from,
+        due_date_to=date_to,
+    )
+    items = []
+    for entry in list_upcoming_entries(session, filters):
+        assert entry.due_date is not None  # The due date filter leaves out the entries without one
+        items.append(
+            UpcomingEntryItem(
+                description=entry.description,
+                amount=entry.amount,
+                type=entry.type,
+                due_date=entry.due_date,
+            )
+        )
+    return UpcomingEntriesResponse(date_from=date_from, date_to=date_to, items=items)
 
 
 @router.get("/{entry_id}", response_model=FinancialEntryResponse)

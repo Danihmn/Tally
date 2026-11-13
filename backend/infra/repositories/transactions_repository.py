@@ -3,7 +3,7 @@ import decimal
 import uuid
 from typing import Any
 
-from sqlalchemy import Text, Uuid, func, literal, select, update
+from sqlalchemy import Date, Text, Uuid, cast, func, literal, literal_column, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
@@ -236,6 +236,43 @@ def sum_transactions_amount(
         filters,
     )
     return session.scalar(stmt) or decimal.Decimal("0.00")
+
+
+@translate_db_errors("transactions")
+def list_top_transactions(
+    session: Session, filters: TransactionFilters, limit: int
+) -> list[tuple[datetime.datetime, str | None, decimal.Decimal]]:
+    """(date, description, abs(amount)) of the `limit` biggest transactions the filters match."""
+    amount = func.abs(Transactions.amount)
+    stmt = (
+        apply_filters(
+            join_owner(select(Transactions.date, Transactions.description, amount)),
+            filters,
+        )
+        .order_by(amount.desc(), Transactions.date.desc(), Transactions.id)
+        .limit(limit)
+    )
+    return [(date, description, value) for date, description, value in session.execute(stmt)]
+
+
+@translate_db_errors("transactions")
+def sum_transactions_by_day(
+    session: Session, filters: TransactionFilters
+) -> list[tuple[datetime.date, decimal.Decimal]]:
+    """(UTC day, sum of abs(amount)) per day that has transactions, oldest day first.
+
+    The day is cut in UTC on purpose: it does not depend on the time zone of the connection.
+    'UTC' is written in the SQL (not a bind parameter), so GROUP BY matches the selected column.
+    """
+    day = cast(func.timezone(literal_column("'UTC'"), Transactions.date), Date).label("day")
+    stmt = (
+        apply_filters(
+            join_owner(select(day, func.sum(func.abs(Transactions.amount)))), filters
+        )
+        .group_by(day)
+        .order_by(day)
+    )
+    return [(day_, total) for day_, total in session.execute(stmt)]
 
 
 @translate_db_errors("transactions")

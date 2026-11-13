@@ -1,3 +1,4 @@
+import datetime
 import unittest
 import uuid
 from decimal import Decimal
@@ -5,7 +6,10 @@ from unittest.mock import MagicMock, patch
 
 from domain.read_models import TransactionFilters
 from services.transactions_service import (
+    get_average_daily_expenses,
     get_balance,
+    get_daily_expenses,
+    get_top_expenses,
     get_total_expenses,
     get_total_revenues,
     summarize_transactions,
@@ -149,3 +153,142 @@ class TotalsOfThePeriodTests(unittest.TestCase):
         balance, _, _ = self._run(get_balance, [Decimal("0.00"), Decimal("0.00")])
 
         self.assertEqual(balance, Decimal("0.00"))
+
+
+def _utc_day(day: int) -> datetime.datetime:
+    return datetime.datetime(2026, 11, day, tzinfo=datetime.UTC)
+
+
+class TopExpensesTests(unittest.TestCase):
+    def _run(self, rows, limit=5):
+        session, filters = MagicMock(), TransactionFilters()
+        with patch(f"{MODULE}.transactions_repository") as repository:
+            repository.list_top_transactions.return_value = rows
+            result = get_top_expenses(session, filters, limit)
+        return result, repository.list_top_transactions.call_args, filters
+
+    def test_asks_only_for_debits_and_passes_the_limit(self):
+        _, call, _ = self._run([], limit=3)
+
+        self.assertEqual(call.args[1].type, "DEBIT")
+        self.assertEqual(call.args[2], 3)
+
+    def test_keeps_the_order_of_the_repository_and_maps_the_three_fields(self):
+        result, _, _ = self._run([
+            (_utc_day(10), "Rent", Decimal("1500.00")),
+            (_utc_day(3), None, Decimal("20.50")),
+        ])
+
+        self.assertEqual(
+            [(e.date, e.description, e.amount) for e in result],
+            [
+                (datetime.date(2026, 11, 10), "Rent", Decimal("1500.00")),
+                (datetime.date(2026, 11, 3), None, Decimal("20.50")),
+            ],
+        )
+
+    def test_the_day_is_the_utc_day_even_when_the_driver_sends_another_time_zone(self):
+        minus_three = datetime.timezone(datetime.timedelta(hours=-3))
+        # 22:00 on the 9th at UTC-3 is 01:00 on the 10th in UTC
+        late = datetime.datetime(2026, 11, 9, 22, 0, tzinfo=minus_three)
+
+        result, _, _ = self._run([(late, "Dinner", Decimal("80"))])
+
+        self.assertEqual(result[0].date, datetime.date(2026, 11, 10))
+
+    def test_the_callers_filters_are_not_changed(self):
+        _, _, filters = self._run([])
+
+        self.assertIsNone(filters.type)
+
+
+class DailyExpensesTests(unittest.TestCase):
+    def _run(self, rows, date_from=1, date_to=6):
+        """Period from day `date_from` until the end of day `date_to - 1` (exclusive bound)."""
+        session = MagicMock()
+        filters = TransactionFilters(date_from=_utc_day(date_from), date_to=_utc_day(date_to))
+        with patch(f"{MODULE}.transactions_repository") as repository:
+            repository.sum_transactions_by_day.return_value = rows
+            result = get_daily_expenses(session, filters)
+        return result, repository.sum_transactions_by_day.call_args, filters
+
+    def test_asks_only_for_debits(self):
+        _, call, filters = self._run([])
+
+        self.assertEqual(call.args[1].type, "DEBIT")
+        self.assertIsNone(filters.type)
+
+    def test_days_without_spending_are_in_the_list_with_zero(self):
+        result, _, _ = self._run([
+            (datetime.date(2026, 11, 2), Decimal("100.00")),
+            (datetime.date(2026, 11, 4), Decimal("50.25")),
+        ])
+
+        self.assertEqual(
+            [(d.day.day, d.total) for d in result],
+            [
+                (1, Decimal("0.00")),
+                (2, Decimal("100.00")),
+                (3, Decimal("0.00")),
+                (4, Decimal("50.25")),
+                (5, Decimal("0.00")),
+            ],
+        )
+
+    def test_the_list_has_one_item_per_day_of_the_period_oldest_first(self):
+        result, _, _ = self._run([], date_from=1, date_to=13)  # Days 1 to 12
+
+        self.assertEqual(len(result), 12)
+        self.assertEqual(result[0].day, datetime.date(2026, 11, 1))
+        self.assertEqual(result[-1].day, datetime.date(2026, 11, 12))
+
+    def test_a_period_of_one_day_has_one_item(self):
+        result, _, _ = self._run([(datetime.date(2026, 11, 5), Decimal("9"))], date_from=5, date_to=6)
+
+        self.assertEqual([(d.day.day, d.total) for d in result], [(5, Decimal("9"))])
+
+    def test_a_filter_without_the_period_is_an_error(self):
+        with self.assertRaises(ValueError):
+            get_daily_expenses(MagicMock(), TransactionFilters())
+
+
+class AverageDailyExpensesTests(unittest.TestCase):
+    def _average(self, rows, date_from=1, date_to=13):
+        session = MagicMock()
+        filters = TransactionFilters(date_from=_utc_day(date_from), date_to=_utc_day(date_to))
+        with patch(f"{MODULE}.transactions_repository") as repository:
+            repository.sum_transactions_by_day.return_value = rows
+            return get_average_daily_expenses(session, filters)
+
+    def test_days_without_spending_count_in_the_average(self):
+        # 600 spent in 3 days of a 12 days period
+        rows = [
+            (datetime.date(2026, 11, 2), Decimal("100")),
+            (datetime.date(2026, 11, 5), Decimal("200")),
+            (datetime.date(2026, 11, 9), Decimal("300")),
+        ]
+
+        self.assertEqual(self._average(rows), Decimal("50.00"))
+
+    def test_is_rounded_to_cents(self):
+        average = self._average([(datetime.date(2026, 11, 1), Decimal("100"))], date_from=1, date_to=4)
+
+        self.assertEqual(average, Decimal("33.33"))
+
+    def test_a_period_without_spending_is_zero(self):
+        self.assertEqual(self._average([]), Decimal("0.00"))
+
+    def test_reuses_the_daily_totals(self):
+        session = MagicMock()
+        filters = TransactionFilters(date_from=_utc_day(1), date_to=_utc_day(3))
+        with patch(f"{MODULE}.get_daily_expenses") as daily:
+            from domain.read_models import DailyTotal
+
+            daily.return_value = [
+                DailyTotal(datetime.date(2026, 11, 1), Decimal("10.00")),
+                DailyTotal(datetime.date(2026, 11, 2), Decimal("21.00")),
+            ]
+            average = get_average_daily_expenses(session, filters)
+
+        daily.assert_called_once_with(session, filters)
+        self.assertEqual(average, Decimal("15.50"))

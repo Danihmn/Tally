@@ -7,6 +7,8 @@ from sqlalchemy.orm import Session
 
 from domain.entities import Transaction
 from domain.read_models import (
+    DailyTotal,
+    TopExpense,
     TransactionFilters,
     TransactionGroupTotal,
     TransactionSummary,
@@ -15,6 +17,7 @@ from domain.read_models import (
 from infra.repositories import transactions_repository
 from services.common.exceptions import translate_repository_errors
 from services.common.mappers import to_entities, to_entity, to_entity_or_none, to_values
+from utils.money import round_to_cents
 
 
 @translate_repository_errors
@@ -172,6 +175,62 @@ def get_total_revenues(session: Session, filters: TransactionFilters) -> decimal
 def get_balance(session: Session, filters: TransactionFilters) -> decimal.Decimal:
     """Revenues minus expenses of the period. Negative when the period spent more than it got."""
     return get_total_revenues(session, filters) - get_total_expenses(session, filters)
+
+
+@translate_repository_errors
+def get_top_expenses(
+    session: Session, filters: TransactionFilters, limit: int
+) -> list[TopExpense]:
+    """The `limit` biggest debits that match the filters, biggest first."""
+    rows = transactions_repository.list_top_transactions(
+        session, dataclasses.replace(filters, type="DEBIT"), limit
+    )
+    return [
+        TopExpense(
+            date=date.astimezone(datetime.UTC).date(),
+            description=description,
+            amount=amount,
+        )
+        for date, description, amount in rows
+    ]
+
+
+@translate_repository_errors
+def get_daily_expenses(
+    session: Session, filters: TransactionFilters
+) -> list[DailyTotal]:
+    """What was spent in each UTC day of the period, oldest day first.
+
+    Days without spending are in the list with 0, so the list always has every day of the period.
+    The filters need both `date_from` and `date_to` (`date_to` is exclusive).
+    """
+    if filters.date_from is None or filters.date_to is None:
+        raise ValueError("date_from and date_to are required")
+    rows = transactions_repository.sum_transactions_by_day(
+        session, dataclasses.replace(filters, type="DEBIT")
+    )
+    totals = dict(rows)
+    start, end = filters.date_from.date(), filters.date_to.date()
+    return [
+        DailyTotal(
+            day=start + datetime.timedelta(days=offset),
+            total=totals.get(
+                start + datetime.timedelta(days=offset), decimal.Decimal("0.00")
+            ),
+        )
+        for offset in range((end - start).days)
+    ]
+
+
+def get_average_daily_expenses(
+    session: Session, filters: TransactionFilters
+) -> decimal.Decimal:
+    """Total spent divided by the number of days of the period (days without spending count)."""
+    daily = get_daily_expenses(session, filters)
+    if not daily:
+        return decimal.Decimal("0.00")
+    total = sum((d.total for d in daily), decimal.Decimal("0"))
+    return round_to_cents(total / len(daily))
 
 
 @translate_repository_errors

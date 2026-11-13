@@ -119,6 +119,28 @@ class ReconciliationCountsResponse(BaseModel):
     not_reconciled: int
 
 
+class UpcomingEntriesQuery(BaseModel):
+    """Query string of GET /financial-entries/upcoming: the entries due from today until today + days."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    days: int = Field(default=7, ge=1, le=90)
+    user_id: uuid.UUID | None = None
+
+
+class UpcomingEntryItem(BaseModel):
+    description: str
+    amount: decimal.Decimal
+    type: str  # REVENUES | EXPENSES
+    due_date: datetime.date
+
+
+class UpcomingEntriesResponse(BaseModel):
+    date_from: datetime.date  # Today
+    date_to: datetime.date  # Today + days (inclusive)
+    items: list[UpcomingEntryItem]  # The nearest due date first
+
+
 class FinancialEntryCreate(BaseModel):
     """Body of POST /financial-entries. `user_id` defaults to the logged user.
 

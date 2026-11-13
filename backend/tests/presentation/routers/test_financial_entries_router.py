@@ -130,6 +130,15 @@ class PlanningEndpointsTestCase(unittest.TestCase):
             ("get_total_reconciled", Decimal("700.50")),
             ("count_reconciled_entries", 3),
             ("count_not_reconciled_entries", 2),
+            (
+                "list_upcoming_entries",
+                [
+                    make_entry(description="Rent", amount=Decimal("1500.00"), type="EXPENSES",
+                               due_date=datetime.date(2026, 11, 15)),
+                    make_entry(description="Salary", amount=Decimal("5000.00"), type="REVENUES",
+                               due_date=datetime.date(2026, 11, 18)),
+                ],
+            ),
         ):
             patcher = patch(f"{MODULE}.{name}", return_value=value)
             self.mocks[name] = patcher.start()
@@ -298,4 +307,84 @@ class PlanningEndpointsSharedRulesTests(PlanningEndpointsTestCase):
                 response = self.client.get(path, params={"type": "EXPENSES"})
 
                 self.assertEqual(response.status_code, 401)
+
+
+class UpcomingEntriesEndpointTests(PlanningEndpointsTestCase):
+    def test_lists_the_description_the_amount_the_type_and_the_due_date(self):
+        response = self.client.get("/financial-entries/upcoming", params={"days": 5})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json(),
+            {
+                "date_from": "2026-11-13",
+                "date_to": "2026-11-18",
+                "items": [
+                    {
+                        "description": "Rent",
+                        "amount": "1500.00",
+                        "type": "EXPENSES",
+                        "due_date": "2026-11-15",
+                    },
+                    {
+                        "description": "Salary",
+                        "amount": "5000.00",
+                        "type": "REVENUES",
+                        "due_date": "2026-11-18",
+                    },
+                ],
+            },
+        )
+
+    def test_the_window_goes_from_today_until_today_plus_the_days(self):
+        self.client.get("/financial-entries/upcoming", params={"days": 5})
+
+        filters = self.filters_sent_to("list_upcoming_entries")
+        self.assertEqual(filters.due_date_from, datetime.date(2026, 11, 13))
+        self.assertEqual(filters.due_date_to, datetime.date(2026, 11, 18))
+
+    def test_the_days_are_7_by_default(self):
+        response = self.client.get("/financial-entries/upcoming")
+
+        self.assertEqual(response.json()["date_to"], "2026-11-20")
+
+    def test_days_out_of_range_are_rejected(self):
+        for days in (0, 91, -3):
+            with self.subTest(days=days):
+                response = self.client.get("/financial-entries/upcoming", params={"days": days})
+
+                self.assertEqual(response.status_code, 422)
+
+    def test_the_type_is_not_a_filter_so_revenues_and_expenses_come_together(self):
+        self.client.get("/financial-entries/upcoming")
+
+        self.assertIsNone(self.filters_sent_to("list_upcoming_entries").type)
+
+    def test_the_household_comes_from_the_logged_user(self):
+        self.client.get("/financial-entries/upcoming")
+
+        self.assertEqual(self.filters_sent_to("list_upcoming_entries").household_id, HOUSEHOLD_ID)
+
+    def test_the_user_filter_is_optional_and_is_passed_on(self):
+        self.client.get("/financial-entries/upcoming")
+        self.assertIsNone(self.filters_sent_to("list_upcoming_entries").user_id)
+
+        self.client.get("/financial-entries/upcoming", params={"user_id": str(PARTNER_ID)})
+        self.assertEqual(self.filters_sent_to("list_upcoming_entries").user_id, PARTNER_ID)
+
+    def test_a_household_sent_in_the_request_is_rejected(self):
+        response = self.client.get(
+            "/financial-entries/upcoming", params={"household_id": str(uuid.uuid4())}
+        )
+
+        self.assertEqual(response.status_code, 422)
+        self.mocks["list_upcoming_entries"].assert_not_called()
+
+    def test_is_not_taken_as_an_entry_id(self):
+        self.assertEqual(self.client.get("/financial-entries/upcoming").status_code, 200)
+
+    def test_without_a_token_it_is_unauthorized(self):
+        app.dependency_overrides.pop(get_current_user)
+
+        self.assertEqual(self.client.get("/financial-entries/upcoming").status_code, 401)
 
