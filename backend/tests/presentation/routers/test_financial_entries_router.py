@@ -134,7 +134,7 @@ class PlanningEndpointsTestCase(unittest.TestCase):
                 "list_upcoming_entries",
                 [
                     make_entry(description="Rent", amount=Decimal("1500.00"), type="EXPENSES",
-                               due_date=datetime.date(2026, 11, 15)),
+                               category="Moradia", due_date=datetime.date(2026, 11, 15)),
                     make_entry(description="Salary", amount=Decimal("5000.00"), type="REVENUES",
                                due_date=datetime.date(2026, 11, 18)),
                 ],
@@ -324,17 +324,25 @@ class UpcomingEntriesEndpointTests(PlanningEndpointsTestCase):
                         "description": "Rent",
                         "amount": "1500.00",
                         "type": "EXPENSES",
+                        "category": "Moradia",
                         "due_date": "2026-11-15",
                     },
                     {
                         "description": "Salary",
                         "amount": "5000.00",
                         "type": "REVENUES",
+                        "category": None,
                         "due_date": "2026-11-18",
                     },
                 ],
             },
         )
+
+    def test_an_entry_without_category_has_a_null_category(self):
+        response = self.client.get("/financial-entries/upcoming")
+
+        categories = [item["category"] for item in response.json()["items"]]
+        self.assertEqual(categories, ["Moradia", None])
 
     def test_the_window_goes_from_today_until_today_plus_the_days(self):
         self.client.get("/financial-entries/upcoming", params={"days": 5})
