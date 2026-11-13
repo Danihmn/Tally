@@ -220,6 +220,318 @@ abstract class AppLocalizations {
   /// **'Algo deu errado. Tente novamente.'**
   String get failureUnknown;
 
+  /// No description provided for @loginTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Entre na sua conta'**
+  String get loginTitle;
+
+  /// No description provided for @loginSubtitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Veja o dinheiro da casa em um só lugar, sem planilha.'**
+  String get loginSubtitle;
+
+  /// No description provided for @loginEmail.
+  ///
+  /// In pt, this message translates to:
+  /// **'E-mail'**
+  String get loginEmail;
+
+  /// No description provided for @loginPassword.
+  ///
+  /// In pt, this message translates to:
+  /// **'Senha'**
+  String get loginPassword;
+
+  /// No description provided for @loginShowPassword.
+  ///
+  /// In pt, this message translates to:
+  /// **'Mostrar senha'**
+  String get loginShowPassword;
+
+  /// No description provided for @loginHidePassword.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ocultar senha'**
+  String get loginHidePassword;
+
+  /// No description provided for @loginSubmit.
+  ///
+  /// In pt, this message translates to:
+  /// **'Entrar'**
+  String get loginSubmit;
+
+  /// No description provided for @loginSubmitting.
+  ///
+  /// In pt, this message translates to:
+  /// **'Entrando…'**
+  String get loginSubmitting;
+
+  /// No description provided for @loginSessionExpired.
+  ///
+  /// In pt, this message translates to:
+  /// **'Sua sessão expirou, entre novamente.'**
+  String get loginSessionExpired;
+
+  /// No description provided for @loginWrongCredentials.
+  ///
+  /// In pt, this message translates to:
+  /// **'E-mail ou senha incorretos. Confira e tente de novo.'**
+  String get loginWrongCredentials;
+
+  /// No description provided for @loginMissingFields.
+  ///
+  /// In pt, this message translates to:
+  /// **'Digite o e-mail e a senha para entrar.'**
+  String get loginMissingFields;
+
+  /// No description provided for @loginAdminNote.
+  ///
+  /// In pt, this message translates to:
+  /// **'As contas são criadas por um administrador da casa, dentro do app.'**
+  String get loginAdminNote;
+
+  /// No description provided for @homeGreeting.
+  ///
+  /// In pt, this message translates to:
+  /// **'Olá, {name}'**
+  String homeGreeting(String name);
+
+  /// No description provided for @homeRefresh.
+  ///
+  /// In pt, this message translates to:
+  /// **'Atualizar dados'**
+  String get homeRefresh;
+
+  /// No description provided for @homeProfileMenu.
+  ///
+  /// In pt, this message translates to:
+  /// **'Abrir perfil e configurações'**
+  String get homeProfileMenu;
+
+  /// No description provided for @homeLogout.
+  ///
+  /// In pt, this message translates to:
+  /// **'Sair'**
+  String get homeLogout;
+
+  /// No description provided for @scopeLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Quem aparece'**
+  String get scopeLabel;
+
+  /// No description provided for @scopeMe.
+  ///
+  /// In pt, this message translates to:
+  /// **'Eu'**
+  String get scopeMe;
+
+  /// No description provided for @scopeHouse.
+  ///
+  /// In pt, this message translates to:
+  /// **'Casa'**
+  String get scopeHouse;
+
+  /// No description provided for @monthPrevious.
+  ///
+  /// In pt, this message translates to:
+  /// **'Mês anterior'**
+  String get monthPrevious;
+
+  /// No description provided for @monthNext.
+  ///
+  /// In pt, this message translates to:
+  /// **'Próximo mês'**
+  String get monthNext;
+
+  /// No description provided for @homeAskTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Perguntar ao Tally'**
+  String get homeAskTitle;
+
+  /// No description provided for @homeAskSubtitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Quanto cada pessoa da casa gastou?'**
+  String get homeAskSubtitle;
+
+  /// No description provided for @homeSpentIn.
+  ///
+  /// In pt, this message translates to:
+  /// **'Gasto em {month}'**
+  String homeSpentIn(String month);
+
+  /// No description provided for @homeAverageUntil.
+  ///
+  /// In pt, this message translates to:
+  /// **'Média de {average} por dia · até {date}'**
+  String homeAverageUntil(String average, String date);
+
+  /// No description provided for @homeAverage.
+  ///
+  /// In pt, this message translates to:
+  /// **'Média de {average} por dia'**
+  String homeAverage(String average);
+
+  /// No description provided for @homeNoSpendYet.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nenhum gasto neste mês ainda'**
+  String get homeNoSpendYet;
+
+  /// No description provided for @homeReceived.
+  ///
+  /// In pt, this message translates to:
+  /// **'Recebido'**
+  String get homeReceived;
+
+  /// No description provided for @homeBalance.
+  ///
+  /// In pt, this message translates to:
+  /// **'Saldo do mês'**
+  String get homeBalance;
+
+  /// No description provided for @planningTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Planejado × real'**
+  String get planningTitle;
+
+  /// No description provided for @planningPlanned.
+  ///
+  /// In pt, this message translates to:
+  /// **'Despesas planejadas'**
+  String get planningPlanned;
+
+  /// No description provided for @planningReal.
+  ///
+  /// In pt, this message translates to:
+  /// **'Já conciliado'**
+  String get planningReal;
+
+  /// No description provided for @planningBarLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Despesas conciliadas'**
+  String get planningBarLabel;
+
+  /// No description provided for @planningCount.
+  ///
+  /// In pt, this message translates to:
+  /// **'{reconciled} de {total} lançamentos conciliados'**
+  String planningCount(int reconciled, int total);
+
+  /// No description provided for @attentionTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Precisa de atenção'**
+  String get attentionTitle;
+
+  /// No description provided for @attentionUnreconciled.
+  ///
+  /// In pt, this message translates to:
+  /// **'{count, plural, =1{1 lançamento sem conciliar} other{{count} lançamentos sem conciliar}}'**
+  String attentionUnreconciled(int count);
+
+  /// No description provided for @attentionUnreconciledHint.
+  ///
+  /// In pt, this message translates to:
+  /// **'Confira se já aparecem no extrato do banco.'**
+  String get attentionUnreconciledHint;
+
+  /// No description provided for @membersTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Gastos por pessoa'**
+  String get membersTitle;
+
+  /// No description provided for @membersCount.
+  ///
+  /// In pt, this message translates to:
+  /// **'{count, plural, =1{1 pessoa} other{{count} pessoas}}'**
+  String membersCount(int count);
+
+  /// No description provided for @membersYou.
+  ///
+  /// In pt, this message translates to:
+  /// **'{name} (você)'**
+  String membersYou(String name);
+
+  /// No description provided for @dailyTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Gasto por dia'**
+  String get dailyTitle;
+
+  /// No description provided for @dailyAverage.
+  ///
+  /// In pt, this message translates to:
+  /// **'Média {average}'**
+  String dailyAverage(String average);
+
+  /// No description provided for @dailyChartLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Gastos diários do mês'**
+  String get dailyChartLabel;
+
+  /// No description provided for @topExpensesTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Onde mais gastamos'**
+  String get topExpensesTitle;
+
+  /// No description provided for @topExpensesNoDescription.
+  ///
+  /// In pt, this message translates to:
+  /// **'Sem descrição'**
+  String get topExpensesNoDescription;
+
+  /// No description provided for @upcomingTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Próximos lançamentos'**
+  String get upcomingTitle;
+
+  /// No description provided for @upcomingSeeAll.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ver todos'**
+  String get upcomingSeeAll;
+
+  /// No description provided for @upcomingEmpty.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nenhum lançamento a vencer nos próximos dias.'**
+  String get upcomingEmpty;
+
+  /// No description provided for @upcomingToday.
+  ///
+  /// In pt, this message translates to:
+  /// **'Vence hoje'**
+  String get upcomingToday;
+
+  /// No description provided for @upcomingInDays.
+  ///
+  /// In pt, this message translates to:
+  /// **'{days, plural, =1{em 1 dia} other{em {days} dias}}'**
+  String upcomingInDays(int days);
+
+  /// No description provided for @noSpendTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ainda não há gastos neste mês'**
+  String get noSpendTitle;
+
+  /// No description provided for @noSpendMessage.
+  ///
+  /// In pt, this message translates to:
+  /// **'Quando o mês começar, as transações importadas aparecem aqui. Os lançamentos planejados já estão logo abaixo.'**
+  String get noSpendMessage;
+
   /// No description provided for @configErrorTitle.
   ///
   /// In pt, this message translates to:

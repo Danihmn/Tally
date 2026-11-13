@@ -34,6 +34,14 @@ Interceptor order: `AuthInterceptor` (adds `Bearer`, on 401 clears the token and
 API error shape: `{"detail": "<English text>"}`, except request validation (422) where `detail` is a **list** of `{loc, msg, type}`. `ErrorInterceptor` reads only the field names.
 401 on `/auth/login` = wrong credentials; 401 anywhere else = expired session. There is no refresh token.
 
+## Session and login
+
+`SessionController` (`core/session`) says whether somebody is logged in. A token in secure storage means logged in; `main.dart` calls `restore()` before the router is built. When the API answers 401 outside of login, `AuthInterceptor` clears the token and tells `SessionExpiredNotifier`, and the controller turns to logged out and remembers that the session expired (the login screen shows a notice).
+
+The router (`createAppRouter`) gets `redirect: sessionRedirect(session)` and `refreshListenable: session`: without a session every route goes to `/login`, and with one `/login` goes to `/home`. The login screen and the home are passed in by the caller (they need a ViewModel from the DI container), so tests can use plain widgets.
+
+Login: `LoginView` creates its own `LoginViewModel` (fresh state on each visit). On success the repository has already saved the token, and the ViewModel calls `session.onLoggedIn()`.
+
 ## State and lists
 
 `PaginatedViewModel<T>` (`core/pagination`) gives `load / refresh / loadMore` with `limit/offset`. Late answers of an older request (for example an old search text) are ignored. `AsyncStateView` renders every `UiState` the same way (skeleton, empty, error + retry).
@@ -47,6 +55,14 @@ Maps to the `user_id` query parameter: Eu = my id, member = their id, Casa = omi
 Every backend endpoint the app calls is declared in `lib/core/network/api_endpoints.dart` (`ApiEndpoints`), with its method, its path and the feature that uses it. Data sources take the path from there, never a string typed in place.
 
 This list is also the mark used to clean the backend: a route of `backend/presentation/routers` that is not in `ApiEndpoints.all` is a candidate for removal. Add the endpoint in the same change that creates it. The list is **not complete yet** (see the comment in the file), so do not delete routes from it alone.
+
+## Home (first real screen)
+
+One ViewModel for the screen, but **one `UiState` for each section**: every card loads, fails and retries alone (`AsyncStateView` with its own skeleton), and all of them load at the same time. The profile (me and the people of the house) loads first; the others need it for the "who appears" choice.
+
+Period rule: the app always sends `date_from` and `date_to`, never the API default (on day 1 of a month the default would be the previous month, and the label would lie). `MonthPeriod` decides the days: a past month is whole, the current month goes from day 1 until yesterday, and on day 1 of the current month no transaction endpoint is called. Planning endpoints are by month and get the whole month.
+
+Numbers are never calculated in the ViewModel with `double`. Money stays `Decimal`; a `double` only sizes a bar (`ratio`, `shareOf`).
 
 ## Dependency injection
 

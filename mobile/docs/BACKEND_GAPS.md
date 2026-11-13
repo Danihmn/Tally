@@ -17,6 +17,11 @@ behind a repository interface.
 | 8 | `GET /bank-accounts` and `GET /users` return plain lists (no `total`) | "Has more" is guessed from a full page | `PaginatedViewModel` handles it |
 | 9 | Chat is stateless (`POST /tally/chat {message}`); no conversation id or history | "Nova conversa", history list | The thread lives in memory. History will be owned by the API |
 | 10 | Validation 422 returns `detail` as a list, other errors as a string | Client must accept both | Done in `ErrorInterceptor` |
+| 11 | `GET /users` lists the users of every household (no filter) | The Home needs only the people of its house | The app filters by `household_id` |
+| 12 | Home "Precisa de atenção": no endpoint for a bank authorization about to expire (gap 1) or for overdue entries | Only "N lançamentos sem conciliar" is shown (from `reconciliation-counts`) | The other two items are left out |
+| 13 | No household name | The Home caption cannot show it | It shows "Tally" |
+| 14 | "Onde mais gastamos" in the prototype groups by merchant ("N compras") | `top-expenses` lists single transactions | The card lists the biggest transactions |
+| 15 | No spending by category | The "Gastos por categoria" chart | Left out of the Home for now |
 
 Not in the original app brief but present in the API: `POST /recurrences/provision`
 (creates the month's PLANNED entries from recurrences) and `GET /users/{id}`.

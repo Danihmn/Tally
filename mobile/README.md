@@ -3,7 +3,7 @@
 Flutter client of the Tally API (personal finance assistant for a household).
 UI language: pt-BR. Currency: BRL. Dates: dd/MM/yyyy.
 
-Status: **Phase 1 (foundation)** done. See `docs/ARCHITECTURE.md` for the rules
+Status: **Phase 1 (foundation)** done, plus the login and the Home with real data. See `docs/ARCHITECTURE.md` for the rules
 and `docs/BACKEND_GAPS.md` for what the API does not have yet.
 
 ## Run

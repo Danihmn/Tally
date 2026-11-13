@@ -24,10 +24,18 @@ class ApiEndpoint {
 /// [all] too.
 ///
 /// NOT COMPLETE YET: the endpoints created before this registry and used by
-/// the app (login, `/users`, `/bank-accounts`, the transaction and entry lists,
-/// `/tally/chat`, ...) are not marked yet. Until they are, do not use this
-/// list alone to delete routes from the backend.
+/// the app (`/bank-accounts`, the transaction and entry lists, `/tally/chat`,
+/// ...) are not marked yet. Until they are, do not use this list alone to
+/// delete routes from the backend.
 abstract final class ApiEndpoints {
+  // Login and household
+
+  static const login = ApiEndpoint('POST', '/auth/login', usedBy: 'Login');
+
+  static const me = ApiEndpoint('GET', '/users/me', usedBy: 'Home');
+
+  static const users = ApiEndpoint('GET', '/users', usedBy: 'Home');
+
   // Movement analysis (transactions)
 
   static const totalExpenses = ApiEndpoint(
@@ -98,6 +106,9 @@ abstract final class ApiEndpoints {
 
   /// Every endpoint above. Add new ones here too.
   static const all = <ApiEndpoint>[
+    login,
+    me,
+    users,
     totalExpenses,
     totalRevenues,
     balance,

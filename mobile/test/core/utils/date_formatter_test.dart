@@ -11,6 +11,11 @@ void main() {
       expect(DateFormatter.dayMonth(DateTime(2026, 11, 12)), '12/11');
     });
 
+    test('formats_the_month_name_alone_in_lower_case', () {
+      expect(DateFormatter.monthName(DateTime(2026, 11, 3)), 'novembro');
+      expect(DateFormatter.monthName(DateTime(2027, 3, 3)), 'março');
+    });
+
     test('formats_month_name_in_portuguese', () {
       expect(
         DateFormatter.monthYear(DateTime(2026, 11, 1)),
