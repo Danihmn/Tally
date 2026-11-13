@@ -161,10 +161,13 @@ class _LoginViewState extends State<LoginView> {
                       ),
                     ),
                     const SizedBox(height: AppSpacing.lg),
-                    FilledButton(
-                      onPressed: busy ? null : _submit,
-                      child: Text(
-                        busy ? l10n.loginSubmitting : l10n.loginSubmit,
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton(
+                        onPressed: busy ? null : _submit,
+                        child: Text(
+                          busy ? l10n.loginSubmitting : l10n.loginSubmit,
+                        ),
                       ),
                     ),
                     const SizedBox(height: AppSpacing.md),

@@ -59,8 +59,11 @@ class MembersCard extends StatelessWidget {
             ClipRRect(
               borderRadius: BorderRadius.circular(7),
               child: SizedBox(
+                key: const Key('membersSplitBar'),
                 height: 14,
                 child: Row(
+                  // Without this the empty colored boxes shrink to no height.
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     for (final item in withSpending)
                       Expanded(

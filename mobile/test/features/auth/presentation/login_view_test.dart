@@ -53,6 +53,15 @@ void main() {
       expect(find.text('Entrar'), findsOneWidget);
     });
 
+    testWidgets('the_enter_button_is_as_wide_as_the_fields', (tester) async {
+      await pumpLogin(tester);
+
+      final button = tester.getSize(find.byType(FilledButton)).width;
+      final fieldWidth = tester.getSize(field('E-mail')).width;
+
+      expect(button, fieldWidth);
+    });
+
     testWidgets('sends_what_was_typed_when_tapping_enter', (tester) async {
       await pumpLogin(tester);
 
