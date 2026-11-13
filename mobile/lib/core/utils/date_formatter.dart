@@ -18,6 +18,10 @@ abstract final class DateFormatter {
   static String monthYear(DateTime value) =>
       DateFormat("MMMM 'de' yyyy", 'pt_BR').format(value);
 
+  /// `novembro`.
+  static String monthName(DateTime value) =>
+      DateFormat('MMMM', 'pt_BR').format(value);
+
   /// Reads `dd/MM/yyyy`. Returns `null` for anything else, including dates
   /// that do not exist, such as `31/02/2026`.
   static DateTime? parse(String input) {

@@ -9,6 +9,7 @@ import 'package:mobile/core/storage/preferences_storage.dart';
 import 'package:mobile/core/storage/secure_storage.dart';
 import 'package:mobile/core/storage/session_token_store.dart';
 import 'package:mobile/features/auth/auth_dependencies.dart';
+import 'package:mobile/features/home/home_dependencies.dart';
 import 'package:mobile/features/household/household_dependencies.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -33,6 +34,7 @@ Future<void> configureDependencies(AppConfig config) async {
 void registerFeatureDependencies(GetIt container) {
   registerAuthDependencies(container);
   registerHouseholdDependencies(container);
+  registerHomeDependencies(container);
 }
 
 /// Registration kept apart from [configureDependencies] so tests can pass

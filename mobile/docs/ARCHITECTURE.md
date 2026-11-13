@@ -56,6 +56,14 @@ Every backend endpoint the app calls is declared in `lib/core/network/api_endpoi
 
 This list is also the mark used to clean the backend: a route of `backend/presentation/routers` that is not in `ApiEndpoints.all` is a candidate for removal. Add the endpoint in the same change that creates it. The list is **not complete yet** (see the comment in the file), so do not delete routes from it alone.
 
+## Home (first real screen)
+
+One ViewModel for the screen, but **one `UiState` for each section**: every card loads, fails and retries alone (`AsyncStateView` with its own skeleton), and all of them load at the same time. The profile (me and the people of the house) loads first; the others need it for the "who appears" choice.
+
+Period rule: the app always sends `date_from` and `date_to`, never the API default (on day 1 of a month the default would be the previous month, and the label would lie). `MonthPeriod` decides the days: a past month is whole, the current month goes from day 1 until yesterday, and on day 1 of the current month no transaction endpoint is called. Planning endpoints are by month and get the whole month.
+
+Numbers are never calculated in the ViewModel with `double`. Money stays `Decimal`; a `double` only sizes a bar (`ratio`, `shareOf`).
+
 ## Dependency injection
 
 `get_it` in `app/di/injection.dart`. Services are lazy singletons, ViewModels are factories (one per screen). Tests build a fresh container with fakes (`registerCoreDependencies`).

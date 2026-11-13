@@ -10,6 +10,7 @@ import 'package:mobile/core/config/app_config.dart';
 import 'package:mobile/core/session/session_controller.dart';
 import 'package:mobile/features/auth/presentation/viewmodels/login_view_model.dart';
 import 'package:mobile/features/auth/presentation/views/login_view.dart';
+import 'package:mobile/features/home/presentation/viewmodels/home_view_model.dart';
 import 'package:mobile/features/home/presentation/views/home_view.dart';
 
 /// Entry point. It only starts things up: config, dependencies, root widget.
@@ -34,7 +35,7 @@ Future<void> main() async {
   runApp(
     TallyApp(
       router: createAppRouter(
-        home: const HomeView(),
+        home: HomeView(createViewModel: () => getIt<HomeViewModel>()),
         login: LoginView(
           createViewModel: () => getIt<LoginViewModel>(),
           session: session,

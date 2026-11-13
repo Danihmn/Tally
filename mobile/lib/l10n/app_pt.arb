@@ -33,6 +33,122 @@
   "loginWrongCredentials": "E-mail ou senha incorretos. Confira e tente de novo.",
   "loginMissingFields": "Digite o e-mail e a senha para entrar.",
   "loginAdminNote": "As contas são criadas por um administrador da casa, dentro do app.",
+  "homeGreeting": "Olá, {name}",
+  "@homeGreeting": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "homeRefresh": "Atualizar dados",
+  "homeProfileMenu": "Abrir perfil e configurações",
+  "homeLogout": "Sair",
+  "scopeLabel": "Quem aparece",
+  "scopeMe": "Eu",
+  "scopeHouse": "Casa",
+  "monthPrevious": "Mês anterior",
+  "monthNext": "Próximo mês",
+  "homeAskTitle": "Perguntar ao Tally",
+  "homeAskSubtitle": "Quanto cada pessoa da casa gastou?",
+  "homeSpentIn": "Gasto em {month}",
+  "@homeSpentIn": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "homeAverageUntil": "Média de {average} por dia · até {date}",
+  "@homeAverageUntil": {
+    "placeholders": {
+      "average": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "homeAverage": "Média de {average} por dia",
+  "@homeAverage": {
+    "placeholders": {
+      "average": {
+        "type": "String"
+      }
+    }
+  },
+  "homeNoSpendYet": "Nenhum gasto neste mês ainda",
+  "homeReceived": "Recebido",
+  "homeBalance": "Saldo do mês",
+  "planningTitle": "Planejado × real",
+  "planningPlanned": "Despesas planejadas",
+  "planningReal": "Já conciliado",
+  "planningBarLabel": "Despesas conciliadas",
+  "planningCount": "{reconciled} de {total} lançamentos conciliados",
+  "@planningCount": {
+    "placeholders": {
+      "reconciled": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "attentionTitle": "Precisa de atenção",
+  "attentionUnreconciled": "{count, plural, =1{1 lançamento sem conciliar} other{{count} lançamentos sem conciliar}}",
+  "@attentionUnreconciled": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "attentionUnreconciledHint": "Confira se já aparecem no extrato do banco.",
+  "membersTitle": "Gastos por pessoa",
+  "membersCount": "{count, plural, =1{1 pessoa} other{{count} pessoas}}",
+  "@membersCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "membersYou": "{name} (você)",
+  "@membersYou": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "dailyTitle": "Gasto por dia",
+  "dailyAverage": "Média {average}",
+  "@dailyAverage": {
+    "placeholders": {
+      "average": {
+        "type": "String"
+      }
+    }
+  },
+  "dailyChartLabel": "Gastos diários do mês",
+  "topExpensesTitle": "Onde mais gastamos",
+  "topExpensesNoDescription": "Sem descrição",
+  "upcomingTitle": "Próximos lançamentos",
+  "upcomingSeeAll": "Ver todos",
+  "upcomingEmpty": "Nenhum lançamento a vencer nos próximos dias.",
+  "upcomingToday": "Vence hoje",
+  "upcomingInDays": "{days, plural, =1{em 1 dia} other{em {days} dias}}",
+  "@upcomingInDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "noSpendTitle": "Ainda não há gastos neste mês",
+  "noSpendMessage": "Quando o mês começar, as transações importadas aparecem aqui. Os lançamentos planejados já estão logo abaixo.",
   "configErrorTitle": "Configuração ausente",
   "configErrorMessage": "O app não foi iniciado com uma URL de API válida. Rode com --dart-define=API_BASE_URL=<url>."
 }
