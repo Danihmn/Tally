@@ -157,7 +157,9 @@ def summarize_transactions(
 
 
 @translate_repository_errors
-def get_total_expenses(session: Session, filters: TransactionFilters) -> decimal.Decimal:
+def get_total_expenses(
+    session: Session, filters: TransactionFilters
+) -> decimal.Decimal:
     """Sum of the debits (money out) that match the filters. Absolute value."""
     return transactions_repository.sum_transactions_amount(
         session, dataclasses.replace(filters, type="DEBIT")
@@ -165,7 +167,9 @@ def get_total_expenses(session: Session, filters: TransactionFilters) -> decimal
 
 
 @translate_repository_errors
-def get_total_revenues(session: Session, filters: TransactionFilters) -> decimal.Decimal:
+def get_total_revenues(
+    session: Session, filters: TransactionFilters
+) -> decimal.Decimal:
     """Sum of the credits (money in) that match the filters. Absolute value."""
     return transactions_repository.sum_transactions_amount(
         session, dataclasses.replace(filters, type="CREDIT")
@@ -229,7 +233,7 @@ def get_average_daily_expenses(
     daily = get_daily_expenses(session, filters)
     if not daily:
         return decimal.Decimal("0.00")
-    total = sum((d.total for d in daily), decimal.Decimal("0"))
+    total = sum((d.total for d in daily), decimal.Decimal(0))
     return round_to_cents(total / len(daily))
 
 

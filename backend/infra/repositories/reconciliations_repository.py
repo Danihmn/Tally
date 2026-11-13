@@ -26,9 +26,7 @@ def get_reconciliation_by_id(
 
 
 @translate_db_errors("reconciliations")
-def create_reconciliation(
-    session: Session, values: dict[str, Any]
-) -> Reconciliations:
+def create_reconciliation(session: Session, values: dict[str, Any]) -> Reconciliations:
     """`values` uses Reconciliations column names.
 
     An active reconciliation of the same entry and transaction raises DuplicateRecordError.

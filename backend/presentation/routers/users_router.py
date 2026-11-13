@@ -28,7 +28,9 @@ def create_user_endpoint(
     body: UserCreate,
     session: Annotated[Session, Depends(get_db)],
 ) -> User:
-    get_household_by_id(session, body.household_id)  # NotFoundError (404) if it does not exist
+    get_household_by_id(
+        session, body.household_id
+    )  # NotFoundError (404) if it does not exist
     user = User(
         household_id=body.household_id,
         first_name=body.first_name,

@@ -115,7 +115,8 @@ def search_bank_accounts(
     if account_type is not None:
         stmt = stmt.where(BankAccounts.type == account_type)
     stmt = (
-        stmt.order_by(BankAccounts.created_at, BankAccounts.id)
+        stmt
+        .order_by(BankAccounts.created_at, BankAccounts.id)
         .limit(limit)
         .offset(offset)
     )

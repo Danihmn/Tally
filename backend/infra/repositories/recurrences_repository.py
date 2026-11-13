@@ -49,7 +49,8 @@ def search_recurrences(
 ) -> list[Recurrences]:
     stmt = _apply_filters(select(Recurrences), filters)
     stmt = (
-        stmt.order_by(Recurrences.created_at.desc(), Recurrences.id)
+        stmt
+        .order_by(Recurrences.created_at.desc(), Recurrences.id)
         .limit(limit)
         .offset(offset)
     )

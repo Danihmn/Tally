@@ -96,7 +96,9 @@ class DailyExpenseItem(BaseModel):
 class DailyExpensesResponse(BaseModel):
     date_from: datetime.date
     date_to: datetime.date
-    items: list[DailyExpenseItem]  # Every day of the period, oldest first. 0 when nothing was spent
+    items: list[
+        DailyExpenseItem
+    ]  # Every day of the period, oldest first. 0 when nothing was spent
 
 
 class AverageResponse(BaseModel):
@@ -106,7 +108,9 @@ class AverageResponse(BaseModel):
 
 
 class TotalResponse(BaseModel):
-    date_from: datetime.date  # The period that was used (the default one when none was sent)
+    date_from: (
+        datetime.date
+    )  # The period that was used (the default one when none was sent)
     date_to: datetime.date
     total: decimal.Decimal
 

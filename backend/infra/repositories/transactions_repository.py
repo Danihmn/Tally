@@ -3,7 +3,17 @@ import decimal
 import uuid
 from typing import Any
 
-from sqlalchemy import Date, Text, Uuid, cast, func, literal, literal_column, select, update
+from sqlalchemy import (
+    Date,
+    Text,
+    Uuid,
+    cast,
+    func,
+    literal,
+    literal_column,
+    select,
+    update,
+)
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
@@ -252,7 +262,9 @@ def list_top_transactions(
         .order_by(amount.desc(), Transactions.date.desc(), Transactions.id)
         .limit(limit)
     )
-    return [(date, description, value) for date, description, value in session.execute(stmt)]
+    return [
+        (date, description, value) for date, description, value in session.execute(stmt)
+    ]
 
 
 @translate_db_errors("transactions")
@@ -264,7 +276,9 @@ def sum_transactions_by_day(
     The day is cut in UTC on purpose: it does not depend on the time zone of the connection.
     'UTC' is written in the SQL (not a bind parameter), so GROUP BY matches the selected column.
     """
-    day = cast(func.timezone(literal_column("'UTC'"), Transactions.date), Date).label("day")
+    day = cast(func.timezone(literal_column("'UTC'"), Transactions.date), Date).label(
+        "day"
+    )
     stmt = (
         apply_filters(
             join_owner(select(day, func.sum(func.abs(Transactions.amount)))), filters

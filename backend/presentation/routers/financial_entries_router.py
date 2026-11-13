@@ -145,7 +145,9 @@ def upcoming_entries_endpoint(
     )
     items = []
     for entry in list_upcoming_entries(session, filters):
-        assert entry.due_date is not None  # The due date filter leaves out the entries without one
+        assert (
+            entry.due_date is not None
+        )  # The due date filter leaves out the entries without one
         items.append(
             UpcomingEntryItem(
                 description=entry.description,
@@ -176,9 +178,12 @@ def create_financial_entry_endpoint(
     current_user: Annotated[User, Depends(get_current_user)],
 ) -> FinancialEntryResponse:
     assert current_user.id is not None
-    if body.user_id is not None and body.user_id != current_user.id:
+    if body.user_id is not None and body.user_id != current_user.id:  # noqa: SIM102
         # An entry can only be assigned to someone of the same household
-        if get_user_by_id(session, body.user_id).household_id != current_user.household_id:
+        if (
+            get_user_by_id(session, body.user_id).household_id
+            != current_user.household_id
+        ):
             raise NotFoundError("User not found")
     entry = FinancialEntry(
         household_id=current_user.household_id,
