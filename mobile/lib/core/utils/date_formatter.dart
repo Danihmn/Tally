@@ -22,6 +22,12 @@ abstract final class DateFormatter {
   static String monthName(DateTime value) =>
       DateFormat('MMMM', 'pt_BR').format(value);
 
+  /// `Seg`, `Ter`, ... Needs the same locale data as [monthName].
+  static String weekdayShort(DateTime value) {
+    final text = DateFormat('E', 'pt_BR').format(value).replaceAll('.', '');
+    return '${text[0].toUpperCase()}${text.substring(1)}';
+  }
+
   /// Reads `dd/MM/yyyy`. Returns `null` for anything else, including dates
   /// that do not exist, such as `31/02/2026`.
   static DateTime? parse(String input) {

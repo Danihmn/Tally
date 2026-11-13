@@ -276,6 +276,218 @@ class AppLocalizationsPt extends AppLocalizations {
       'Quando o mês começar, as transações importadas aparecem aqui. Os lançamentos planejados já estão logo abaixo.';
 
   @override
+  String get transactionsSearchHint => 'Buscar na descrição';
+
+  @override
+  String get transactionsSearchLabel => 'Buscar nas transações';
+
+  @override
+  String get transactionsClearSearch => 'Limpar busca';
+
+  @override
+  String get transactionsFilterButton => 'Abrir filtros';
+
+  @override
+  String transactionsRemoveFilter(String label) {
+    return 'Remover filtro $label';
+  }
+
+  @override
+  String transactionsShowing(int shown, int total) {
+    return 'Mostrando $shown de $total';
+  }
+
+  @override
+  String get transactionsRefresh => 'Atualizar';
+
+  @override
+  String get transactionsLoadingMore => 'Carregando mais transações…';
+
+  @override
+  String get transactionsEnd => 'Fim da lista';
+
+  @override
+  String get transactionsEmptyTitle => 'Nenhuma transação encontrada';
+
+  @override
+  String get transactionsEmptyFiltered =>
+      'Tente outro termo de busca ou remova alguns filtros.';
+
+  @override
+  String get transactionsEmptyPlain =>
+      'Quando houver transações, elas aparecem aqui.';
+
+  @override
+  String get transactionsClearAll => 'Limpar busca e filtros';
+
+  @override
+  String transactionsNoBankTitle(String who) {
+    return '$who ainda não conectou um banco';
+  }
+
+  @override
+  String get transactionsNoBankMessage =>
+      'Sem conexão, não há transações para mostrar. Conecte uma conta pelo Meu Pluggy para importar os dados automaticamente.';
+
+  @override
+  String get transactionsSeeAccounts => 'Ver contas e conexões';
+
+  @override
+  String get transactionsTheHouse => 'A casa';
+
+  @override
+  String get transactionsNoDescription => 'Sem descrição';
+
+  @override
+  String get dayToday => 'Hoje';
+
+  @override
+  String get dayYesterday => 'Ontem';
+
+  @override
+  String get transactionPending => 'Pendente';
+
+  @override
+  String get transactionPosted => 'Efetivada';
+
+  @override
+  String get filtersTitle => 'Filtrar transações';
+
+  @override
+  String get filterPerson => 'Pessoa';
+
+  @override
+  String get filterAccount => 'Conta ou cartão';
+
+  @override
+  String get filterAllAccounts => 'Todas';
+
+  @override
+  String get filterPeriod => 'Período';
+
+  @override
+  String get filterFrom => 'De';
+
+  @override
+  String get filterTo => 'Até';
+
+  @override
+  String get filterDateHint => 'dd/mm/aaaa';
+
+  @override
+  String get filterDateInvalid => 'Use o formato dd/mm/aaaa.';
+
+  @override
+  String get filterDatesOutOfOrder => 'A data inicial deve vir antes da final.';
+
+  @override
+  String get filterType => 'Tipo';
+
+  @override
+  String get filterAll => 'Todos';
+
+  @override
+  String get filterDebit => 'Débito';
+
+  @override
+  String get filterCredit => 'Crédito';
+
+  @override
+  String get filterStatus => 'Status';
+
+  @override
+  String get filterAmount => 'Valor';
+
+  @override
+  String get filterMin => 'Mínimo';
+
+  @override
+  String get filterMax => 'Máximo';
+
+  @override
+  String get filterAmountHint => '0,00';
+
+  @override
+  String get filterAmountInvalid => 'Informe um valor válido.';
+
+  @override
+  String get filterAmountsOutOfOrder => 'O mínimo deve ser menor que o máximo.';
+
+  @override
+  String get filterApply => 'Aplicar filtros';
+
+  @override
+  String get filterReset => 'Limpar';
+
+  @override
+  String get chipDebits => 'Débitos';
+
+  @override
+  String get chipCredits => 'Créditos';
+
+  @override
+  String get chipPending => 'Pendentes';
+
+  @override
+  String get chipPosted => 'Efetivadas';
+
+  @override
+  String chipMin(String amount) {
+    return 'Mín. $amount';
+  }
+
+  @override
+  String chipMax(String amount) {
+    return 'Máx. $amount';
+  }
+
+  @override
+  String chipFrom(String date) {
+    return 'De $date';
+  }
+
+  @override
+  String chipTo(String date) {
+    return 'Até $date';
+  }
+
+  @override
+  String get detailTitle => 'Transação';
+
+  @override
+  String get detailDate => 'Data';
+
+  @override
+  String get detailDescription => 'Descrição';
+
+  @override
+  String get detailCategory => 'Categoria';
+
+  @override
+  String get detailMerchant => 'Estabelecimento';
+
+  @override
+  String get detailAccount => 'Conta';
+
+  @override
+  String get detailHolder => 'Titular';
+
+  @override
+  String get detailType => 'Tipo';
+
+  @override
+  String get detailStatus => 'Status';
+
+  @override
+  String get detailBalanceAfter => 'Saldo após';
+
+  @override
+  String get detailMissing => 'Não foi possível abrir esta transação.';
+
+  @override
+  String get detailBack => 'Voltar para a lista';
+
+  @override
   String get configErrorTitle => 'Configuração ausente';
 
   @override

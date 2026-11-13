@@ -11,6 +11,12 @@ void main() {
       expect(DateFormatter.dayMonth(DateTime(2026, 11, 12)), '12/11');
     });
 
+    test('formats_the_short_weekday_with_a_capital_and_no_dot', () {
+      expect(DateFormatter.weekdayShort(DateTime(2026, 11, 13)), 'Sex');
+      expect(DateFormatter.weekdayShort(DateTime(2026, 11, 11)), 'Qua');
+      expect(DateFormatter.weekdayShort(DateTime(2026, 11, 8)), 'Dom');
+    });
+
     test('formats_the_month_name_alone_in_lower_case', () {
       expect(DateFormatter.monthName(DateTime(2026, 11, 3)), 'novembro');
       expect(DateFormatter.monthName(DateTime(2027, 3, 3)), 'março');

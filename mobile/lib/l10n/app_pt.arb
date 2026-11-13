@@ -149,6 +149,123 @@
   },
   "noSpendTitle": "Ainda não há gastos neste mês",
   "noSpendMessage": "Quando o mês começar, as transações importadas aparecem aqui. Os lançamentos planejados já estão logo abaixo.",
+  "transactionsSearchHint": "Buscar na descrição",
+  "transactionsSearchLabel": "Buscar nas transações",
+  "transactionsClearSearch": "Limpar busca",
+  "transactionsFilterButton": "Abrir filtros",
+  "transactionsRemoveFilter": "Remover filtro {label}",
+  "@transactionsRemoveFilter": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "transactionsShowing": "Mostrando {shown} de {total}",
+  "@transactionsShowing": {
+    "placeholders": {
+      "shown": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "transactionsRefresh": "Atualizar",
+  "transactionsLoadingMore": "Carregando mais transações…",
+  "transactionsEnd": "Fim da lista",
+  "transactionsEmptyTitle": "Nenhuma transação encontrada",
+  "transactionsEmptyFiltered": "Tente outro termo de busca ou remova alguns filtros.",
+  "transactionsEmptyPlain": "Quando houver transações, elas aparecem aqui.",
+  "transactionsClearAll": "Limpar busca e filtros",
+  "transactionsNoBankTitle": "{who} ainda não conectou um banco",
+  "@transactionsNoBankTitle": {
+    "placeholders": {
+      "who": {
+        "type": "String"
+      }
+    }
+  },
+  "transactionsNoBankMessage": "Sem conexão, não há transações para mostrar. Conecte uma conta pelo Meu Pluggy para importar os dados automaticamente.",
+  "transactionsSeeAccounts": "Ver contas e conexões",
+  "transactionsTheHouse": "A casa",
+  "transactionsNoDescription": "Sem descrição",
+  "dayToday": "Hoje",
+  "dayYesterday": "Ontem",
+  "transactionPending": "Pendente",
+  "transactionPosted": "Efetivada",
+  "filtersTitle": "Filtrar transações",
+  "filterPerson": "Pessoa",
+  "filterAccount": "Conta ou cartão",
+  "filterAllAccounts": "Todas",
+  "filterPeriod": "Período",
+  "filterFrom": "De",
+  "filterTo": "Até",
+  "filterDateHint": "dd/mm/aaaa",
+  "filterDateInvalid": "Use o formato dd/mm/aaaa.",
+  "filterDatesOutOfOrder": "A data inicial deve vir antes da final.",
+  "filterType": "Tipo",
+  "filterAll": "Todos",
+  "filterDebit": "Débito",
+  "filterCredit": "Crédito",
+  "filterStatus": "Status",
+  "filterAmount": "Valor",
+  "filterMin": "Mínimo",
+  "filterMax": "Máximo",
+  "filterAmountHint": "0,00",
+  "filterAmountInvalid": "Informe um valor válido.",
+  "filterAmountsOutOfOrder": "O mínimo deve ser menor que o máximo.",
+  "filterApply": "Aplicar filtros",
+  "filterReset": "Limpar",
+  "chipDebits": "Débitos",
+  "chipCredits": "Créditos",
+  "chipPending": "Pendentes",
+  "chipPosted": "Efetivadas",
+  "chipMin": "Mín. {amount}",
+  "@chipMin": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "chipMax": "Máx. {amount}",
+  "@chipMax": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "chipFrom": "De {date}",
+  "@chipFrom": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "chipTo": "Até {date}",
+  "@chipTo": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "detailTitle": "Transação",
+  "detailDate": "Data",
+  "detailDescription": "Descrição",
+  "detailCategory": "Categoria",
+  "detailMerchant": "Estabelecimento",
+  "detailAccount": "Conta",
+  "detailHolder": "Titular",
+  "detailType": "Tipo",
+  "detailStatus": "Status",
+  "detailBalanceAfter": "Saldo após",
+  "detailMissing": "Não foi possível abrir esta transação.",
+  "detailBack": "Voltar para a lista",
   "configErrorTitle": "Configuração ausente",
   "configErrorMessage": "O app não foi iniciado com uma URL de API válida. Rode com --dart-define=API_BASE_URL=<url>."
 }
