@@ -98,7 +98,7 @@ def create_recurrence_endpoint(
     current_user: Annotated[User, Depends(get_current_user)],
 ) -> RecurrenceResponse:
     assert current_user.id is not None
-    if body.user_id is not None and body.user_id != current_user.id:
+    if body.user_id is not None and body.user_id != current_user.id:  # noqa: SIM102
         # A recurrence can only be assigned to someone of the same household
         if (
             get_user_by_id(session, body.user_id).household_id

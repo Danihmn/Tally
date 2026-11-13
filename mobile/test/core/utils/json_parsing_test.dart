@@ -1,0 +1,35 @@
+import 'package:decimal/decimal.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/utils/json_parsing.dart';
+
+void main() {
+  group('parseDecimal', () {
+    test('reads_strings_and_numbers_exactly', () {
+      expect(parseDecimal('412.37'), Decimal.parse('412.37'));
+      expect(parseDecimal(412.37), Decimal.parse('412.37'));
+      expect(parseDecimal(8900), Decimal.parse('8900'));
+    });
+
+    test('throws_a_format_exception_for_other_types', () {
+      expect(() => parseDecimal(null), throwsFormatException);
+      expect(() => parseDecimal(true), throwsFormatException);
+      expect(() => parseDecimal('abc'), throwsFormatException);
+    });
+
+    test('null_variant_returns_null', () {
+      expect(parseDecimalOrNull(null), isNull);
+      expect(parseDecimalOrNull('1.5'), Decimal.parse('1.5'));
+    });
+  });
+
+  group('parseDateTime', () {
+    test('reads_iso_strings_and_keeps_utc', () {
+      expect(
+        parseDateTime('2026-11-12T10:30:00Z'),
+        DateTime.utc(2026, 11, 12, 10, 30),
+      );
+      expect(parseDateTimeOrNull(null), isNull);
+      expect(() => parseDateTime(5), throwsFormatException);
+    });
+  });
+}

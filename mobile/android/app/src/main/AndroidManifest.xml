@@ -1,6 +1,13 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Security: no backups (the token must not leave the device) and HTTPS only.
+         The debug manifest re-allows cleartext so the emulator can reach http://10.0.2.2. -->
     <application
-        android:label="mobile"
+        android:label="Tally"
+        android:allowBackup="false"
+        android:fullBackupContent="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:usesCleartextTraffic="false"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

@@ -1,0 +1,57 @@
+import 'package:dio/dio.dart';
+import 'package:get_it/get_it.dart';
+import 'package:mobile/app/theme/theme_controller.dart';
+import 'package:mobile/core/config/app_config.dart';
+import 'package:mobile/core/network/dio_factory.dart';
+import 'package:mobile/core/network/session_expired_notifier.dart';
+import 'package:mobile/core/storage/preferences_storage.dart';
+import 'package:mobile/core/storage/secure_storage.dart';
+import 'package:mobile/core/storage/session_token_store.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+/// The app's service locator. Services are lazy singletons. ViewModels are
+/// registered as factories by each feature (one new instance per screen).
+final GetIt getIt = GetIt.instance;
+
+/// Registers the core services. Call once at startup, before `runApp`.
+Future<void> configureDependencies(AppConfig config) async {
+  final preferences = await SharedPreferences.getInstance();
+  registerCoreDependencies(
+    getIt,
+    config: config,
+    secureStorage: PlatformSecureStorage(),
+    preferences: SharedPreferencesStorage(preferences),
+  );
+}
+
+/// Registration kept apart from [configureDependencies] so tests can pass
+/// fakes (no plugins, no network) into a fresh container.
+void registerCoreDependencies(
+  GetIt container, {
+  required AppConfig config,
+  required SecureStorage secureStorage,
+  required PreferencesStorage preferences,
+}) {
+  container
+    ..registerSingleton<AppConfig>(config)
+    ..registerSingleton<SecureStorage>(secureStorage)
+    ..registerSingleton<PreferencesStorage>(preferences)
+    ..registerLazySingleton<SessionTokenStore>(
+      () => SessionTokenStore(container<SecureStorage>()),
+    )
+    ..registerLazySingleton<SessionExpiredNotifier>(
+      SessionExpiredNotifier.new,
+      dispose: (notifier) => notifier.dispose(),
+    )
+    ..registerLazySingleton<Dio>(
+      () => DioFactory.create(
+        config: container<AppConfig>(),
+        tokenStore: container<SessionTokenStore>(),
+        notifier: container<SessionExpiredNotifier>(),
+      ),
+    )
+    ..registerLazySingleton<ThemeController>(
+      () => ThemeController(container<PreferencesStorage>()),
+      dispose: (controller) => controller.dispose(),
+    );
+}
