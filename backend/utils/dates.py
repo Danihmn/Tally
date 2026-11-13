@@ -1,6 +1,9 @@
 """Date helpers shared by every layer. Everything is in UTC, like the database columns."""
 
 import datetime
+from zoneinfo import ZoneInfo
+
+_LOCAL_TIMEZONE = ZoneInfo("America/Sao_Paulo")
 
 
 def utcnow() -> datetime.datetime:
@@ -22,3 +25,19 @@ def end_of_day_utc(day: datetime.date) -> datetime.datetime:
 
 def first_day_of_month(day: datetime.date) -> datetime.date:
     return day.replace(day=1)
+
+
+def today_local() -> datetime.date:
+    """Today where the couple lives. Near midnight it differs from `today_utc()`."""
+    return datetime.datetime.now(_LOCAL_TIMEZONE).date()
+
+
+def default_analysis_period(today: datetime.date) -> tuple[datetime.date, datetime.date]:
+    """Day 1 of the month until yesterday (both inclusive).
+
+    On day 1 yesterday is in the previous month, so the whole previous month is used.
+    """
+    if today.day > 1:
+        return first_day_of_month(today), today - datetime.timedelta(days=1)
+    last_day = today - datetime.timedelta(days=1)
+    return first_day_of_month(last_day), last_day

@@ -3,9 +3,11 @@ import unittest
 from unittest.mock import patch
 
 from utils.dates import (
+    default_analysis_period,
     end_of_day_utc,
     first_day_of_month,
     start_of_day_utc,
+    today_local,
     today_utc,
     utcnow,
 )
@@ -43,4 +45,51 @@ class TestFirstDayOfMonth(unittest.TestCase):
     def test_moves_the_day_to_one(self):
         self.assertEqual(
             first_day_of_month(datetime.date(2026, 2, 28)), datetime.date(2026, 2, 1)
+        )
+
+
+class TestTodayLocal(unittest.TestCase):
+    def test_uses_the_sao_paulo_day_when_utc_is_already_the_next_day(self):
+        # 01:00 UTC on the 14th is 22:00 on the 13th in Sao Paulo
+        real_datetime = datetime.datetime
+        now_utc = real_datetime(2026, 11, 14, 1, 0, tzinfo=datetime.UTC)
+
+        class FrozenDatetime(real_datetime):
+            @classmethod
+            def now(cls, tz=None):
+                return now_utc.astimezone(tz)
+
+        with patch("utils.dates.datetime.datetime", FrozenDatetime):
+            self.assertEqual(today_local(), datetime.date(2026, 11, 13))
+
+
+class TestDefaultAnalysisPeriod(unittest.TestCase):
+    def test_is_day_one_until_yesterday(self):
+        self.assertEqual(
+            default_analysis_period(datetime.date(2026, 11, 13)),
+            (datetime.date(2026, 11, 1), datetime.date(2026, 11, 12)),
+        )
+
+    def test_on_day_two_it_is_only_day_one(self):
+        self.assertEqual(
+            default_analysis_period(datetime.date(2026, 11, 2)),
+            (datetime.date(2026, 11, 1), datetime.date(2026, 11, 1)),
+        )
+
+    def test_on_day_one_it_is_the_whole_previous_month(self):
+        self.assertEqual(
+            default_analysis_period(datetime.date(2026, 11, 1)),
+            (datetime.date(2026, 10, 1), datetime.date(2026, 10, 31)),
+        )
+
+    def test_on_january_first_it_is_the_whole_december(self):
+        self.assertEqual(
+            default_analysis_period(datetime.date(2027, 1, 1)),
+            (datetime.date(2026, 12, 1), datetime.date(2026, 12, 31)),
+        )
+
+    def test_on_march_first_it_ends_on_the_last_day_of_february(self):
+        self.assertEqual(
+            default_analysis_period(datetime.date(2027, 3, 1)),
+            (datetime.date(2027, 2, 1), datetime.date(2027, 2, 28)),
         )
