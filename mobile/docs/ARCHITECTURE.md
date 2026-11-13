@@ -1,0 +1,70 @@
+# Architecture
+
+MVVM + Clean Architecture, feature-first. Dependencies point inward.
+
+```
+presentation  ──►  domain  ◄──  data
+(View, ViewModel)  (entities,    (DTO, mapper, data sources,
+                    repository    repository implementation)
+                    interfaces,
+                    use cases)
+```
+
+## Layers
+
+| Layer | Contains | May import |
+|---|---|---|
+| `domain` | entities (Equatable, immutable), repository **interfaces**, use cases | pure Dart + `core/result`, `core/error`. No Flutter, no Dio, no storage |
+| `data` | DTOs (`fromJson`), mappers, remote/fake data sources, repository implementations | domain, Dio, core |
+| `presentation` | ViewModels (`ChangeNotifier`), views, feature widgets | domain, Flutter, provider |
+
+Rules:
+- **View**: renders state and forwards actions. No API calls, no business `if`.
+- **ViewModel**: one per screen, never imports `BuildContext`/`Navigator`. Holds an immutable `UiState` (`UiInitial | UiLoading | UiSuccess | UiEmpty | UiError`). Calls **use cases**, never repositories.
+- **Use case**: one class, one `call`, returns `Result<T>`.
+- **Entities are not DTOs.** Map at the repository boundary. No business rule in `fromJson`.
+- Navigation is done by the View or by the router redirect, never by a ViewModel.
+- Errors: data sources use `apiCall(...)`, which returns `Result<T>` with a typed `Failure`. A `DioException` never leaves the data layer. Views show pt-BR text with `failureMessage(...)`; server text (English) is never shown.
+- Money is `Decimal` (never `double`). Formatting only through `MoneyFormatter`, dates through `DateFormatter`. Strings only in `lib/l10n/app_pt.arb`.
+
+## Network (`core/network`)
+
+Interceptor order: `AuthInterceptor` (adds `Bearer`, on 401 clears the token and fires `SessionExpiredNotifier` once) → `ErrorInterceptor` (Dio error → `Failure`) → `SafeLogInterceptor` (debug only).
+
+API error shape: `{"detail": "<English text>"}`, except request validation (422) where `detail` is a **list** of `{loc, msg, type}`. `ErrorInterceptor` reads only the field names.
+401 on `/auth/login` = wrong credentials; 401 anywhere else = expired session. There is no refresh token.
+
+## State and lists
+
+`PaginatedViewModel<T>` (`core/pagination`) gives `load / refresh / loadMore` with `limit/offset`. Late answers of an older request (for example an old search text) are ignored. `AsyncStateView` renders every `UiState` the same way (skeleton, empty, error + retry).
+
+## Scope (Eu / Casa / member)
+
+Maps to the `user_id` query parameter: Eu = my id, member = their id, Casa = omitted.
+
+## Dependency injection
+
+`get_it` in `app/di/injection.dart`. Services are lazy singletons, ViewModels are factories (one per screen). Tests build a fresh container with fakes (`registerCoreDependencies`).
+
+## How to add a feature (step by step)
+
+1. Read the endpoint in `backend/presentation/routers` and the schema in `backend/presentation/schemas`. Do not invent fields.
+2. `domain/entities`: immutable Equatable classes. `domain/repositories`: abstract interface returning `Result<T>`.
+3. `domain/usecases`: one class per action.
+4. `data/models`: DTOs with `fromJson` (use `parseDecimal`, `parseDateTime`). `data/mappers`: DTO ↔ entity.
+5. `data/datasources`: remote (Dio + `apiCall`). If the endpoint does not exist yet: a fake data source, marked `// TODO(backend)`, and a line in `docs/BACKEND_GAPS.md`.
+6. `data/repositories`: implement the interface.
+7. `presentation/viewmodels`: `ChangeNotifier` + `UiState` (or `PaginatedViewModel`). Register as a factory in DI.
+8. `presentation/views`: use `AsyncStateView`. Add strings to the ARB file and run `flutter gen-l10n`. Add the route in `app/router`.
+9. Tests mirroring the folders (mappers, use cases, ViewModel states, repository with mocked data source, one widget test). Run `flutter analyze` and `flutter test`.
+
+## Privacy screen (hide content in the app switcher)
+
+Off by default.
+- **Android**: in `MainActivity.kt` set `PRIVACY_SCREEN_ENABLED = true` (uses `FLAG_SECURE`: also blocks screenshots).
+- **iOS**: not implemented yet. To enable, in `AppDelegate` add a blur/colored view over the window in `applicationWillResignActive` and remove it in `applicationDidBecomeActive`.
+
+## Later phases (prepared, not enabled)
+
+- Biometric lock: `AppLockService` interface + `local_auth`, after phase 7.
+- Chat history lives in the backend (phase 7 builds only the UI).
