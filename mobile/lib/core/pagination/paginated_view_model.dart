@@ -1,25 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:mobile/core/error/failure.dart';
+import 'package:mobile/core/pagination/page_result.dart';
 import 'package:mobile/core/result/result.dart';
 import 'package:mobile/core/state/ui_state.dart';
 
-/// One page returned by a list endpoint (`limit`/`offset`).
-///
-/// [total] is `null` for endpoints that return a plain list (bank accounts,
-/// users). Then "has more" is guessed: a full page means maybe more.
-class PageResult<T> {
-  const PageResult({
-    required this.items,
-    required this.limit,
-    required this.offset,
-    this.total,
-  });
-
-  final List<T> items;
-  final int limit;
-  final int offset;
-  final int? total;
-}
+export 'package:mobile/core/pagination/page_result.dart';
 
 /// Infinite scroll for list ViewModels, written once.
 ///
@@ -44,6 +29,7 @@ mixin PaginatedViewModel<T> on ChangeNotifier {
   bool _hasMore = false;
   bool _loadingMore = false;
   Failure? _inlineFailure;
+  int? _total;
   int _generation = 0;
   bool _disposed = false;
 
@@ -52,6 +38,10 @@ mixin PaginatedViewModel<T> on ChangeNotifier {
   bool get hasMore => _hasMore;
 
   bool get isLoadingMore => _loadingMore;
+
+  /// How many items the API says match, from the last answer. `null` when the
+  /// endpoint does not tell (plain lists) or nothing was loaded.
+  int? get total => _total;
 
   /// Failure of a refresh or "load more" while data is already on screen.
   /// The view shows a retry footer. It is cleared by the next success.
@@ -64,6 +54,7 @@ mixin PaginatedViewModel<T> on ChangeNotifier {
     _hasMore = false;
     _loadingMore = false;
     _inlineFailure = null;
+    _total = null;
     _state = const UiLoading();
     _notify();
     final result = await fetchPage(offset: 0, limit: pageSize);
@@ -108,6 +99,7 @@ mixin PaginatedViewModel<T> on ChangeNotifier {
     switch (result) {
       case Success<PageResult<T>>(:final value):
         _items.addAll(value.items);
+        _total = value.total;
         _hasMore = _computeHasMore(value);
         _state = UiSuccess(List.unmodifiable(_items));
       case Err<PageResult<T>>(:final failure):
@@ -118,6 +110,7 @@ mixin PaginatedViewModel<T> on ChangeNotifier {
 
   void _applyFirstPage(PageResult<T> page) {
     _items.addAll(page.items);
+    _total = page.total;
     _hasMore = _computeHasMore(page);
     _state = _items.isEmpty
         ? const UiEmpty()

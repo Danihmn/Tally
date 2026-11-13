@@ -2,6 +2,7 @@ import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:flutter_localizations/flutter_localizations.dart'
     show GlobalWidgetsLocalizations;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:mobile/app/router/app_router.dart';
 import 'package:mobile/app/router/app_routes.dart';
@@ -16,6 +17,7 @@ void main() {
     final router = createAppRouter(
       home: const SizedBox(),
       login: const SizedBox(),
+      transactions: const SizedBox(),
       redirect: redirect == null
           ? null
           : (context, state) => redirect(context, state),
@@ -57,6 +59,23 @@ void main() {
         );
       }
       expect(AppRoutes.home, '/home');
+    });
+
+    testWidgets('the_detail_route_without_a_transaction_says_so', (
+      tester,
+    ) async {
+      await pumpRouter(tester);
+      await tester.pumpAndSettle();
+
+      GoRouter.of(tester.element(find.byType(NavigationBar)))
+          .go(AppRoutes.transactionDetail);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Não foi possível abrir esta transação.'),
+        findsOneWidget,
+      );
+      expect(find.byType(NavigationBar), findsNothing);
     });
 
     testWidgets('tapping_a_tab_shows_its_screen', (tester) async {

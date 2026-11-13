@@ -1,7 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:mobile/app/theme/app_spacing.dart';
-import 'package:mobile/features/home/presentation/viewmodels/home_view_model.dart';
-import 'package:mobile/features/home/presentation/widgets/member_palette.dart';
+import 'package:mobile/features/household/presentation/viewmodels/household_scope_controller.dart';
+import 'package:mobile/features/household/presentation/widgets/member_palette.dart';
 import 'package:mobile/l10n/app_localizations.dart';
 
 /// "Who appears": me, the other people, or the whole house. Up to three

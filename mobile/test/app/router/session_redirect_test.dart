@@ -40,6 +40,7 @@ void main() {
     final router = createAppRouter(
       home: const Text('HOME-PAGE'),
       login: const Text('LOGIN-PAGE'),
+      transactions: const Text('TRANSACTIONS-PAGE'),
       initialLocation: initialLocation,
       redirect: sessionRedirect(session),
       refreshListenable: session,

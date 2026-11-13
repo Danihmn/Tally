@@ -7,6 +7,7 @@ import 'package:mobile/core/state/ui_state.dart';
 import 'package:mobile/features/home/domain/entities/spending_summary.dart';
 import 'package:mobile/features/home/presentation/viewmodels/home_view_model.dart';
 import 'package:mobile/features/household/domain/entities/member.dart';
+import 'package:mobile/features/household/presentation/viewmodels/household_scope_controller.dart';
 
 import '../../../support/fake_home_repository.dart';
 import '../../../support/home_kit.dart';
@@ -27,7 +28,7 @@ void main() {
       await loaded();
       final vm = kit.viewModel;
 
-      expect(vm.profile, isA<UiSuccess<HomeProfile>>());
+      expect(vm.profile, isA<UiSuccess<HouseholdProfile>>());
       expect(vm.summary, isA<UiSuccess<Object?>>());
       expect(vm.planning, isA<UiSuccess<Object?>>());
       expect(vm.daily, isA<UiSuccess<Object?>>());
@@ -89,7 +90,7 @@ void main() {
 
       await kit.viewModel.load();
 
-      expect(kit.viewModel.profile, isA<UiError<HomeProfile>>());
+      expect(kit.viewModel.profile, isA<UiError<HouseholdProfile>>());
       expect(kit.home.calls, isEmpty);
     });
 
@@ -101,7 +102,7 @@ void main() {
 
       await kit.viewModel.load();
 
-      expect(kit.viewModel.profile, isA<UiSuccess<HomeProfile>>());
+      expect(kit.viewModel.profile, isA<UiSuccess<HouseholdProfile>>());
     });
 
     test('if_the_people_list_fails_the_home_still_works_for_me', () async {
@@ -110,21 +111,32 @@ void main() {
 
       await kit.viewModel.load();
 
-      final profile = (kit.viewModel.profile as UiSuccess<HomeProfile>).data;
+      final profile =
+          (kit.viewModel.profile as UiSuccess<HouseholdProfile>).data;
       expect(profile.members, [ana]);
       expect(kit.viewModel.summary, isA<UiSuccess<Object?>>());
     });
 
-    test('notifies_with_loading_first', () async {
-      kit = HomeKit();
-      final states = <UiState<HomeProfile>>[];
-      kit.viewModel.addListener(() => states.add(kit.viewModel.profile));
+    test(
+      'notifies_without_data_first_and_with_the_profile_at_the_end',
+      () async {
+        kit = HomeKit();
+        final states = <UiState<HouseholdProfile>>[];
+        kit.viewModel.addListener(() => states.add(kit.viewModel.profile));
 
-      await kit.viewModel.load();
+        await kit.viewModel.load();
 
-      expect(states.first, isA<UiLoading<HomeProfile>>());
-      expect(states.last, isA<UiSuccess<HomeProfile>>());
-    });
+        // The screen shows the skeleton for both "initial" and "loading".
+        expect(
+          states.first,
+          anyOf(
+            isA<UiInitial<HouseholdProfile>>(),
+            isA<UiLoading<HouseholdProfile>>(),
+          ),
+        );
+        expect(states.last, isA<UiSuccess<HouseholdProfile>>());
+      },
+    );
   });
 
   group('sections fail on their own', () {
@@ -238,6 +250,31 @@ void main() {
       await kit.viewModel.selectScope(ScopeOption.me(ana));
 
       expect(kit.home.calls, isEmpty);
+    });
+
+    test('a_change_made_on_another_screen_reloads_the_home', () async {
+      await loaded();
+      kit.home.calls.clear();
+
+      // Another screen (the transactions) chooses the house through the controller.
+      kit.scope.select(const ScopeOption.house());
+      await pumpEventQueue();
+
+      expect(
+        kit.home.calls.where((c) => c.startsWith('totalRevenues')).single,
+        'totalRevenues 2026-11-01..2026-11-12 user=null',
+      );
+      expect(kit.viewModel.scope?.kind, ScopeKind.house);
+    });
+
+    test('the_profile_loaded_by_another_screen_is_not_asked_again', () async {
+      kit = HomeKit();
+      await kit.scope.ensureLoaded();
+
+      await kit.viewModel.load();
+
+      expect(kit.household.meCalls, 1);
+      expect(kit.viewModel.summary, isA<UiSuccess<Object?>>());
     });
 
     test('three_people_make_five_options', () async {
@@ -384,7 +421,7 @@ void main() {
 
       await kit.viewModel.refresh();
 
-      expect(kit.viewModel.profile, isA<UiSuccess<HomeProfile>>());
+      expect(kit.viewModel.profile, isA<UiSuccess<HouseholdProfile>>());
     });
   });
 

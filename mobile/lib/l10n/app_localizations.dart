@@ -532,6 +532,396 @@ abstract class AppLocalizations {
   /// **'Quando o mês começar, as transações importadas aparecem aqui. Os lançamentos planejados já estão logo abaixo.'**
   String get noSpendMessage;
 
+  /// No description provided for @transactionsSearchHint.
+  ///
+  /// In pt, this message translates to:
+  /// **'Buscar na descrição'**
+  String get transactionsSearchHint;
+
+  /// No description provided for @transactionsSearchLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Buscar nas transações'**
+  String get transactionsSearchLabel;
+
+  /// No description provided for @transactionsClearSearch.
+  ///
+  /// In pt, this message translates to:
+  /// **'Limpar busca'**
+  String get transactionsClearSearch;
+
+  /// No description provided for @transactionsFilterButton.
+  ///
+  /// In pt, this message translates to:
+  /// **'Abrir filtros'**
+  String get transactionsFilterButton;
+
+  /// No description provided for @transactionsRemoveFilter.
+  ///
+  /// In pt, this message translates to:
+  /// **'Remover filtro {label}'**
+  String transactionsRemoveFilter(String label);
+
+  /// No description provided for @transactionsShowing.
+  ///
+  /// In pt, this message translates to:
+  /// **'Mostrando {shown} de {total}'**
+  String transactionsShowing(int shown, int total);
+
+  /// No description provided for @transactionsRefresh.
+  ///
+  /// In pt, this message translates to:
+  /// **'Atualizar'**
+  String get transactionsRefresh;
+
+  /// No description provided for @transactionsLoadingMore.
+  ///
+  /// In pt, this message translates to:
+  /// **'Carregando mais transações…'**
+  String get transactionsLoadingMore;
+
+  /// No description provided for @transactionsEnd.
+  ///
+  /// In pt, this message translates to:
+  /// **'Fim da lista'**
+  String get transactionsEnd;
+
+  /// No description provided for @transactionsEmptyTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nenhuma transação encontrada'**
+  String get transactionsEmptyTitle;
+
+  /// No description provided for @transactionsEmptyFiltered.
+  ///
+  /// In pt, this message translates to:
+  /// **'Tente outro termo de busca ou remova alguns filtros.'**
+  String get transactionsEmptyFiltered;
+
+  /// No description provided for @transactionsEmptyPlain.
+  ///
+  /// In pt, this message translates to:
+  /// **'Quando houver transações, elas aparecem aqui.'**
+  String get transactionsEmptyPlain;
+
+  /// No description provided for @transactionsClearAll.
+  ///
+  /// In pt, this message translates to:
+  /// **'Limpar busca e filtros'**
+  String get transactionsClearAll;
+
+  /// No description provided for @transactionsNoBankTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'{who} ainda não conectou um banco'**
+  String transactionsNoBankTitle(String who);
+
+  /// No description provided for @transactionsNoBankMessage.
+  ///
+  /// In pt, this message translates to:
+  /// **'Sem conexão, não há transações para mostrar. Conecte uma conta pelo Meu Pluggy para importar os dados automaticamente.'**
+  String get transactionsNoBankMessage;
+
+  /// No description provided for @transactionsSeeAccounts.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ver contas e conexões'**
+  String get transactionsSeeAccounts;
+
+  /// No description provided for @transactionsTheHouse.
+  ///
+  /// In pt, this message translates to:
+  /// **'A casa'**
+  String get transactionsTheHouse;
+
+  /// No description provided for @transactionsNoDescription.
+  ///
+  /// In pt, this message translates to:
+  /// **'Sem descrição'**
+  String get transactionsNoDescription;
+
+  /// No description provided for @dayToday.
+  ///
+  /// In pt, this message translates to:
+  /// **'Hoje'**
+  String get dayToday;
+
+  /// No description provided for @dayYesterday.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ontem'**
+  String get dayYesterday;
+
+  /// No description provided for @transactionPending.
+  ///
+  /// In pt, this message translates to:
+  /// **'Pendente'**
+  String get transactionPending;
+
+  /// No description provided for @transactionPosted.
+  ///
+  /// In pt, this message translates to:
+  /// **'Efetivada'**
+  String get transactionPosted;
+
+  /// No description provided for @filtersTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Filtrar transações'**
+  String get filtersTitle;
+
+  /// No description provided for @filterPerson.
+  ///
+  /// In pt, this message translates to:
+  /// **'Pessoa'**
+  String get filterPerson;
+
+  /// No description provided for @filterAccount.
+  ///
+  /// In pt, this message translates to:
+  /// **'Conta ou cartão'**
+  String get filterAccount;
+
+  /// No description provided for @filterAllAccounts.
+  ///
+  /// In pt, this message translates to:
+  /// **'Todas'**
+  String get filterAllAccounts;
+
+  /// No description provided for @filterPeriod.
+  ///
+  /// In pt, this message translates to:
+  /// **'Período'**
+  String get filterPeriod;
+
+  /// No description provided for @filterFrom.
+  ///
+  /// In pt, this message translates to:
+  /// **'De'**
+  String get filterFrom;
+
+  /// No description provided for @filterTo.
+  ///
+  /// In pt, this message translates to:
+  /// **'Até'**
+  String get filterTo;
+
+  /// No description provided for @filterDateHint.
+  ///
+  /// In pt, this message translates to:
+  /// **'dd/mm/aaaa'**
+  String get filterDateHint;
+
+  /// No description provided for @filterDateInvalid.
+  ///
+  /// In pt, this message translates to:
+  /// **'Use o formato dd/mm/aaaa.'**
+  String get filterDateInvalid;
+
+  /// No description provided for @filterDatesOutOfOrder.
+  ///
+  /// In pt, this message translates to:
+  /// **'A data inicial deve vir antes da final.'**
+  String get filterDatesOutOfOrder;
+
+  /// No description provided for @filterType.
+  ///
+  /// In pt, this message translates to:
+  /// **'Tipo'**
+  String get filterType;
+
+  /// No description provided for @filterAll.
+  ///
+  /// In pt, this message translates to:
+  /// **'Todos'**
+  String get filterAll;
+
+  /// No description provided for @filterDebit.
+  ///
+  /// In pt, this message translates to:
+  /// **'Débito'**
+  String get filterDebit;
+
+  /// No description provided for @filterCredit.
+  ///
+  /// In pt, this message translates to:
+  /// **'Crédito'**
+  String get filterCredit;
+
+  /// No description provided for @filterStatus.
+  ///
+  /// In pt, this message translates to:
+  /// **'Status'**
+  String get filterStatus;
+
+  /// No description provided for @filterAmount.
+  ///
+  /// In pt, this message translates to:
+  /// **'Valor'**
+  String get filterAmount;
+
+  /// No description provided for @filterMin.
+  ///
+  /// In pt, this message translates to:
+  /// **'Mínimo'**
+  String get filterMin;
+
+  /// No description provided for @filterMax.
+  ///
+  /// In pt, this message translates to:
+  /// **'Máximo'**
+  String get filterMax;
+
+  /// No description provided for @filterAmountHint.
+  ///
+  /// In pt, this message translates to:
+  /// **'0,00'**
+  String get filterAmountHint;
+
+  /// No description provided for @filterAmountInvalid.
+  ///
+  /// In pt, this message translates to:
+  /// **'Informe um valor válido.'**
+  String get filterAmountInvalid;
+
+  /// No description provided for @filterAmountsOutOfOrder.
+  ///
+  /// In pt, this message translates to:
+  /// **'O mínimo deve ser menor que o máximo.'**
+  String get filterAmountsOutOfOrder;
+
+  /// No description provided for @filterApply.
+  ///
+  /// In pt, this message translates to:
+  /// **'Aplicar filtros'**
+  String get filterApply;
+
+  /// No description provided for @filterReset.
+  ///
+  /// In pt, this message translates to:
+  /// **'Limpar'**
+  String get filterReset;
+
+  /// No description provided for @chipDebits.
+  ///
+  /// In pt, this message translates to:
+  /// **'Débitos'**
+  String get chipDebits;
+
+  /// No description provided for @chipCredits.
+  ///
+  /// In pt, this message translates to:
+  /// **'Créditos'**
+  String get chipCredits;
+
+  /// No description provided for @chipPending.
+  ///
+  /// In pt, this message translates to:
+  /// **'Pendentes'**
+  String get chipPending;
+
+  /// No description provided for @chipPosted.
+  ///
+  /// In pt, this message translates to:
+  /// **'Efetivadas'**
+  String get chipPosted;
+
+  /// No description provided for @chipMin.
+  ///
+  /// In pt, this message translates to:
+  /// **'Mín. {amount}'**
+  String chipMin(String amount);
+
+  /// No description provided for @chipMax.
+  ///
+  /// In pt, this message translates to:
+  /// **'Máx. {amount}'**
+  String chipMax(String amount);
+
+  /// No description provided for @chipFrom.
+  ///
+  /// In pt, this message translates to:
+  /// **'De {date}'**
+  String chipFrom(String date);
+
+  /// No description provided for @chipTo.
+  ///
+  /// In pt, this message translates to:
+  /// **'Até {date}'**
+  String chipTo(String date);
+
+  /// No description provided for @detailTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Transação'**
+  String get detailTitle;
+
+  /// No description provided for @detailDate.
+  ///
+  /// In pt, this message translates to:
+  /// **'Data'**
+  String get detailDate;
+
+  /// No description provided for @detailDescription.
+  ///
+  /// In pt, this message translates to:
+  /// **'Descrição'**
+  String get detailDescription;
+
+  /// No description provided for @detailCategory.
+  ///
+  /// In pt, this message translates to:
+  /// **'Categoria'**
+  String get detailCategory;
+
+  /// No description provided for @detailMerchant.
+  ///
+  /// In pt, this message translates to:
+  /// **'Estabelecimento'**
+  String get detailMerchant;
+
+  /// No description provided for @detailAccount.
+  ///
+  /// In pt, this message translates to:
+  /// **'Conta'**
+  String get detailAccount;
+
+  /// No description provided for @detailHolder.
+  ///
+  /// In pt, this message translates to:
+  /// **'Titular'**
+  String get detailHolder;
+
+  /// No description provided for @detailType.
+  ///
+  /// In pt, this message translates to:
+  /// **'Tipo'**
+  String get detailType;
+
+  /// No description provided for @detailStatus.
+  ///
+  /// In pt, this message translates to:
+  /// **'Status'**
+  String get detailStatus;
+
+  /// No description provided for @detailBalanceAfter.
+  ///
+  /// In pt, this message translates to:
+  /// **'Saldo após'**
+  String get detailBalanceAfter;
+
+  /// No description provided for @detailMissing.
+  ///
+  /// In pt, this message translates to:
+  /// **'Não foi possível abrir esta transação.'**
+  String get detailMissing;
+
+  /// No description provided for @detailBack.
+  ///
+  /// In pt, this message translates to:
+  /// **'Voltar para a lista'**
+  String get detailBack;
+
   /// No description provided for @configErrorTitle.
   ///
   /// In pt, this message translates to:

@@ -8,9 +8,11 @@ import 'package:mobile/core/session/session_controller.dart';
 import 'package:mobile/core/storage/preferences_storage.dart';
 import 'package:mobile/core/storage/secure_storage.dart';
 import 'package:mobile/core/storage/session_token_store.dart';
+import 'package:mobile/features/accounts/accounts_dependencies.dart';
 import 'package:mobile/features/auth/auth_dependencies.dart';
 import 'package:mobile/features/home/home_dependencies.dart';
 import 'package:mobile/features/household/household_dependencies.dart';
+import 'package:mobile/features/transactions/transactions_dependencies.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// The app's service locator. Services are lazy singletons. ViewModels are
@@ -35,6 +37,8 @@ void registerFeatureDependencies(GetIt container) {
   registerAuthDependencies(container);
   registerHouseholdDependencies(container);
   registerHomeDependencies(container);
+  registerAccountsDependencies(container);
+  registerTransactionsDependencies(container);
 }
 
 /// Registration kept apart from [configureDependencies] so tests can pass

@@ -12,6 +12,8 @@ import 'package:mobile/features/auth/presentation/viewmodels/login_view_model.da
 import 'package:mobile/features/auth/presentation/views/login_view.dart';
 import 'package:mobile/features/home/presentation/viewmodels/home_view_model.dart';
 import 'package:mobile/features/home/presentation/views/home_view.dart';
+import 'package:mobile/features/transactions/presentation/viewmodels/transactions_view_model.dart';
+import 'package:mobile/features/transactions/presentation/views/transactions_view.dart';
 
 /// Entry point. It only starts things up: config, dependencies, root widget.
 Future<void> main() async {
@@ -39,6 +41,9 @@ Future<void> main() async {
         login: LoginView(
           createViewModel: () => getIt<LoginViewModel>(),
           session: session,
+        ),
+        transactions: TransactionsView(
+          createViewModel: () => getIt<TransactionsViewModel>(),
         ),
         initialLocation: session.isLoggedIn ? AppRoutes.home : AppRoutes.login,
         redirect: sessionRedirect(session),

@@ -1,4 +1,3 @@
-import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 import 'package:mobile/core/error/failure.dart';
 import 'package:mobile/core/result/result.dart';
@@ -18,45 +17,7 @@ import 'package:mobile/features/home/domain/usecases/get_spending_by_member.dart
 import 'package:mobile/features/home/domain/usecases/get_spending_summary.dart';
 import 'package:mobile/features/home/domain/usecases/get_top_expenses.dart';
 import 'package:mobile/features/home/domain/usecases/get_upcoming_entries.dart';
-import 'package:mobile/features/household/domain/entities/member.dart';
-import 'package:mobile/features/household/domain/usecases/get_household_members.dart';
-import 'package:mobile/features/household/domain/usecases/get_me.dart';
-
-/// The logged person and the people of the house.
-class HomeProfile extends Equatable {
-  const HomeProfile({required this.me, required this.members});
-
-  final Member me;
-
-  /// Everybody of the house, [me] first.
-  final List<Member> members;
-
-  @override
-  List<Object?> get props => [me, members];
-}
-
-enum ScopeKind { me, member, house }
-
-/// One choice of "who appears": the logged person, another person, or the
-/// whole house.
-class ScopeOption extends Equatable {
-  const ScopeOption.me(Member this.member) : kind = ScopeKind.me;
-
-  const ScopeOption.person(Member this.member) : kind = ScopeKind.member;
-
-  const ScopeOption.house() : kind = ScopeKind.house, member = null;
-
-  final ScopeKind kind;
-
-  /// The person, or `null` for the whole house.
-  final Member? member;
-
-  /// What goes in the `user_id` query parameter. `null` means the whole house.
-  String? get userId => member?.id;
-
-  @override
-  List<Object?> get props => [kind, member];
-}
+import 'package:mobile/features/household/presentation/viewmodels/household_scope_controller.dart';
 
 /// The parts of the home that load and fail on their own.
 enum HomeSection { summary, planning, byMember, daily, topExpenses, upcoming }
@@ -68,8 +29,7 @@ enum HomeSection { summary, planning, byMember, daily, topExpenses, upcoming }
 /// fails shows its own error and the others keep working.
 class HomeViewModel extends ChangeNotifier {
   HomeViewModel({
-    required this._getMe,
-    required this._getMembers,
+    required this._scopeController,
     required this._getSummary,
     required this._getPlanning,
     required this._getByMember,
@@ -81,10 +41,10 @@ class HomeViewModel extends ChangeNotifier {
     this._now = DateTime.now,
   }) {
     _period = MonthPeriod.containing(today);
+    _scopeController.addListener(_onScopeChanged);
   }
 
-  final GetMe _getMe;
-  final GetHouseholdMembers _getMembers;
+  final HouseholdScopeController _scopeController;
   final GetSpendingSummary _getSummary;
   final GetPlanningProgress _getPlanning;
   final GetSpendingByMember _getByMember;
@@ -96,14 +56,18 @@ class HomeViewModel extends ChangeNotifier {
   final DateTime Function() _now;
 
   late MonthPeriod _period;
-  ScopeOption? _scope;
   bool _disposed = false;
+
+  /// The choice that the sections on screen were loaded for.
+  ScopeOption? _appliedScope;
+
+  /// The reload that the last change of the choice started.
+  Future<void>? _scopeReload;
 
   /// Grows on every new load. An answer that comes back for an older load (for
   /// example the previous month) is thrown away.
   int _generation = 0;
 
-  UiState<HomeProfile> _profile = const UiInitial();
   UiState<SpendingSummary> _summary = const UiInitial();
   UiState<PlanningProgress> _planning = const UiInitial();
   UiState<SpendingByMember> _byMember = const UiInitial();
@@ -111,7 +75,7 @@ class HomeViewModel extends ChangeNotifier {
   UiState<List<TopExpense>> _topExpenses = const UiInitial();
   UiState<List<UpcomingEntry>> _upcoming = const UiInitial();
 
-  UiState<HomeProfile> get profile => _profile;
+  UiState<HouseholdProfile> get profile => _scopeController.profile;
   UiState<SpendingSummary> get summary => _summary;
   UiState<PlanningProgress> get planning => _planning;
   UiState<SpendingByMember> get byMember => _byMember;
@@ -127,29 +91,13 @@ class HomeViewModel extends ChangeNotifier {
     return DateTime(now.year, now.month, now.day);
   }
 
-  HomeProfile? get _profileData => switch (_profile) {
-    UiSuccess<HomeProfile>(:final data) => data,
-    _ => null,
-  };
+  HouseholdProfile? get _profileData => _scopeController.profileData;
 
   /// The people the person can choose from: "me", the others, and the house.
-  List<ScopeOption> get scopeOptions {
-    final profile = _profileData;
-    if (profile == null) return const [];
-    return [
-      ScopeOption.me(profile.me),
-      for (final member in profile.members)
-        if (member.id != profile.me.id) ScopeOption.person(member),
-      const ScopeOption.house(),
-    ];
-  }
+  List<ScopeOption> get scopeOptions => _scopeController.scopeOptions;
 
   /// The choice in use. At first it is the logged person.
-  ScopeOption? get scope {
-    final profile = _profileData;
-    if (profile == null) return null;
-    return _scope ?? ScopeOption.me(profile.me);
-  }
+  ScopeOption? get scope => _scopeController.scope;
 
   bool get canGoPrevious => _period.canGoPrevious(today);
 
@@ -197,25 +145,16 @@ class HomeViewModel extends ChangeNotifier {
   /// First load. Also what "try again" does when the profile failed.
   Future<void> load() async {
     final generation = ++_generation;
-    _profile = const UiLoading();
     _setSectionsLoading();
     _notify();
 
-    final meResult = await _getMe();
+    await _scopeController.ensureLoaded();
     if (generation != _generation) return;
-    final me = meResult.valueOrNull;
-    if (me == null) {
-      _profile = UiError(meResult.failureOrNull!);
+    // If the profile failed, the screen shows its error (see `profile`).
+    if (_profileData == null) {
       _notify();
       return;
     }
-
-    final membersResult = await _getMembers(me);
-    if (generation != _generation) return;
-    // If the list of people fails, the home still works for the logged person.
-    final members = membersResult.valueOrNull ?? [me];
-    _profile = UiSuccess(HomeProfile(me: me, members: members));
-    _scope = ScopeOption.me(me);
     await _loadSections(showLoading: true);
   }
 
@@ -228,8 +167,10 @@ class HomeViewModel extends ChangeNotifier {
 
   Future<void> selectScope(ScopeOption option) async {
     if (_profileData == null || option == scope) return;
-    _scope = option;
-    await _loadSections(showLoading: true);
+    _scopeReload = null;
+    // The change reaches `_onScopeChanged`, which reloads the sections.
+    _scopeController.select(option);
+    await _scopeReload;
   }
 
   Future<void> goToPreviousMonth() async {
@@ -281,6 +222,7 @@ class HomeViewModel extends ChangeNotifier {
 
   Future<void> _loadSections({required bool showLoading}) {
     _generation++;
+    _appliedScope = scope;
     if (showLoading) _setSectionsLoading();
     _notify();
     return Future.wait([
@@ -379,6 +321,19 @@ class HomeViewModel extends ChangeNotifier {
     failure: UiError<T>.new,
   );
 
+  /// The profile or the choice of "who appears" changed (here or on another
+  /// screen). If the choice changed, this screen loads its numbers again.
+  void _onScopeChanged() {
+    final current = scope;
+    final changed =
+        _appliedScope != null && current != null && current != _appliedScope;
+    if (changed) {
+      _scopeReload = _loadSections(showLoading: true);
+    } else {
+      _notify();
+    }
+  }
+
   void _notify() {
     if (!_disposed) notifyListeners();
   }
@@ -386,6 +341,7 @@ class HomeViewModel extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    _scopeController.removeListener(_onScopeChanged);
     super.dispose();
   }
 }

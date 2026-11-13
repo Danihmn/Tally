@@ -22,6 +22,10 @@ behind a repository interface.
 | 13 | No household name | The Home caption cannot show it | It shows "Tally" |
 | 14 | "Onde mais gastamos" in the prototype groups by merchant ("N compras") | `top-expenses` lists single transactions | The card lists the biggest transactions |
 | 15 | No spending by category | The "Gastos por categoria" chart | Left out of the Home for now |
+| 16 | No last-sync date | "Atualizado há 2 min" of the Transações prototype | The screen has only "Atualizar" and pull to refresh |
+| 17 | Transaction category: `category` is English text and may be null; `category_id` is hierarchical (only groups 01, 05 and 19 are known) | Category badge and icon in the list and the detail | Text shown as it comes; the icon follows the known groups, else the direction. No category filter |
+| 18 | No reconciliation endpoints for a transaction (see gap 4) | The "Lançamento vinculado" block of the transaction detail | Left out of the detail screen |
+| 19 | `GET /transactions` and `GET /bank-accounts` did not filter by household | Anyone logged in could list other houses | Fixed in the backend: the household comes from the JWT |
 
 Not in the original app brief but present in the API: `POST /recurrences/provision`
 (creates the month's PLANNED entries from recurrences) and `GET /users/{id}`.

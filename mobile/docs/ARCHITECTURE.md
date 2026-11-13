@@ -50,6 +50,8 @@ Login: `LoginView` creates its own `LoginViewModel` (fresh state on each visit).
 
 Maps to the `user_id` query parameter: Eu = my id, member = their id, Casa = omitted.
 
+The choice is **shared between the tabs** by one `HouseholdScopeController` (a singleton in `features/household`). It loads the profile once and is cleared when the session ends. Home and Transações listen to it; because the tabs stay alive (`indexedStack`), a change reloads both.
+
 ## Endpoints the app uses
 
 Every backend endpoint the app calls is declared in `lib/core/network/api_endpoints.dart` (`ApiEndpoints`), with its method, its path and the feature that uses it. Data sources take the path from there, never a string typed in place.
@@ -63,6 +65,15 @@ One ViewModel for the screen, but **one `UiState` for each section**: every card
 Period rule: the app always sends `date_from` and `date_to`, never the API default (on day 1 of a month the default would be the previous month, and the label would lie). `MonthPeriod` decides the days: a past month is whole, the current month goes from day 1 until yesterday, and on day 1 of the current month no transaction endpoint is called. Planning endpoints are by month and get the whole month.
 
 Numbers are never calculated in the ViewModel with `double`. Money stays `Decimal`; a `double` only sizes a bar (`ratio`, `shareOf`).
+
+## Transações (list and detail)
+
+`TransactionsViewModel` uses `PaginatedViewModel` (pages of 30, "Mostrando X de Y" from `total`). It reloads when the person, the filters or the search text change (the text waits 300 ms). The accounts load beside the list: they give the account name of each row and say whether the chosen person has a bank at all (the "sem banco conectado" card).
+
+- The direction of a transaction comes from `type` (DEBIT / CREDIT), never from the sign of `amount` (a credit card purchase comes positive). The sum of a day is credits minus debits.
+- The day of a transaction is its **UTC** calendar day. "Hoje" and "Ontem" compare it with the local day.
+- The filter sheet has no category field on purpose (the API may not have categories). The category text of a transaction is shown as the bank sends it (maybe in English).
+- The detail screen (`/transactions/detail`) opens on the root navigator, over the tabs. It receives the transaction by `extra`, so it needs no request. Opened without it (for example after a restore), it says so and goes back to the list.
 
 ## Dependency injection
 

@@ -46,6 +46,28 @@ void main() {
       expect(vm.hasMore, isTrue);
     });
 
+    test('total_is_what_the_api_says_and_is_null_without_it', () async {
+      final withTotal = _Vm((o, l) async => _page([1, 2], o, total: 7));
+      await withTotal.load();
+      final plain = _Vm((o, l) async => _page([1, 2], o));
+      await plain.load();
+
+      expect(withTotal.total, 7);
+      expect(plain.total, isNull);
+    });
+
+    test('total_follows_the_last_page_and_is_cleared_by_a_new_load', () async {
+      final vm = _Vm((o, l) async => _page([1, 2], o, total: o == 0 ? 4 : 5));
+      await vm.load();
+      await vm.loadMore();
+      expect(vm.total, 5);
+
+      final loading = vm.load();
+      expect(vm.total, isNull);
+      await loading;
+      expect(vm.total, 4);
+    });
+
     test('load_with_no_items_ends_in_empty', () async {
       final vm = _Vm((o, l) async => _page([], o, total: 0));
       await vm.load();
