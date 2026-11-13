@@ -132,6 +132,7 @@ class UpcomingEntryItem(BaseModel):
     description: str
     amount: decimal.Decimal
     type: str  # REVENUES | EXPENSES
+    category: str | None  # The entry may have no category
     due_date: datetime.date
 
 

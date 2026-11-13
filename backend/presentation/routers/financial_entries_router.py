@@ -153,6 +153,7 @@ def upcoming_entries_endpoint(
                 description=entry.description,
                 amount=entry.amount,
                 type=entry.type,
+                category=entry.category,
                 due_date=entry.due_date,
             )
         )
