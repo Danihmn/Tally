@@ -72,9 +72,14 @@ def _to_response(item: TransactionWithOwner) -> TransactionResponse:
 def list_transactions_endpoint(
     query: Annotated[TransactionQuery, Query()],
     session: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
 ) -> Page[TransactionResponse]:
+    # The household always comes from the logged user, never from the request
     items, total = search_transactions(
-        session, query.to_filters(), limit=query.limit, offset=query.offset
+        session,
+        query.to_filters(current_user.household_id),
+        limit=query.limit,
+        offset=query.offset,
     )
     return Page[TransactionResponse](
         items=[_to_response(item) for item in items],

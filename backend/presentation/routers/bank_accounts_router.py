@@ -4,6 +4,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
+from domain.entities import User
 from domain.read_models import BankAccountWithOwner
 from infra.database.session import get_db
 from presentation.dependencies.auth import get_current_user
@@ -16,7 +17,8 @@ from services.bank_accounts_service import (
     search_bank_accounts,
 )
 
-# Both people of the household see every account (the app is private, for two people).
+# Both people of the household see every account of the household (the app is private, for two
+# people). Accounts of other households are never listed.
 router = APIRouter(
     prefix="/bank-accounts",
     tags=["bank-accounts"],
@@ -48,13 +50,17 @@ def _to_response(item: BankAccountWithOwner) -> BankAccountResponse:
 def list_bank_accounts_endpoint(
     query: Annotated[BankAccountQuery, Query()],
     session: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
 ) -> list[BankAccountResponse]:
+    # The household always comes from the logged user, never from the request. Accounts of
+    # removed connections are kept in the list: their transactions are still stored.
     items = search_bank_accounts(
         session,
         user_id=query.user_id,
         account_type=query.type,
         limit=query.limit,
         offset=query.offset,
+        household_id=current_user.household_id,
     )
     return [_to_response(item) for item in items]
 

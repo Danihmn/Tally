@@ -27,3 +27,5 @@ Not in the original app brief but present in the API: `POST /recurrences/provisi
 (creates the month's PLANNED entries from recurrences) and `GET /users/{id}`.
 
 **Known limit of the totals (gap 5):** they sum every DEBIT / CREDIT. A credit card bill payment is a DEBIT in the bank account and a CREDIT in the card, and transfers between own accounts are both, so expenses can be counted twice and revenues inflated. A filter will come later.
+
+`GET /transactions` and `GET /bank-accounts` only return data of the household of the logged user. The household comes from the JWT and is never a query parameter (a `household_id` in the query is a 422). The `/{id}` routes of both are not scoped yet and the app does not use them.

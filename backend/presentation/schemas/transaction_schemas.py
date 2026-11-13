@@ -34,8 +34,10 @@ class TransactionQuery(BaseModel):
         check_amount_range(self.min_amount, self.max_amount)
         return self
 
-    def to_filters(self) -> TransactionFilters:
+    def to_filters(self, household_id: uuid.UUID) -> TransactionFilters:
+        """The filters of the query, always inside the household of the logged user."""
         return TransactionFilters(
+            household_id=household_id,
             user_id=self.user_id,
             bank_account_id=self.bank_account_id,
             date_from=start_of_day_utc(self.date_from) if self.date_from else None,
