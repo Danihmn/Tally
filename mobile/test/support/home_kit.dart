@@ -13,6 +13,7 @@ import 'package:mobile/features/home/presentation/viewmodels/home_view_model.dar
 import 'package:mobile/features/household/domain/entities/member.dart';
 import 'package:mobile/features/household/domain/usecases/get_household_members.dart';
 import 'package:mobile/features/household/domain/usecases/get_me.dart';
+import 'package:mobile/features/household/presentation/viewmodels/household_scope_controller.dart';
 
 import 'fake_auth_repository.dart';
 import 'fake_home_repository.dart';
@@ -37,9 +38,13 @@ class HomeKit {
       tokenStore: SessionTokenStore(FakeSecureStorage()),
       expiredNotifier: notifier,
     );
-    viewModel = HomeViewModel(
+    scope = HouseholdScopeController(
       getMe: GetMe(household),
       getMembers: GetHouseholdMembers(household),
+      session: session,
+    );
+    viewModel = HomeViewModel(
+      scopeController: scope,
       getSummary: GetSpendingSummary(home),
       getPlanning: GetPlanningProgress(home),
       getByMember: GetSpendingByMember(home),
@@ -57,10 +62,12 @@ class HomeKit {
   final FakeAuthRepository auth;
   final SessionExpiredNotifier notifier;
   late final SessionController session;
+  late final HouseholdScopeController scope;
   late final HomeViewModel viewModel;
 
   Future<void> dispose() async {
     viewModel.dispose();
+    scope.dispose();
     session.dispose();
     await notifier.dispose();
   }

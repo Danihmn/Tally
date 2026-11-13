@@ -12,8 +12,7 @@ import 'package:mobile/features/home/domain/usecases/get_spending_summary.dart';
 import 'package:mobile/features/home/domain/usecases/get_top_expenses.dart';
 import 'package:mobile/features/home/domain/usecases/get_upcoming_entries.dart';
 import 'package:mobile/features/home/presentation/viewmodels/home_view_model.dart';
-import 'package:mobile/features/household/domain/usecases/get_household_members.dart';
-import 'package:mobile/features/household/domain/usecases/get_me.dart';
+import 'package:mobile/features/household/presentation/viewmodels/household_scope_controller.dart';
 
 /// Registers the home feature. The ViewModel is a factory: one per screen.
 void registerHomeDependencies(GetIt container) {
@@ -44,8 +43,7 @@ void registerHomeDependencies(GetIt container) {
     )
     ..registerFactory<HomeViewModel>(
       () => HomeViewModel(
-        getMe: container<GetMe>(),
-        getMembers: container<GetHouseholdMembers>(),
+        scopeController: container<HouseholdScopeController>(),
         getSummary: container<GetSpendingSummary>(),
         getPlanning: container<GetPlanningProgress>(),
         getByMember: container<GetSpendingByMember>(),

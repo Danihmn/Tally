@@ -2,8 +2,8 @@ import 'package:material_ui/material_ui.dart';
 import 'package:mobile/app/theme/app_spacing.dart';
 import 'package:mobile/core/utils/money_formatter.dart';
 import 'package:mobile/features/home/domain/entities/spending_by_member.dart';
-import 'package:mobile/features/home/presentation/widgets/member_palette.dart';
 import 'package:mobile/features/household/domain/entities/member.dart';
+import 'package:mobile/features/household/presentation/widgets/member_palette.dart';
 import 'package:mobile/l10n/app_localizations.dart';
 
 /// What each person of the house spent: a bar split by person, and a row

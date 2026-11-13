@@ -19,10 +19,11 @@ import 'package:mobile/features/home/presentation/widgets/home_skeletons.dart';
 import 'package:mobile/features/home/presentation/widgets/members_card.dart';
 import 'package:mobile/features/home/presentation/widgets/month_selector.dart';
 import 'package:mobile/features/home/presentation/widgets/planning_card.dart';
-import 'package:mobile/features/home/presentation/widgets/scope_selector.dart';
 import 'package:mobile/features/home/presentation/widgets/summary_section.dart';
 import 'package:mobile/features/home/presentation/widgets/top_expenses_card.dart';
 import 'package:mobile/features/home/presentation/widgets/upcoming_card.dart';
+import 'package:mobile/features/household/presentation/viewmodels/household_scope_controller.dart';
+import 'package:mobile/features/household/presentation/widgets/scope_selector.dart';
 
 /// The home: the numbers of the month for one person or for the whole house.
 ///
@@ -83,7 +84,7 @@ class _HomeViewState extends State<HomeView> {
       body: SafeArea(
         child: ListenableBuilder(
           listenable: _viewModel,
-          builder: (context, _) => AsyncStateView<HomeProfile>(
+          builder: (context, _) => AsyncStateView<HouseholdProfile>(
             state: _viewModel.profile,
             onRetry: () => unawaited(_viewModel.load()),
             loading: const _HomeLoading(),
@@ -94,7 +95,7 @@ class _HomeViewState extends State<HomeView> {
     );
   }
 
-  Widget _content(BuildContext context, HomeProfile profile) {
+  Widget _content(BuildContext context, HouseholdProfile profile) {
     final vm = _viewModel;
     final summaryState = vm.summary;
 
@@ -179,7 +180,7 @@ class _HomeViewState extends State<HomeView> {
   /// day and the biggest expenses. Without spending there is one empty card.
   List<Widget> _spendingDetails(
     HomeViewModel vm,
-    HomeProfile profile,
+    HouseholdProfile profile,
     UiState<SpendingSummary> summaryState,
   ) {
     switch (summaryState) {

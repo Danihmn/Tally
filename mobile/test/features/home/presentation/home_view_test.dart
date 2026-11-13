@@ -322,10 +322,16 @@ void main() {
       await tester.tap(find.byTooltip('Abrir perfil e configurações'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Sair'));
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump();
 
       expect(kit.auth.logouts, 1);
       expect(kit.session.isLoggedIn, isFalse);
+      // The person and the choice are forgotten: the next login starts clean.
+      expect(kit.scope.profileData, isNull);
+      // In the app the router leaves this screen. Here the skeleton keeps
+      // pulsing, so the test ends by removing it.
+      await tester.pumpWidget(const SizedBox());
     });
   });
 }
