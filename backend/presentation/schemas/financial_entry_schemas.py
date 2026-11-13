@@ -81,6 +81,44 @@ class FinancialEntryQuery(BaseModel):
         )
 
 
+class EntryPeriodQuery(BaseModel):
+    """Query string of the planning endpoints (total-planned, total-reconciled, reconciliation-counts).
+
+    The period is in months (`reference_month`): any day of a month picks that month. `date_from`
+    and `date_to` come together or not at all; without them the current month is used.
+    `type` is required: revenues and expenses are never mixed.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    type: Literal["REVENUES", "EXPENSES"]
+    user_id: uuid.UUID | None = None
+    date_from: datetime.date | None = None
+    date_to: datetime.date | None = None
+
+    @model_validator(mode="after")
+    def _check_period(self) -> EntryPeriodQuery:
+        if (self.date_from is None) != (self.date_to is None):
+            raise ValueError("date_from and date_to must be sent together")
+        check_date_range(self.date_from, self.date_to, "date_from", "date_to")
+        return self
+
+
+class EntryTotalResponse(BaseModel):
+    reference_month_from: datetime.date  # First day of the first month that was used
+    reference_month_to: datetime.date  # First day of the last month that was used
+    type: str  # REVENUES | EXPENSES
+    total: decimal.Decimal
+
+
+class ReconciliationCountsResponse(BaseModel):
+    reference_month_from: datetime.date
+    reference_month_to: datetime.date
+    type: str  # REVENUES | EXPENSES
+    reconciled: int
+    not_reconciled: int
+
+
 class FinancialEntryCreate(BaseModel):
     """Body of POST /financial-entries. `user_id` defaults to the logged user.
 

@@ -2,8 +2,17 @@ import unittest
 from decimal import Decimal
 from unittest.mock import MagicMock, patch
 
+import uuid
+
 from domain.read_models import FinancialEntryFilters
-from services.financial_entries_service import summarize_financial_entries
+from services.financial_entries_service import (
+    count_not_reconciled_entries,
+    count_reconciled_entries,
+    get_total_not_reconciled,
+    get_total_planned,
+    get_total_reconciled,
+    summarize_financial_entries,
+)
 
 MODULE = "services.financial_entries_service"
 
@@ -58,3 +67,81 @@ class SummarizeFinancialEntriesTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TotalsAndCountsOfThePeriodTests(unittest.TestCase):
+    HOUSEHOLD = uuid.UUID("00000000-0000-0000-0000-00000000c001")
+
+    def _run(self, function, repository_function, answers):
+        """Runs `function` with the repository answering `answers` (one per call, in order)."""
+        session = MagicMock()
+        filters = FinancialEntryFilters(household_id=self.HOUSEHOLD, type="EXPENSES")
+        with patch(f"{MODULE}.financial_entries_repository") as repository:
+            getattr(repository, repository_function).side_effect = answers
+            result = function(session, filters)
+        calls = getattr(repository, repository_function).call_args_list
+        return result, [c.args[1] for c in calls], filters
+
+    def test_total_reconciled_sums_only_the_reconciled_entries(self):
+        total, sent, _ = self._run(
+            get_total_reconciled, "sum_financial_entries_amount", [Decimal("700.50")]
+        )
+
+        self.assertEqual(total, Decimal("700.50"))
+        self.assertEqual([f.status for f in sent], ["RECONCILED"])
+
+    def test_total_not_reconciled_sums_only_the_planned_entries(self):
+        total, sent, _ = self._run(
+            get_total_not_reconciled, "sum_financial_entries_amount", [Decimal("300")]
+        )
+
+        self.assertEqual(total, Decimal("300"))
+        self.assertEqual([f.status for f in sent], ["PLANNED"])
+
+    def test_total_planned_is_reconciled_plus_not_reconciled(self):
+        total, sent, _ = self._run(
+            get_total_planned,
+            "sum_financial_entries_amount",
+            [Decimal("700.50"), Decimal("299.50")],
+        )
+
+        self.assertEqual(total, Decimal("1000.00"))
+        self.assertEqual({f.status for f in sent}, {"RECONCILED", "PLANNED"})
+
+    def test_total_planned_never_asks_for_cancelled_entries(self):
+        _, sent, _ = self._run(
+            get_total_planned, "sum_financial_entries_amount", [Decimal("1"), Decimal("1")]
+        )
+
+        self.assertNotIn("CANCELLED", [f.status for f in sent])
+        self.assertEqual(len(sent), 2)
+
+    def test_total_planned_without_entries_is_zero(self):
+        total, _, _ = self._run(
+            get_total_planned, "sum_financial_entries_amount", [Decimal("0.00"), Decimal("0.00")]
+        )
+
+        self.assertEqual(total, Decimal("0.00"))
+
+    def test_the_other_filters_are_kept_and_the_callers_filters_are_not_changed(self):
+        _, sent, filters = self._run(
+            get_total_reconciled, "sum_financial_entries_amount", [Decimal("1")]
+        )
+
+        self.assertEqual((sent[0].household_id, sent[0].type), (self.HOUSEHOLD, "EXPENSES"))
+        self.assertIsNone(filters.status)
+
+    def test_count_reconciled_counts_only_the_reconciled_entries(self):
+        count, sent, _ = self._run(count_reconciled_entries, "count_financial_entries", [4])
+
+        self.assertEqual(count, 4)
+        self.assertEqual([f.status for f in sent], ["RECONCILED"])
+
+    def test_count_not_reconciled_counts_only_the_planned_entries(self):
+        count, sent, filters = self._run(
+            count_not_reconciled_entries, "count_financial_entries", [0]
+        )
+
+        self.assertEqual(count, 0)
+        self.assertEqual([f.status for f in sent], ["PLANNED"])
+        self.assertIsNone(filters.status)

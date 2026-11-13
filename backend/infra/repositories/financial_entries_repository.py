@@ -209,6 +209,17 @@ def count_financial_entries(session: Session, filters: FinancialEntryFilters) ->
 
 
 @translate_db_errors("financial_entries")
+def sum_financial_entries_amount(
+    session: Session, filters: FinancialEntryFilters
+) -> decimal.Decimal:
+    """Sum of amount of everything the filters match (0 when nothing matches)."""
+    stmt = _apply_search_filters(
+        select(func.coalesce(func.sum(FinancialEntries.amount), 0)), filters
+    )
+    return session.scalar(stmt) or decimal.Decimal("0.00")
+
+
+@translate_db_errors("financial_entries")
 def summarize_financial_entries(
     session: Session, filters: FinancialEntryFilters
 ) -> list[tuple[str, str, decimal.Decimal, int]]:
