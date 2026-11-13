@@ -1,5 +1,7 @@
+import datetime
 import unittest
 import uuid
+from decimal import Decimal
 from unittest.mock import MagicMock, patch
 
 from fastapi.testclient import TestClient
@@ -7,7 +9,7 @@ from fastapi.testclient import TestClient
 from infra.database.session import get_db
 from presentation.app import app
 from presentation.dependencies.auth import get_current_user
-from tests.factories import make_entry, make_user, utc
+from tests.factories import HOUSEHOLD_ID, make_entry, make_user, utc
 
 MODULE = "presentation.routers.financial_entries_router"
 OTHER_HOUSEHOLD_ID = uuid.UUID("00000000-0000-0000-0000-00000000c002")
@@ -92,3 +94,208 @@ class CreateFinancialEntryEndpointTests(unittest.TestCase):
         self.assertIsNone(
             self.mocks["create_financial_entry"].call_args.args[1].recurrence_id
         )
+
+
+PARTNER_ID = uuid.UUID("00000000-0000-0000-0000-00000000b002")
+TODAY = datetime.date(2026, 11, 13)
+PLANNING_PATHS = (
+    "/financial-entries/total-planned",
+    "/financial-entries/total-reconciled",
+    "/financial-entries/reconciliation-counts",
+)
+
+
+class PlanningEndpointsTestCase(unittest.TestCase):
+    """Shared setup: logged user, fake session, `today` frozen and the services patched."""
+
+    def setUp(self):
+        self.session = MagicMock()
+        self.current_user = make_user()
+
+        def _get_db():
+            yield self.session
+
+        app.dependency_overrides[get_db] = _get_db
+        app.dependency_overrides[get_current_user] = lambda: self.current_user
+        self.addCleanup(app.dependency_overrides.clear)
+        self.client = TestClient(app)
+
+        patcher = patch(f"{MODULE}.today_local", return_value=TODAY)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+        self.mocks = {}
+        for name, value in (
+            ("get_total_planned", Decimal("1000.00")),
+            ("get_total_reconciled", Decimal("700.50")),
+            ("count_reconciled_entries", 3),
+            ("count_not_reconciled_entries", 2),
+        ):
+            patcher = patch(f"{MODULE}.{name}", return_value=value)
+            self.mocks[name] = patcher.start()
+            self.addCleanup(patcher.stop)
+
+    def filters_sent_to(self, service: str):
+        return self.mocks[service].call_args.args[1]
+
+
+class TotalPlannedEndpointTests(PlanningEndpointsTestCase):
+    def test_answers_with_the_total_and_the_months_that_were_used(self):
+        response = self.client.get(
+            "/financial-entries/total-planned",
+            params={"type": "EXPENSES", "date_from": "2026-10-20", "date_to": "2026-11-05"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json(),
+            {
+                "reference_month_from": "2026-10-01",
+                "reference_month_to": "2026-11-01",
+                "type": "EXPENSES",
+                "total": "1000.00",
+            },
+        )
+
+    def test_without_dates_it_is_the_whole_current_month(self):
+        response = self.client.get("/financial-entries/total-planned", params={"type": "EXPENSES"})
+
+        body = response.json()
+        self.assertEqual(
+            (body["reference_month_from"], body["reference_month_to"]),
+            ("2026-11-01", "2026-11-01"),
+        )
+
+    def test_any_day_of_the_month_picks_that_month(self):
+        self.client.get(
+            "/financial-entries/total-planned",
+            params={"type": "EXPENSES", "date_from": "2026-11-01", "date_to": "2026-11-12"},
+        )
+
+        filters = self.filters_sent_to("get_total_planned")
+        self.assertEqual(filters.reference_month_from, datetime.date(2026, 11, 1))
+        self.assertEqual(filters.reference_month_to, datetime.date(2026, 11, 1))
+
+    def test_the_total_is_planned_so_no_status_filter_is_sent(self):
+        self.client.get("/financial-entries/total-planned", params={"type": "REVENUES"})
+
+        self.assertIsNone(self.filters_sent_to("get_total_planned").status)
+
+
+class TotalReconciledEndpointTests(PlanningEndpointsTestCase):
+    def test_answers_with_the_reconciled_total(self):
+        response = self.client.get(
+            "/financial-entries/total-reconciled", params={"type": "REVENUES"}
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["total"], "700.50")
+        self.assertEqual(response.json()["type"], "REVENUES")
+        self.mocks["get_total_reconciled"].assert_called_once()
+        self.mocks["get_total_planned"].assert_not_called()
+
+
+class ReconciliationCountsEndpointTests(PlanningEndpointsTestCase):
+    def test_answers_with_both_counts_of_the_type(self):
+        response = self.client.get(
+            "/financial-entries/reconciliation-counts", params={"type": "EXPENSES"}
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json(),
+            {
+                "reference_month_from": "2026-11-01",
+                "reference_month_to": "2026-11-01",
+                "type": "EXPENSES",
+                "reconciled": 3,
+                "not_reconciled": 2,
+            },
+        )
+
+    def test_both_counts_use_the_same_filters(self):
+        self.client.get(
+            "/financial-entries/reconciliation-counts", params={"type": "EXPENSES"}
+        )
+
+        self.assertEqual(
+            self.filters_sent_to("count_reconciled_entries"),
+            self.filters_sent_to("count_not_reconciled_entries"),
+        )
+
+
+class PlanningEndpointsSharedRulesTests(PlanningEndpointsTestCase):
+    def test_the_type_is_required_in_every_endpoint(self):
+        for path in PLANNING_PATHS:
+            with self.subTest(path=path):
+                self.assertEqual(self.client.get(path).status_code, 422)
+
+    def test_an_unknown_type_is_rejected_in_every_endpoint(self):
+        for path in PLANNING_PATHS:
+            with self.subTest(path=path):
+                response = self.client.get(path, params={"type": "DEBIT"})
+
+                self.assertEqual(response.status_code, 422)
+
+    def test_the_type_is_passed_to_the_filters(self):
+        self.client.get("/financial-entries/total-reconciled", params={"type": "REVENUES"})
+
+        self.assertEqual(self.filters_sent_to("get_total_reconciled").type, "REVENUES")
+
+    def test_the_household_comes_from_the_logged_user(self):
+        self.client.get("/financial-entries/total-planned", params={"type": "EXPENSES"})
+
+        self.assertEqual(self.filters_sent_to("get_total_planned").household_id, HOUSEHOLD_ID)
+
+    def test_a_household_sent_in_the_request_is_rejected(self):
+        response = self.client.get(
+            "/financial-entries/total-planned",
+            params={"type": "EXPENSES", "household_id": str(uuid.uuid4())},
+        )
+
+        self.assertEqual(response.status_code, 422)
+        self.mocks["get_total_planned"].assert_not_called()
+
+    def test_the_user_filter_is_optional_and_is_passed_on(self):
+        self.client.get("/financial-entries/total-planned", params={"type": "EXPENSES"})
+        self.assertIsNone(self.filters_sent_to("get_total_planned").user_id)
+
+        self.client.get(
+            "/financial-entries/total-planned",
+            params={"type": "EXPENSES", "user_id": str(PARTNER_ID)},
+        )
+        self.assertEqual(self.filters_sent_to("get_total_planned").user_id, PARTNER_ID)
+
+    def test_only_one_of_the_two_dates_is_rejected(self):
+        for params in ({"date_from": "2026-11-01"}, {"date_to": "2026-11-10"}):
+            with self.subTest(params=params):
+                response = self.client.get(
+                    "/financial-entries/total-planned", params={"type": "EXPENSES", **params}
+                )
+
+                self.assertEqual(response.status_code, 422)
+
+    def test_a_start_after_the_end_is_rejected(self):
+        response = self.client.get(
+            "/financial-entries/total-planned",
+            params={"type": "EXPENSES", "date_from": "2026-11-10", "date_to": "2026-11-01"},
+        )
+
+        self.assertEqual(response.status_code, 422)
+
+    def test_the_fixed_paths_are_not_taken_as_an_entry_id(self):
+        for path in PLANNING_PATHS:
+            with self.subTest(path=path):
+                response = self.client.get(path, params={"type": "EXPENSES"})
+
+                self.assertEqual(response.status_code, 200)
+
+    def test_without_a_token_it_is_unauthorized(self):
+        app.dependency_overrides.pop(get_current_user)
+
+        for path in PLANNING_PATHS:
+            with self.subTest(path=path):
+                response = self.client.get(path, params={"type": "EXPENSES"})
+
+                self.assertEqual(response.status_code, 401)
+

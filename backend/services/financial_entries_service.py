@@ -1,4 +1,6 @@
+import dataclasses
 import datetime
+import decimal
 import uuid
 
 from sqlalchemy.orm import Session
@@ -123,6 +125,51 @@ def search_financial_entries(
     )
     total = financial_entries_repository.count_financial_entries(session, filters)
     return to_entities(FinancialEntry, rows), total
+
+
+# The status decides what is reconciled: the reconciliation job and the undo keep it in sync with
+# the `reconciliations` table. CANCELLED entries are in none of the numbers below.
+@translate_repository_errors
+def get_total_reconciled(
+    session: Session, filters: FinancialEntryFilters
+) -> decimal.Decimal:
+    """Sum of the amounts of the entries already matched with a bank transaction."""
+    return financial_entries_repository.sum_financial_entries_amount(
+        session, dataclasses.replace(filters, status="RECONCILED")
+    )
+
+
+@translate_repository_errors
+def get_total_not_reconciled(
+    session: Session, filters: FinancialEntryFilters
+) -> decimal.Decimal:
+    """Sum of the amounts of the entries still waiting for a bank transaction."""
+    return financial_entries_repository.sum_financial_entries_amount(
+        session, dataclasses.replace(filters, status="PLANNED")
+    )
+
+
+def get_total_planned(session: Session, filters: FinancialEntryFilters) -> decimal.Decimal:
+    """Everything that was planned and not cancelled: reconciled plus not reconciled."""
+    return get_total_reconciled(session, filters) + get_total_not_reconciled(
+        session, filters
+    )
+
+
+@translate_repository_errors
+def count_reconciled_entries(session: Session, filters: FinancialEntryFilters) -> int:
+    return financial_entries_repository.count_financial_entries(
+        session, dataclasses.replace(filters, status="RECONCILED")
+    )
+
+
+@translate_repository_errors
+def count_not_reconciled_entries(
+    session: Session, filters: FinancialEntryFilters
+) -> int:
+    return financial_entries_repository.count_financial_entries(
+        session, dataclasses.replace(filters, status="PLANNED")
+    )
 
 
 _STATUS_FIELDS = {
