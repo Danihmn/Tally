@@ -227,6 +227,18 @@ def summarize_transactions(
 
 
 @translate_db_errors("transactions")
+def sum_transactions_amount(
+    session: Session, filters: TransactionFilters
+) -> decimal.Decimal:
+    """Sum of abs(amount) of everything the filters match (0 when nothing matches)."""
+    stmt = apply_filters(
+        join_owner(select(func.coalesce(func.sum(func.abs(Transactions.amount)), 0))),
+        filters,
+    )
+    return session.scalar(stmt) or decimal.Decimal("0.00")
+
+
+@translate_db_errors("transactions")
 def summarize_transactions_by(
     session: Session,
     filters: TransactionFilters,

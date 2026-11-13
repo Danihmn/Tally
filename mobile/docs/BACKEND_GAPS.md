@@ -11,7 +11,7 @@ behind a repository interface.
 | 2 | `POST /pluggy-items` takes the owner from the JWT only | "Dono da conexão" for another person cannot be set | Only "Eu" can connect a bank |
 | 3 | No endpoint to create a household; `POST /users` needs `household_id` | "Nova casa" in "Adicionar pessoa" | Hidden. New people join the current household |
 | 4 | No reconciliation endpoints (table `007_reconciliations_table.sql` and matching logic exist) | Conciliação: list pairs, confirm, undo, manual link | Fake data source |
-| 5 | No analysis summary (by month, category, member) | Home dashboard, charts | Fake data source (or computed from lists when possible) |
+| 5 | Partial analysis. Done: `GET /transactions/total-expenses`, `/total-revenues`, `/balance` (filters `date_from`+`date_to` together or none, optional `user_id`; default period is day 1 until yesterday, or the whole previous month on day 1). Missing: by month, by category, by member, average per day | Home dashboard, charts | Totals from the API; the rest from a fake data source |
 | 6 | No update/delete for entries and recurrences | Edit/cancel actions | Not built |
 | 7 | No credit limit or due date in `BankAccountResponse` | Card details | Not shown |
 | 8 | `GET /bank-accounts` and `GET /users` return plain lists (no `total`) | "Has more" is guessed from a full page | `PaginatedViewModel` handles it |
@@ -20,3 +20,5 @@ behind a repository interface.
 
 Not in the original app brief but present in the API: `POST /recurrences/provision`
 (creates the month's PLANNED entries from recurrences) and `GET /users/{id}`.
+
+**Known limit of the totals (gap 5):** they sum every DEBIT / CREDIT. A credit card bill payment is a DEBIT in the bank account and a CREDIT in the card, and transfers between own accounts are both, so expenses can be counted twice and revenues inflated. A filter will come later.

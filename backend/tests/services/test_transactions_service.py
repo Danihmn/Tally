@@ -4,7 +4,13 @@ from decimal import Decimal
 from unittest.mock import MagicMock, patch
 
 from domain.read_models import TransactionFilters
-from services.transactions_service import summarize_transactions, summarize_transactions_by
+from services.transactions_service import (
+    get_balance,
+    get_total_expenses,
+    get_total_revenues,
+    summarize_transactions,
+    summarize_transactions_by,
+)
 
 MODULE = "services.transactions_service"
 
@@ -95,3 +101,51 @@ class SummarizeTransactionsByTests(unittest.TestCase):
 
     def test_no_transactions_is_no_groups(self):
         self.assertEqual(self._summarize([]), [])
+
+
+class TotalsOfThePeriodTests(unittest.TestCase):
+    HOUSEHOLD = uuid.UUID("00000000-0000-0000-0000-00000000c001")
+
+    def _run(self, function, sums):
+        """Runs `function` with the repository answering `sums` (one per call, in order)."""
+        session = MagicMock()
+        filters = TransactionFilters(household_id=self.HOUSEHOLD)
+        with patch(f"{MODULE}.transactions_repository") as repository:
+            repository.sum_transactions_amount.side_effect = sums
+            result = function(session, filters)
+        return result, repository.sum_transactions_amount.call_args_list, filters
+
+    def test_expenses_sum_only_the_debits(self):
+        total, calls, _ = self._run(get_total_expenses, [Decimal("150.75")])
+
+        self.assertEqual(total, Decimal("150.75"))
+        self.assertEqual(calls[0].args[1].type, "DEBIT")
+
+    def test_revenues_sum_only_the_credits(self):
+        total, calls, _ = self._run(get_total_revenues, [Decimal("3000")])
+
+        self.assertEqual(total, Decimal("3000"))
+        self.assertEqual(calls[0].args[1].type, "CREDIT")
+
+    def test_the_other_filters_are_kept_and_the_callers_filters_are_not_changed(self):
+        _, calls, filters = self._run(get_total_expenses, [Decimal("1")])
+
+        self.assertEqual(calls[0].args[1].household_id, self.HOUSEHOLD)
+        self.assertIsNone(filters.type)
+
+    def test_balance_is_revenues_minus_expenses(self):
+        # get_balance asks for the revenues first, then for the expenses
+        balance, calls, _ = self._run(get_balance, [Decimal("3000.00"), Decimal("1200.50")])
+
+        self.assertEqual(balance, Decimal("1799.50"))
+        self.assertEqual([c.args[1].type for c in calls], ["CREDIT", "DEBIT"])
+
+    def test_balance_is_negative_when_it_spent_more_than_it_received(self):
+        balance, _, _ = self._run(get_balance, [Decimal("100.00"), Decimal("250.25")])
+
+        self.assertEqual(balance, Decimal("-150.25"))
+
+    def test_balance_without_transactions_is_zero(self):
+        balance, _, _ = self._run(get_balance, [Decimal("0.00"), Decimal("0.00")])
+
+        self.assertEqual(balance, Decimal("0.00"))

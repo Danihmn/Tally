@@ -1,4 +1,6 @@
+import dataclasses
 import datetime
+import decimal
 import uuid
 
 from sqlalchemy.orm import Session
@@ -149,6 +151,27 @@ def summarize_transactions(
         elif type_ == "CREDIT":
             summary.credit_total, summary.credit_count = total, count
     return summary
+
+
+@translate_repository_errors
+def get_total_expenses(session: Session, filters: TransactionFilters) -> decimal.Decimal:
+    """Sum of the debits (money out) that match the filters. Absolute value."""
+    return transactions_repository.sum_transactions_amount(
+        session, dataclasses.replace(filters, type="DEBIT")
+    )
+
+
+@translate_repository_errors
+def get_total_revenues(session: Session, filters: TransactionFilters) -> decimal.Decimal:
+    """Sum of the credits (money in) that match the filters. Absolute value."""
+    return transactions_repository.sum_transactions_amount(
+        session, dataclasses.replace(filters, type="CREDIT")
+    )
+
+
+def get_balance(session: Session, filters: TransactionFilters) -> decimal.Decimal:
+    """Revenues minus expenses of the period. Negative when the period spent more than it got."""
+    return get_total_revenues(session, filters) - get_total_expenses(session, filters)
 
 
 @translate_repository_errors

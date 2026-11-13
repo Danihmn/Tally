@@ -49,6 +49,39 @@ class TransactionQuery(BaseModel):
         )
 
 
+class TransactionPeriodQuery(BaseModel):
+    """Query string of the period analysis endpoints (total-expenses, total-revenues, balance).
+
+    `date_from` and `date_to` come together or not at all: without them the server uses the
+    default period (day 1 of the month until yesterday). Both ends are inclusive UTC days.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    user_id: uuid.UUID | None = None
+    date_from: datetime.date | None = None
+    date_to: datetime.date | None = None
+
+    @model_validator(mode="after")
+    def _check_period(self) -> TransactionPeriodQuery:
+        if (self.date_from is None) != (self.date_to is None):
+            raise ValueError("date_from and date_to must be sent together")
+        check_date_range(self.date_from, self.date_to, "date_from", "date_to")
+        return self
+
+
+class TotalResponse(BaseModel):
+    date_from: datetime.date  # The period that was used (the default one when none was sent)
+    date_to: datetime.date
+    total: decimal.Decimal
+
+
+class BalanceResponse(BaseModel):
+    date_from: datetime.date
+    date_to: datetime.date
+    balance: decimal.Decimal  # Revenues minus expenses. Negative when it spent more
+
+
 class TransactionResponse(BaseModel):
     """`payment_data` is left out on purpose: it carries the other party's document numbers."""
 
