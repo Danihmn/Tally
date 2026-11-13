@@ -99,3 +99,12 @@ uv run python -m unittest discover -s tests -t .
 ```
 
 `main_test.py` is not a test: it runs the real sync job. The `test*.py` pattern does not collect it.
+
+## 7. Endpoints used by the app
+
+Every endpoint is built for the mobile app. The app lists the ones it uses in `mobile/lib/core/network/api_endpoints.dart` (`ApiEndpoints`: method, path, which feature uses it, and the `all` list).
+
+Rules for the agent:
+1. When you create an endpoint for the app, **add it to `ApiEndpoints` in the same change** (and to `all`). Then say so in the answer.
+2. The backend cleanup removes the routes that are not in that list. The list is **not complete yet**: endpoints created before it (login, users, bank accounts, the transaction and entry lists, the chat, ...) are still to be marked. Do not delete a route because it is missing from the list until the user says the list is complete.
+3. Flutter may not be installed where you run. If you could not run `flutter analyze` and `flutter test`, say so.

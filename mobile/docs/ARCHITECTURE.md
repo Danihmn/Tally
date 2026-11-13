@@ -42,6 +42,12 @@ API error shape: `{"detail": "<English text>"}`, except request validation (422)
 
 Maps to the `user_id` query parameter: Eu = my id, member = their id, Casa = omitted.
 
+## Endpoints the app uses
+
+Every backend endpoint the app calls is declared in `lib/core/network/api_endpoints.dart` (`ApiEndpoints`), with its method, its path and the feature that uses it. Data sources take the path from there, never a string typed in place.
+
+This list is also the mark used to clean the backend: a route of `backend/presentation/routers` that is not in `ApiEndpoints.all` is a candidate for removal. Add the endpoint in the same change that creates it. The list is **not complete yet** (see the comment in the file), so do not delete routes from it alone.
+
 ## Dependency injection
 
 `get_it` in `app/di/injection.dart`. Services are lazy singletons, ViewModels are factories (one per screen). Tests build a fresh container with fakes (`registerCoreDependencies`).
@@ -52,7 +58,7 @@ Maps to the `user_id` query parameter: Eu = my id, member = their id, Casa = omi
 2. `domain/entities`: immutable Equatable classes. `domain/repositories`: abstract interface returning `Result<T>`.
 3. `domain/usecases`: one class per action.
 4. `data/models`: DTOs with `fromJson` (use `parseDecimal`, `parseDateTime`). `data/mappers`: DTO ↔ entity.
-5. `data/datasources`: remote (Dio + `apiCall`). If the endpoint does not exist yet: a fake data source, marked `// TODO(backend)`, and a line in `docs/BACKEND_GAPS.md`.
+5. `data/datasources`: remote (Dio + `apiCall`), with the path from `ApiEndpoints` (add the endpoint there if it is not listed). If the endpoint does not exist yet: a fake data source, marked `// TODO(backend)`, and a line in `docs/BACKEND_GAPS.md`.
 6. `data/repositories`: implement the interface.
 7. `presentation/viewmodels`: `ChangeNotifier` + `UiState` (or `PaginatedViewModel`). Register as a factory in DI.
 8. `presentation/views`: use `AsyncStateView`. Add strings to the ARB file and run `flutter gen-l10n`. Add the route in `app/router`.
