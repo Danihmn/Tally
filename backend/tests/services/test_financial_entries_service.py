@@ -11,6 +11,7 @@ from services.financial_entries_service import (
     get_total_not_reconciled,
     get_total_planned,
     get_total_reconciled,
+    list_upcoming_entries,
     summarize_financial_entries,
 )
 
@@ -145,3 +146,37 @@ class TotalsAndCountsOfThePeriodTests(unittest.TestCase):
         self.assertEqual(count, 0)
         self.assertEqual([f.status for f in sent], ["PLANNED"])
         self.assertIsNone(filters.status)
+
+
+class ListUpcomingEntriesTests(unittest.TestCase):
+    def _run(self, rows):
+        session = MagicMock()
+        filters = FinancialEntryFilters(
+            household_id=uuid.UUID("00000000-0000-0000-0000-00000000c001")
+        )
+        with patch(f"{MODULE}.financial_entries_repository") as repository:
+            repository.list_financial_entries_by_due_date.return_value = rows
+            result = list_upcoming_entries(session, filters)
+        return result, repository.list_financial_entries_by_due_date.call_args, filters
+
+    def test_asks_only_for_the_entries_not_reconciled_yet(self):
+        _, call, filters = self._run([])
+
+        self.assertEqual(call.args[1].status, "PLANNED")
+        self.assertEqual(call.args[1].household_id, filters.household_id)
+        self.assertIsNone(filters.status)
+
+    def test_keeps_the_order_of_the_repository(self):
+        from tests.factories import make_entry
+
+        first = make_entry(description="Rent")
+        second = make_entry(description="Internet")
+
+        result, _, _ = self._run([first, second])
+
+        self.assertEqual([e.description for e in result], ["Rent", "Internet"])
+
+    def test_without_entries_the_list_is_empty(self):
+        result, _, _ = self._run([])
+
+        self.assertEqual(result, [])

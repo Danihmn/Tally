@@ -51,6 +51,23 @@ class TransactionGroupTotal:
 
 
 @dataclass(slots=True)
+class TopExpense:
+    """One of the biggest expenses of a period. `date` is the UTC day. Absolute value."""
+
+    date: datetime.date
+    description: str | None
+    amount: decimal.Decimal
+
+
+@dataclass(slots=True)
+class DailyTotal:
+    """What was spent in one UTC day. Absolute value."""
+
+    day: datetime.date
+    total: decimal.Decimal
+
+
+@dataclass(slots=True)
 class TransactionFilters:
     """Every field is optional: None means "do not filter by it"."""
 

@@ -172,6 +172,17 @@ def count_not_reconciled_entries(
     )
 
 
+@translate_repository_errors
+def list_upcoming_entries(
+    session: Session, filters: FinancialEntryFilters
+) -> list[FinancialEntry]:
+    """Entries still waiting for a bank transaction (PLANNED), the nearest due date first."""
+    entries = financial_entries_repository.list_financial_entries_by_due_date(
+        session, dataclasses.replace(filters, status="PLANNED")
+    )
+    return to_entities(FinancialEntry, entries)
+
+
 _STATUS_FIELDS = {
     "PLANNED": ("planned_total", "planned_count"),
     "RECONCILED": ("reconciled_total", "reconciled_count"),

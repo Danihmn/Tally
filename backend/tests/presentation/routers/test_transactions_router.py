@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient
 from infra.database.session import get_db
 from presentation.app import app
 from presentation.dependencies.auth import get_current_user
+from domain.read_models import DailyTotal, TopExpense
 from tests.factories import HOUSEHOLD_ID, make_user
 
 MODULE = "presentation.routers.transactions_router"
@@ -41,6 +42,26 @@ class PeriodEndpointsTestCase(unittest.TestCase):
         self.mocks = {}
         for name in ("get_total_expenses", "get_total_revenues", "get_balance"):
             patcher = patch(f"{MODULE}.{name}", return_value=Decimal("10.50"))
+            self.mocks[name] = patcher.start()
+            self.addCleanup(patcher.stop)
+        for name, value in (
+            (
+                "get_top_expenses",
+                [
+                    TopExpense(datetime.date(2026, 11, 10), "Rent", Decimal("1500.00")),
+                    TopExpense(datetime.date(2026, 11, 3), None, Decimal("20.50")),
+                ],
+            ),
+            (
+                "get_daily_expenses",
+                [
+                    DailyTotal(datetime.date(2026, 11, 1), Decimal("0.00")),
+                    DailyTotal(datetime.date(2026, 11, 2), Decimal("99.90")),
+                ],
+            ),
+            ("get_average_daily_expenses", Decimal("49.95")),
+        ):
+            patcher = patch(f"{MODULE}.{name}", return_value=value)
             self.mocks[name] = patcher.start()
             self.addCleanup(patcher.stop)
 
@@ -175,6 +196,128 @@ class BalanceEndpointTests(PeriodEndpointsTestCase):
         self.client.get("/transactions/balance")
 
         self.assertEqual(self.filters_sent_to("get_balance").household_id, HOUSEHOLD_ID)
+
+
+
+class TopExpensesEndpointTests(PeriodEndpointsTestCase):
+    def test_lists_only_the_date_the_amount_and_the_description(self):
+        response = self.client.get("/transactions/top-expenses")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json(),
+            {
+                "date_from": "2026-11-01",
+                "date_to": "2026-11-12",
+                "items": [
+                    {"date": "2026-11-10", "amount": "1500.00", "description": "Rent"},
+                    {"date": "2026-11-03", "amount": "20.50", "description": None},
+                ],
+            },
+        )
+
+    def test_the_limit_is_5_by_default_and_can_be_changed(self):
+        self.client.get("/transactions/top-expenses")
+        self.assertEqual(self.mocks["get_top_expenses"].call_args.args[2], 5)
+
+        self.client.get("/transactions/top-expenses", params={"limit": 12})
+        self.assertEqual(self.mocks["get_top_expenses"].call_args.args[2], 12)
+
+    def test_a_limit_out_of_range_is_rejected(self):
+        for limit in (0, 51, -1):
+            with self.subTest(limit=limit):
+                response = self.client.get("/transactions/top-expenses", params={"limit": limit})
+
+                self.assertEqual(response.status_code, 422)
+
+    def test_uses_the_same_period_and_household_rules_as_the_totals(self):
+        self.client.get(
+            "/transactions/top-expenses",
+            params={"date_from": "2026-11-01", "date_to": "2026-11-10", "user_id": str(PARTNER_ID)},
+        )
+
+        filters = self.filters_sent_to("get_top_expenses")
+        self.assertEqual(filters.household_id, HOUSEHOLD_ID)
+        self.assertEqual(filters.user_id, PARTNER_ID)
+        self.assertEqual(filters.date_to, datetime.datetime(2026, 11, 11, tzinfo=datetime.UTC))
+
+    def test_only_one_of_the_two_dates_is_rejected(self):
+        response = self.client.get("/transactions/top-expenses", params={"date_from": "2026-11-01"})
+
+        self.assertEqual(response.status_code, 422)
+
+    def test_a_household_sent_in_the_request_is_rejected(self):
+        response = self.client.get(
+            "/transactions/top-expenses", params={"household_id": str(uuid.uuid4())}
+        )
+
+        self.assertEqual(response.status_code, 422)
+
+    def test_without_a_token_it_is_unauthorized(self):
+        app.dependency_overrides.pop(get_current_user)
+
+        self.assertEqual(self.client.get("/transactions/top-expenses").status_code, 401)
+
+
+class DailyExpensesEndpointTests(PeriodEndpointsTestCase):
+    def test_answers_with_one_item_per_day(self):
+        response = self.client.get("/transactions/daily-expenses")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json(),
+            {
+                "date_from": "2026-11-01",
+                "date_to": "2026-11-12",
+                "items": [
+                    {"date": "2026-11-01", "total": "0.00"},
+                    {"date": "2026-11-02", "total": "99.90"},
+                ],
+            },
+        )
+
+    def test_uses_the_household_of_the_logged_user_and_the_period(self):
+        self.client.get(
+            "/transactions/daily-expenses",
+            params={"date_from": "2026-11-01", "date_to": "2026-11-10"},
+        )
+
+        filters = self.filters_sent_to("get_daily_expenses")
+        self.assertEqual(filters.household_id, HOUSEHOLD_ID)
+        self.assertEqual(filters.date_from, datetime.datetime(2026, 11, 1, tzinfo=datetime.UTC))
+        self.assertEqual(filters.date_to, datetime.datetime(2026, 11, 11, tzinfo=datetime.UTC))
+
+    def test_a_start_after_the_end_is_rejected(self):
+        response = self.client.get(
+            "/transactions/daily-expenses",
+            params={"date_from": "2026-11-10", "date_to": "2026-11-01"},
+        )
+
+        self.assertEqual(response.status_code, 422)
+
+    def test_is_not_taken_as_a_transaction_id(self):
+        self.assertEqual(self.client.get("/transactions/daily-expenses").status_code, 200)
+
+
+class AverageDailyExpensesEndpointTests(PeriodEndpointsTestCase):
+    def test_answers_with_the_average_and_the_period_that_was_used(self):
+        response = self.client.get("/transactions/average-daily-expenses")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json(),
+            {"date_from": "2026-11-01", "date_to": "2026-11-12", "average": "49.95"},
+        )
+
+    def test_uses_the_household_of_the_logged_user(self):
+        self.client.get("/transactions/average-daily-expenses")
+
+        self.assertEqual(
+            self.filters_sent_to("get_average_daily_expenses").household_id, HOUSEHOLD_ID
+        )
+
+    def test_is_not_taken_as_a_transaction_id(self):
+        self.assertEqual(self.client.get("/transactions/average-daily-expenses").status_code, 200)
 
 
 if __name__ == "__main__":

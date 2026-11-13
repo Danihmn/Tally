@@ -209,6 +209,17 @@ def count_financial_entries(session: Session, filters: FinancialEntryFilters) ->
 
 
 @translate_db_errors("financial_entries")
+def list_financial_entries_by_due_date(
+    session: Session, filters: FinancialEntryFilters
+) -> list[FinancialEntries]:
+    """Every entry the filters match (no pagination), the nearest due date first."""
+    stmt = _apply_search_filters(select(FinancialEntries), filters).order_by(
+        FinancialEntries.due_date, FinancialEntries.id
+    )
+    return list(session.scalars(stmt).all())
+
+
+@translate_db_errors("financial_entries")
 def sum_financial_entries_amount(
     session: Session, filters: FinancialEntryFilters
 ) -> decimal.Decimal:
