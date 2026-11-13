@@ -1,8 +1,12 @@
-from sqlalchemy import Select, func
+from sqlalchemy import Select, func, or_
 
 from domain.read_models import TransactionFilters
 from infra.database.models import BankAccounts, PluggyItems, Transactions
 from infra.repositories.common.like import ilike_contains
+
+SAME_PERSON = "SAME_PERSON"
+SAME_HOUSEHOLD = "SAME_HOUSEHOLD"
+UNCLASSIFIED = "UNCLASSIFIED"  # filter value for internal_transfer IS NULL
 
 
 def join_owner(stmt: Select) -> Select:
@@ -37,4 +41,23 @@ def apply_filters(stmt: Select, filters: TransactionFilters) -> Select:
         stmt = stmt.where(func.abs(Transactions.amount) >= filters.min_amount)
     if filters.max_amount is not None:
         stmt = stmt.where(func.abs(Transactions.amount) <= filters.max_amount)
+    if filters.internal_transfer == UNCLASSIFIED:
+        stmt = stmt.where(Transactions.internal_transfer.is_(None))
+    elif filters.internal_transfer is not None:
+        stmt = stmt.where(Transactions.internal_transfer == filters.internal_transfer)
+    if filters.exclude_internal_transfers:
+        # In the person view, only the transfers between their own accounts leave the totals.
+        # In the household view, the transfers between people of the household leave too.
+        # NULL (not classified yet) must stay in, so it needs an explicit IS NULL.
+        excluded = (
+            [SAME_PERSON]
+            if filters.user_id is not None
+            else [SAME_PERSON, SAME_HOUSEHOLD]
+        )
+        stmt = stmt.where(
+            or_(
+                Transactions.internal_transfer.is_(None),
+                Transactions.internal_transfer.not_in(excluded),
+            )
+        )
     return stmt

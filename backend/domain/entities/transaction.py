@@ -32,3 +32,6 @@ class Transaction:
     credit_card_metadata: Any | None = None
     merchant: Any | None = None
     deleted_at: datetime.datetime | None = None
+    # SAME_PERSON | SAME_HOUSEHOLD | NOT_INTERNAL_TRANSFER. None = not classified yet.
+    internal_transfer: str | None = None
+    internal_transfer_classification_source: str | None = None  # MANUAL | AUTO

@@ -65,6 +65,8 @@ def _to_response(item: TransactionWithOwner) -> TransactionResponse:
         category_id=t.category_id,
         merchant=t.merchant,
         balance=t.balance,
+        internal_transfer=t.internal_transfer,  # type: ignore[arg-type]
+        internal_transfer_classification_source=t.internal_transfer_classification_source,  # type: ignore[arg-type]
     )
 
 
@@ -105,6 +107,7 @@ def _period_filters(
         user_id=query.user_id,
         date_from=start_of_day_utc(date_from),
         date_to=end_of_day_utc(date_to),
+        exclude_internal_transfers=True,
     )
     return date_from, date_to, filters
 

@@ -19,6 +19,13 @@ from services.common.exceptions import translate_repository_errors
 from services.common.mappers import to_entities, to_entity, to_entity_or_none, to_values
 from utils.money import round_to_cents
 
+# Written only by the classification of the internal transfers, never by the Pluggy sync:
+# sending them (as None) on a re-sync would erase the classification.
+CLASSIFICATION_FIELDS = (
+    "internal_transfer",
+    "internal_transfer_classification_source",
+)
+
 
 @translate_repository_errors
 def get_transaction_by_id(session: Session, transaction_id: uuid.UUID) -> Transaction:
@@ -81,7 +88,7 @@ def upsert_transactions(
     session: Session, transactions: list[Transaction]
 ) -> list[Transaction]:
     saved = transactions_repository.upsert_transactions(
-        session, [to_values(t) for t in transactions]
+        session, [to_values(t, exclude=CLASSIFICATION_FIELDS) for t in transactions]
     )
     return to_entities(Transaction, saved)
 
@@ -107,8 +114,32 @@ def mark_transactions_deleted(session: Session, ids: list[uuid.UUID]) -> None:
 @translate_repository_errors
 def update_transactions(session: Session, transactions: list[Transaction]) -> None:
     transactions_repository.update_transactions(
-        session, [to_values(t) for t in transactions]
+        session, [to_values(t, exclude=CLASSIFICATION_FIELDS) for t in transactions]
     )
+
+
+@translate_repository_errors
+def list_unclassified_transactions(
+    session: Session, account_ids: list[uuid.UUID]
+) -> list[Transaction]:
+    """POSTED transactions of the accounts that are not classified as internal transfer yet."""
+    if not account_ids:
+        return []
+    transactions = transactions_repository.list_unclassified_posted_by_accounts(
+        session, account_ids
+    )
+    return to_entities(Transaction, transactions)
+
+
+@translate_repository_errors
+def mark_internal_transfer(
+    session: Session, ids: list[uuid.UUID], value: str, source: str
+) -> int:
+    """Classifies the transactions (value: SAME_PERSON | SAME_HOUSEHOLD | NOT_INTERNAL_TRANSFER,
+    source: MANUAL | AUTO). The already classified ones are not changed. Returns how many were."""
+    if not ids:
+        return 0
+    return transactions_repository.set_internal_transfer(session, ids, value, source)
 
 
 @translate_repository_errors

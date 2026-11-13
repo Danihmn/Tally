@@ -1,6 +1,6 @@
 import logging
 import uuid
-from datetime import date
+from datetime import UTC, date, datetime
 
 from dateutil.relativedelta import relativedelta
 from sqlalchemy.orm import Session
@@ -13,12 +13,18 @@ from integrations.pluggy.http_clients.transaction.transaction_client import (
     get_all_transactions,
 )
 from integrations.pluggy.schemas.base_error_schema import BaseErrorSchema
-from jobs._common import JOB_ERRORS, iter_all_users
+from jobs._common import JOB_ERRORS
 from jobs.reconciliation_registration import reconciliate_financial_entries
+from jobs.transaction_internal_transfers_classification import (
+    launch_internal_transfers_classification,
+)
 from services.bank_accounts_sync_service import sync_bank_account
 from services.common.exceptions import ServiceError
 from services.pluggy_auth_service import authenticate_user
-from services.pluggy_items_service import list_pluggy_items_by_user
+from services.pluggy_items_service import (
+    list_pluggy_items_by_user,
+    update_pluggy_item_sync_info,
+)
 from services.transactions_sync_service import (
     sync_account_transactions,
     to_transaction_entity,
@@ -36,12 +42,12 @@ def _sync_user_transactions(session: Session, user: User) -> None:
     api_key = authenticate_user(user)
     pluggy_items = list_pluggy_items_by_user(session, user_id)
 
-    for item in pluggy_items:
+    for pluggy_item in pluggy_items:
         try:
-            item_id = require_id(item, "Pluggy item")
+            item_id = require_id(pluggy_item, "Pluggy item")
 
             # Both BANK and CREDIT accounts: the transactions logic is the same
-            accounts = get_all_accounts(api_key, str(item.pluggy_item_id))
+            accounts = get_all_accounts(api_key, str(pluggy_item.pluggy_item_id))
             for account in accounts.results:
                 # Our own pluggy_items id, not Pluggy's item id
                 stored_account, _ = sync_bank_account(
@@ -98,9 +104,14 @@ def _sync_user_transactions(session: Session, user: User) -> None:
         except PluggyExceptionError:
             logger.warning(
                 "Pluggy error on item %s, skipping it",
-                item.pluggy_item_id,
+                pluggy_item.pluggy_item_id,
                 exc_info=True,
             )
+            return
+
+        update_pluggy_item_sync_info(
+            session, pluggy_item.pluggy_item_id, datetime.now(UTC), None
+        )
 
 
 def _sync_and_commit_user(session: Session, user: User) -> None:
@@ -117,12 +128,7 @@ def _sync_and_commit_user(session: Session, user: User) -> None:
     # the transactions that are already committed
     if user.id is not None:
         reconciliate_financial_entries(user.id)
-
-
-def launch_transactions():
-    with get_session() as session:
-        for user in iter_all_users(session):
-            _sync_and_commit_user(session, user)
+    launch_internal_transfers_classification(user.household_id)
 
 
 def launch_user_transactions(user_id: uuid.UUID) -> None:

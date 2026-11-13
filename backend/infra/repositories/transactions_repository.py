@@ -195,6 +195,47 @@ def soft_delete_transactions(session: Session, ids: list[uuid.UUID]) -> None:
 
 
 @translate_db_errors("transactions")
+def list_unclassified_posted_by_accounts(
+    session: Session, account_ids: list[uuid.UUID]
+) -> list[Transactions]:
+    """POSTED transactions of the accounts that were not classified as internal transfer yet."""
+    stmt = (
+        select(Transactions)
+        .where(Transactions.bank_account_id.in_(account_ids))
+        .where(Transactions.status == "POSTED")
+        .where(Transactions.deleted_at.is_(None))
+        .where(Transactions.internal_transfer.is_(None))
+        .order_by(Transactions.date, Transactions.id)
+    )
+    return list(session.scalars(stmt).all())
+
+
+@translate_db_errors("transactions")
+def set_internal_transfer(
+    session: Session, ids: list[uuid.UUID], value: str, source: str
+) -> int:
+    """Classifies the transactions. Only the ones still unclassified: a decision already
+    taken (by hand or by an earlier run) is never overwritten. Returns how many changed."""
+    now = datetime.datetime.now(datetime.UTC)
+    changed = 0
+    for start in range(0, len(ids), _UPSERT_CHUNK_SIZE):
+        chunk = ids[start : start + _UPSERT_CHUNK_SIZE]
+        result = session.execute(
+            update(Transactions)
+            .where(Transactions.id.in_(chunk))
+            .where(Transactions.internal_transfer.is_(None))
+            .where(Transactions.deleted_at.is_(None))
+            .values(
+                internal_transfer=value,
+                internal_transfer_classification_source=source,
+                updated_at=now,
+            )
+        )
+        changed += result.rowcount  # type: ignore[attr-defined]
+    return changed
+
+
+@translate_db_errors("transactions")
 def search_transactions(
     session: Session,
     filters: TransactionFilters,

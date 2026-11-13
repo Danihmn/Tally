@@ -32,6 +32,11 @@ def today_local() -> datetime.date:
     return datetime.datetime.now(_LOCAL_TIMEZONE).date()
 
 
+def to_local_date(moment: datetime.datetime) -> datetime.date:
+    """The day of `moment` where the couple lives (a 22h Pix is already tomorrow in UTC)."""
+    return moment.astimezone(_LOCAL_TIMEZONE).date()
+
+
 def default_analysis_period(today: datetime.date) -> tuple[datetime.date, datetime.date]:
     """Day 1 of the month until yesterday (both inclusive).
 

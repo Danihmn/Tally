@@ -59,7 +59,15 @@ def make_incoming(stored: Transaction, **overrides: Any) -> Transaction:
     values = {
         field.name: getattr(stored, field.name)
         for field in dataclasses.fields(Transaction)
-        if field.name not in ("id", "created_at", "updated_at", "deleted_at")
+        if field.name
+        not in (
+            "id",
+            "created_at",
+            "updated_at",
+            "deleted_at",
+            "internal_transfer",
+            "internal_transfer_classification_source",
+        )
     }
     values.update(overrides)
     return Transaction(**values)

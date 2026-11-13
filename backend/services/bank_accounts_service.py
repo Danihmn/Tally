@@ -57,6 +57,15 @@ def list_bank_accounts_by_household(
 
 
 @translate_repository_errors
+def list_bank_accounts_by_user(
+    session: Session, user_id: uuid.UUID
+) -> list[BankAccount]:
+    """The user's bank accounts (checking and savings): no credit cards."""
+    accounts = bank_account_repository.list_bank_accounts_by_user(session, user_id)
+    return to_entities(BankAccount, accounts)
+
+
+@translate_repository_errors
 def upsert_bank_account(session: Session, account: BankAccount) -> BankAccount:
     saved = bank_account_repository.upsert_bank_account(session, to_values(account))
     return to_entity(BankAccount, saved)

@@ -1,4 +1,5 @@
 import calendar
+import dataclasses
 import datetime
 from typing import Literal
 
@@ -232,7 +233,10 @@ def _summarize(
     by_owner = group_by in ("owner", "owner_and_category")
     by_category = group_by in ("category", "owner_and_category")
     start, end, defaulted = _resolve_period(date_from, date_to)
-    filters = _filters(user, only_mine, start, end, type, category, search)
+    filters = dataclasses.replace(
+        _filters(user, only_mine, start, end, type, category, search),
+        exclude_internal_transfers=True,
+    )
 
     with get_session() as session:
         groups = summarize_transactions_by(session, filters, by_owner, by_category)
@@ -271,9 +275,10 @@ def _summarize(
     lines.append(f"{len(groups)} groups (biggest debit total first).")
     lines.extend(_totals_lines(summary))
     lines.append(
-        "Notes: debits are money out, credits are money in. Card bill payments and transfers "
-        "between the couple's own accounts are inside these totals; filter by category to "
-        "leave them out."
+        "Notes: debits are money out, credits are money in. Transfers between the person's "
+        "own accounts are left out of these totals (and, for the household, between the "
+        "couple too). Transfers not classified yet and card bill payments are still inside "
+        "them; filter by category to leave the bill payments out."
     )
     return "\n".join(lines)
 

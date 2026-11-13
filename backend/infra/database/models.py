@@ -348,6 +348,18 @@ class Transactions(Base):
     __tablename__ = "transactions"
     __table_args__ = (
         CheckConstraint(
+            "internal_transfer IS NULL AND internal_transfer_classification_source IS NULL OR internal_transfer IS NOT NULL AND internal_transfer_classification_source IS NOT NULL",
+            name="transactions_internal_transfer_consistency_check",
+        ),
+        CheckConstraint(
+            "internal_transfer::text = ANY (ARRAY['SAME_PERSON'::character varying, 'SAME_HOUSEHOLD'::character varying, 'NOT_INTERNAL_TRANSFER'::character varying]::text[])",
+            name="transactions_internal_transfer_check",
+        ),
+        CheckConstraint(
+            "internal_transfer_classification_source::text = ANY (ARRAY['MANUAL'::character varying, 'AUTO'::character varying]::text[])",
+            name="transactions_internal_transfer_source_check",
+        ),
+        CheckConstraint(
             "status = ANY (ARRAY['POSTED'::text, 'PENDING'::text])",
             name="transactions_status_check",
         ),
@@ -412,6 +424,10 @@ class Transactions(Base):
     credit_card_metadata: Mapped[object | None] = mapped_column(JSONB)
     merchant: Mapped[object | None] = mapped_column(JSONB)
     deleted_at: Mapped[datetime.datetime | None] = mapped_column(DateTime(True))
+    internal_transfer: Mapped[str | None] = mapped_column(String(25))
+    internal_transfer_classification_source: Mapped[str | None] = mapped_column(
+        String(20)
+    )
 
     bank_account: Mapped[BankAccounts] = relationship(
         "BankAccounts", back_populates="transactions"

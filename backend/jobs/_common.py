@@ -16,7 +16,9 @@ USERS_PAGE_SIZE = 20
 JOB_ERRORS = (ServiceError, PluggyExceptionError, httpx.HTTPError, ValueError)
 
 
-def iter_all_users(session: Session, page_size: int = USERS_PAGE_SIZE) -> Iterator[User]:
+def iter_all_users(
+    session: Session, page_size: int = USERS_PAGE_SIZE
+) -> Iterator[User]:
     """Every user, loaded one page at a time (the next page is read only when needed)."""
     offset = 0
     while True:

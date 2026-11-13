@@ -12,11 +12,86 @@ from services.transactions_service import (
     get_top_expenses,
     get_total_expenses,
     get_total_revenues,
+    list_unclassified_transactions,
+    mark_internal_transfer,
     summarize_transactions,
     summarize_transactions_by,
+    update_transactions,
+    upsert_transactions,
 )
+from tests.factories import make_transaction
 
 MODULE = "services.transactions_service"
+
+
+class SyncKeepsTheInternalTransferClassificationTests(unittest.TestCase):
+    """The Pluggy sync must never send the classification columns (it would reset them to NULL)."""
+
+    CLASSIFICATION = {"internal_transfer", "internal_transfer_classification_source"}
+
+    def _classified(self):
+        return make_transaction(
+            internal_transfer="SAME_PERSON",
+            internal_transfer_classification_source="MANUAL",
+        )
+
+    def test_the_upsert_does_not_send_the_classification_columns(self):
+        with patch(f"{MODULE}.transactions_repository") as repository:
+            repository.upsert_transactions.return_value = []
+            upsert_transactions(MagicMock(), [self._classified()])
+
+        (values,) = repository.upsert_transactions.call_args.args[1]
+        self.assertFalse(self.CLASSIFICATION & values.keys())
+        self.assertIn("description", values)
+
+    def test_the_update_does_not_send_the_classification_columns(self):
+        with patch(f"{MODULE}.transactions_repository") as repository:
+            update_transactions(MagicMock(), [self._classified()])
+
+        (values,) = repository.update_transactions.call_args.args[1]
+        self.assertFalse(self.CLASSIFICATION & values.keys())
+        self.assertIn("description", values)
+
+
+class ListUnclassifiedTransactionsTests(unittest.TestCase):
+    def test_asks_the_repository_for_the_accounts_and_returns_entities(self):
+        session, accounts = MagicMock(), [uuid.uuid4(), uuid.uuid4()]
+        stored = make_transaction()
+        with patch(f"{MODULE}.transactions_repository") as repository:
+            repository.list_unclassified_posted_by_accounts.return_value = [stored]
+            result = list_unclassified_transactions(session, accounts)
+
+        repository.list_unclassified_posted_by_accounts.assert_called_once_with(
+            session, accounts
+        )
+        self.assertEqual(result, [stored])
+
+    def test_no_accounts_does_not_hit_the_repository(self):
+        with patch(f"{MODULE}.transactions_repository") as repository:
+            result = list_unclassified_transactions(MagicMock(), [])
+
+        self.assertEqual(result, [])
+        repository.list_unclassified_posted_by_accounts.assert_not_called()
+
+
+class MarkInternalTransferTests(unittest.TestCase):
+    def test_sends_the_ids_the_value_and_the_source_and_returns_how_many_changed(self):
+        session, ids = MagicMock(), [uuid.uuid4(), uuid.uuid4()]
+        with patch(f"{MODULE}.transactions_repository") as repository:
+            repository.set_internal_transfer.return_value = 2
+            changed = mark_internal_transfer(session, ids, "SAME_PERSON", "AUTO")
+
+        repository.set_internal_transfer.assert_called_once_with(
+            session, ids, "SAME_PERSON", "AUTO"
+        )
+        self.assertEqual(changed, 2)
+
+    def test_no_ids_does_not_hit_the_repository(self):
+        with patch(f"{MODULE}.transactions_repository") as repository:
+            changed = mark_internal_transfer(MagicMock(), [], "SAME_PERSON", "AUTO")
+
+        self.assertEqual(changed, 0)
+        repository.set_internal_transfer.assert_not_called()
 
 
 class SummarizeTransactionsTests(unittest.TestCase):

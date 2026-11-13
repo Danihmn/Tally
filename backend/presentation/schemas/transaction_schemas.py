@@ -25,6 +25,13 @@ class TransactionQuery(BaseModel):
     search: str | None = Field(default=None, min_length=1, max_length=100)
     min_amount: decimal.Decimal | None = Field(default=None, ge=0)
     max_amount: decimal.Decimal | None = Field(default=None, ge=0)
+    # UNCLASSIFIED: the ones that were not classified yet
+    internal_transfer: (
+        Literal[
+            "SAME_PERSON", "SAME_HOUSEHOLD", "NOT_INTERNAL_TRANSFER", "UNCLASSIFIED"
+        ]
+        | None
+    ) = None
     limit: int = Field(default=50, ge=1, le=200)
     offset: int = Field(default=0, ge=0)
 
@@ -48,6 +55,7 @@ class TransactionQuery(BaseModel):
             search=self.search,
             min_amount=self.min_amount,
             max_amount=self.max_amount,
+            internal_transfer=self.internal_transfer,
         )
 
 
@@ -139,3 +147,8 @@ class TransactionResponse(BaseModel):
     category_id: str | None
     merchant: Any | None
     balance: decimal.Decimal | None
+    # None = not classified yet
+    internal_transfer: (
+        Literal["SAME_PERSON", "SAME_HOUSEHOLD", "NOT_INTERNAL_TRANSFER"] | None
+    )
+    internal_transfer_classification_source: Literal["MANUAL", "AUTO"] | None

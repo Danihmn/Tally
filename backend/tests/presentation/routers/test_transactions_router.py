@@ -69,6 +69,31 @@ class PeriodEndpointsTestCase(unittest.TestCase):
         return self.mocks[service].call_args.args[1]
 
 
+class InternalTransfersLeaveTheTotalsTests(PeriodEndpointsTestCase):
+    ENDPOINTS = {
+        "/transactions/total-expenses": "get_total_expenses",
+        "/transactions/total-revenues": "get_total_revenues",
+        "/transactions/balance": "get_balance",
+        "/transactions/top-expenses": "get_top_expenses",
+        "/transactions/daily-expenses": "get_daily_expenses",
+        "/transactions/average-daily-expenses": "get_average_daily_expenses",
+    }
+
+    def test_every_period_endpoint_asks_to_leave_internal_transfers_out(self):
+        for path, service in self.ENDPOINTS.items():
+            with self.subTest(path=path):
+                self.client.get(path)
+
+                self.assertTrue(self.filters_sent_to(service).exclude_internal_transfers)
+
+    def test_the_person_filter_is_kept_so_the_scope_of_the_exclusion_can_follow_it(self):
+        self.client.get("/transactions/total-expenses", params={"user_id": str(PARTNER_ID)})
+        self.assertEqual(self.filters_sent_to("get_total_expenses").user_id, PARTNER_ID)
+
+        self.client.get("/transactions/total-expenses")
+        self.assertIsNone(self.filters_sent_to("get_total_expenses").user_id)
+
+
 class TotalExpensesEndpointTests(PeriodEndpointsTestCase):
     def test_answers_with_the_total_and_the_period_that_was_used(self):
         response = self.client.get(
@@ -384,6 +409,52 @@ class ListTransactionsEndpointTests(unittest.TestCase):
         self.assertEqual((filters.type, filters.status), ("DEBIT", "PENDING"))
         self.assertEqual((filters.category, filters.search), ("Groceries", "mercado"))
         self.assertEqual((filters.min_amount, filters.max_amount), (Decimal("10.50"), Decimal("200")))
+
+    def test_the_internal_transfer_filter_reaches_the_service(self):
+        for value in (
+            "SAME_PERSON",
+            "SAME_HOUSEHOLD",
+            "NOT_INTERNAL_TRANSFER",
+            "UNCLASSIFIED",
+        ):
+            with self.subTest(value=value):
+                self.client.get("/transactions", params={"internal_transfer": value})
+
+                self.assertEqual(self._filters().internal_transfer, value)
+
+    def test_an_unknown_internal_transfer_value_is_rejected(self):
+        response = self.client.get("/transactions", params={"internal_transfer": "BOTH"})
+
+        self.assertEqual(response.status_code, 422)
+        self.search.assert_not_called()
+
+    def test_the_list_keeps_the_internal_transfers_unless_asked_to_filter(self):
+        self.client.get("/transactions")
+
+        filters = self._filters()
+        self.assertIsNone(filters.internal_transfer)
+        self.assertFalse(filters.exclude_internal_transfers)
+
+    def test_answers_with_the_internal_transfer_classification(self):
+        classified = make_transaction(
+            internal_transfer="SAME_HOUSEHOLD",
+            internal_transfer_classification_source="AUTO",
+        )
+        unclassified = make_transaction()
+        self.search.return_value = (
+            [
+                TransactionWithOwner(transaction=classified, user_id=self.OWNER_ID),
+                TransactionWithOwner(transaction=unclassified, user_id=self.OWNER_ID),
+            ],
+            2,
+        )
+
+        items = self.client.get("/transactions").json()["items"]
+
+        self.assertEqual(items[0]["internal_transfer"], "SAME_HOUSEHOLD")
+        self.assertEqual(items[0]["internal_transfer_classification_source"], "AUTO")
+        self.assertIsNone(items[1]["internal_transfer"])
+        self.assertIsNone(items[1]["internal_transfer_classification_source"])
 
     def test_the_period_is_whole_utc_days_with_both_ends_inclusive(self):
         self.client.get(

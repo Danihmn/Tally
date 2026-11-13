@@ -11,7 +11,6 @@ from integrations.pluggy.schemas.base_error_schema import BaseErrorSchema
 from jobs.transaction_launcher import (
     _sync_and_commit_user,
     _sync_user_transactions,
-    launch_transactions,
     launch_user_transactions,
 )
 from services.common.exceptions import NotFoundError, ServiceError
@@ -192,20 +191,25 @@ class SyncAndCommitUserTests(unittest.TestCase):
         self.user = make_user()
         self.order = (
             MagicMock()
-        )  # Records the order of the sync, the commit and the reconciliation
+        )  # Records the order of the sync, the commit, the reconciliation and the classification
 
         sync_patcher = patch(f"{MODULE}._sync_user_transactions", self.order.sync)
         reconcile_patcher = patch(
             f"{MODULE}.reconciliate_financial_entries", self.order.reconcile
         )
+        classify_patcher = patch(
+            f"{MODULE}.launch_internal_transfers_classification", self.order.classify
+        )
         sync_patcher.start()
         reconcile_patcher.start()
+        classify_patcher.start()
         self.addCleanup(sync_patcher.stop)
         self.addCleanup(reconcile_patcher.stop)
+        self.addCleanup(classify_patcher.stop)
         self.session.commit = self.order.commit
         self.session.rollback = self.order.rollback
 
-    def test_commits_and_then_reconciles(self):
+    def test_commits_then_reconciles_and_then_classifies_the_internal_transfers(self):
         _sync_and_commit_user(self.session, self.user)
 
         self.assertEqual(
@@ -214,10 +218,11 @@ class SyncAndCommitUserTests(unittest.TestCase):
                 call.sync(self.session, self.user),
                 call.commit(),
                 call.reconcile(self.user.id),
+                call.classify(self.user.household_id),
             ],
         )
 
-    def test_known_errors_roll_back_and_skip_the_reconciliation(self):
+    def test_known_errors_roll_back_and_skip_the_reconciliation_and_the_classification(self):
         errors = (
             ServiceError("db"),
             _pluggy_error(),
@@ -234,6 +239,7 @@ class SyncAndCommitUserTests(unittest.TestCase):
                 self.order.rollback.assert_called_once()
                 self.order.commit.assert_not_called()
                 self.order.reconcile.assert_not_called()
+                self.order.classify.assert_not_called()
 
     def test_unexpected_error_is_raised(self):
         self.order.sync.side_effect = RuntimeError("bug")
@@ -242,37 +248,17 @@ class SyncAndCommitUserTests(unittest.TestCase):
             _sync_and_commit_user(self.session, self.user)
 
 
-class LaunchTransactionsTests(unittest.TestCase):
+class LaunchUserTransactionsTests(unittest.TestCase):
     def setUp(self):
         self.session = MagicMock()
         for name, value in (
             ("get_session", fake_get_session(self.session)),
             ("_sync_and_commit_user", MagicMock()),
-            ("iter_all_users", MagicMock()),
             ("get_user_by_id", MagicMock()),
         ):
             patcher = patch(f"{MODULE}.{name}", value)
             setattr(self, name, patcher.start())
             self.addCleanup(patcher.stop)
-
-    def test_syncs_every_user(self):
-        users = [make_user(id=uuid.uuid4()) for _ in range(3)]
-        self.iter_all_users.return_value = iter(users)
-
-        launch_transactions()
-
-        self.iter_all_users.assert_called_once_with(self.session)
-        self.assertEqual(
-            self._sync_and_commit_user.call_args_list,
-            [call(self.session, u) for u in users],
-        )
-
-    def test_no_users_does_nothing(self):
-        self.iter_all_users.return_value = iter([])
-
-        launch_transactions()
-
-        self._sync_and_commit_user.assert_not_called()
 
     def test_launch_user_transactions_syncs_that_user(self):
         user = make_user()

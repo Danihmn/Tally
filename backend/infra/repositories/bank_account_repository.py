@@ -71,6 +71,23 @@ def list_bank_accounts_by_household(
 
 
 @translate_db_errors("bank_accounts")
+def list_bank_accounts_by_user(
+    session: Session, user_id: uuid.UUID
+) -> list[BankAccounts]:
+    """The user's bank accounts (type BANK: checking and savings), with no pagination.
+
+    Credit cards (type CREDIT) and the accounts of removed items are left out."""
+    stmt = (
+        _with_owner(select(BankAccounts))
+        .where(PluggyItems.user_id == user_id)
+        .where(PluggyItems.deleted_at.is_(None))
+        .where(BankAccounts.type == "BANK")
+        .order_by(BankAccounts.created_at, BankAccounts.id)
+    )
+    return list(session.scalars(stmt).all())
+
+
+@translate_db_errors("bank_accounts")
 def upsert_bank_account(session: Session, values: dict[str, Any]) -> BankAccounts:
     """Insert or update by pluggy_account_id. `values` uses BankAccounts column names."""
     return upsert_one(

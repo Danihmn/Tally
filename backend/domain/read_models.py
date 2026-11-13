@@ -82,6 +82,11 @@ class TransactionFilters:
     search: str | None = None  # case-insensitive, inside the description
     min_amount: decimal.Decimal | None = None  # compared with abs(amount)
     max_amount: decimal.Decimal | None = None
+    # SAME_PERSON | SAME_HOUSEHOLD | NOT_INTERNAL_TRANSFER | UNCLASSIFIED (not classified yet)
+    internal_transfer: str | None = None
+    # Leaves internal transfers out of the totals: SAME_PERSON always, SAME_HOUSEHOLD only
+    # when there is no user_id (the household view). Not classified rows still count.
+    exclude_internal_transfers: bool = False
 
 
 @dataclass(slots=True)

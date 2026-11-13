@@ -8,6 +8,7 @@ from utils.dates import (
     first_day_of_month,
     start_of_day_utc,
     today_local,
+    to_local_date,
     today_utc,
     utcnow,
 )
@@ -93,3 +94,15 @@ class TestDefaultAnalysisPeriod(unittest.TestCase):
             default_analysis_period(datetime.date(2027, 3, 1)),
             (datetime.date(2027, 2, 1), datetime.date(2027, 2, 28)),
         )
+
+
+class TestToLocalDate(unittest.TestCase):
+    def test_a_late_evening_in_brazil_is_already_the_next_day_in_utc_but_stays_the_same_local_day(self):
+        moment = datetime.datetime(2026, 11, 11, 1, 30, tzinfo=datetime.UTC)  # 22:30 on the 10th
+
+        self.assertEqual(to_local_date(moment), datetime.date(2026, 11, 10))
+
+    def test_midday_is_the_same_day_everywhere(self):
+        moment = datetime.datetime(2026, 11, 10, 15, 0, tzinfo=datetime.UTC)
+
+        self.assertEqual(to_local_date(moment), datetime.date(2026, 11, 10))
