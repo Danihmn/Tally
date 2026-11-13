@@ -160,7 +160,13 @@ def summarize_transactions_by(
 ) -> list[TransactionGroupTotal]:
     """Debit and credit totals per owner and/or category, biggest debit total first."""
     groups: dict[tuple, TransactionGroupTotal] = {}
-    for user_id, category, type_, total, count in transactions_repository.summarize_transactions_by(
+    for (
+        user_id,
+        category,
+        type_,
+        total,
+        count,
+    ) in transactions_repository.summarize_transactions_by(
         session, filters, by_owner, by_category
     ):
         group = groups.setdefault(

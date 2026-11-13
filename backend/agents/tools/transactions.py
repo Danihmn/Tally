@@ -6,7 +6,14 @@ from langchain.tools import ToolRuntime, tool
 
 from agents.common.clock import today
 from agents.common.context import AgentContext
-from agents.common.formatting import clamp_limit, day, money, period_note, scope_line, text
+from agents.common.formatting import (
+    clamp_limit,
+    day,
+    money,
+    period_note,
+    scope_line,
+    text,
+)
 from agents.tools._shared import owner_names, tool_errors
 from domain.entities import User
 from domain.read_models import TransactionFilters, TransactionSummary
@@ -220,8 +227,7 @@ def _summarize(
 ) -> str:
     if group_by not in ("owner", "category", "owner_and_category"):
         raise ValueError(
-            "group_by must be owner, category or owner_and_category, "
-            f"got '{group_by}'"
+            f"group_by must be owner, category or owner_and_category, got '{group_by}'"
         )
     by_owner = group_by in ("owner", "owner_and_category")
     by_category = group_by in ("category", "owner_and_category")
@@ -241,7 +247,9 @@ def _summarize(
 
     columns = (["owner"] if by_owner else []) + (["category"] if by_category else [])
     lines.append(
-        " | ".join(columns + ["total debits", "debit count", "total credits", "credit count"])
+        " | ".join(
+            columns + ["total debits", "debit count", "total credits", "credit count"]
+        )
     )
     for group in groups:
         keys = []
@@ -275,7 +283,8 @@ def _summarize(
     description=(
         "ONLY the logged person's own spending and income, totaled by category (default) or "
         "by person. Call it for 'quanto eu gastei por categoria', 'onde eu mais gastei', "
-        "'com o que eu gastei'. Never use it for the couple or the house. " + _SUMMARY_HELP
+        "'com o que eu gastei'. Never use it for the couple or the house. "
+        + _SUMMARY_HELP
     ),
 )
 @tool_errors
