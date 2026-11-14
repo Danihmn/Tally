@@ -49,37 +49,6 @@ def list_financial_entries_by_user(
 
 
 @translate_db_errors("financial_entries")
-def list_financial_entries_by_household(
-    session: Session,
-    household_id: uuid.UUID,
-    reference_month_from: datetime.date | None = None,  # inclusive
-    reference_month_to: datetime.date | None = None,  # exclusive
-    status: str | None = None,
-    bank_account_id: uuid.UUID | None = None,
-) -> list[FinancialEntries]:
-    """Entries of the whole household that were not soft deleted, with no pagination."""
-    stmt = (
-        select(FinancialEntries)
-        .where(FinancialEntries.household_id == household_id)
-        .where(FinancialEntries.deleted_at.is_(None))
-    )
-    if reference_month_from is not None:
-        stmt = stmt.where(FinancialEntries.reference_month >= reference_month_from)
-    if reference_month_to is not None:
-        stmt = stmt.where(FinancialEntries.reference_month < reference_month_to)
-    if status is not None:
-        stmt = stmt.where(FinancialEntries.status == status)
-    if bank_account_id is not None:
-        stmt = stmt.where(FinancialEntries.bank_account_id == bank_account_id)
-    stmt = stmt.order_by(
-        FinancialEntries.reference_month,
-        FinancialEntries.due_date,
-        FinancialEntries.id,
-    )
-    return list(session.scalars(stmt).all())
-
-
-@translate_db_errors("financial_entries")
 def create_financial_entry(
     session: Session, values: dict[str, Any]
 ) -> FinancialEntries:

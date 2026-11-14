@@ -5,7 +5,6 @@ from domain.entities.financial_entry import FinancialEntry
 from domain.entities.household import Household
 from domain.entities.pluggy_item import PluggyItem
 from domain.entities.reconciliation import Reconciliation
-from domain.entities.recurrence import Recurrence
 from domain.entities.transaction import Transaction
 from domain.entities.user import User
 
@@ -17,7 +16,6 @@ __all__ = [
     "Household",
     "PluggyItem",
     "Reconciliation",
-    "Recurrence",
     "Transaction",
     "User",
 ]
