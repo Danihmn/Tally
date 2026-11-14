@@ -49,6 +49,14 @@ abstract final class ApiEndpoints {
     usedBy: 'Transações',
   );
 
+  // Entries list (and the transactions they are matched with)
+
+  static const financialEntries = ApiEndpoint(
+    'GET',
+    '/financial-entries',
+    usedBy: 'Lançamentos',
+  );
+
   // Movement analysis (transactions)
 
   static const totalExpenses = ApiEndpoint(
@@ -124,6 +132,7 @@ abstract final class ApiEndpoints {
     users,
     transactions,
     bankAccounts,
+    financialEntries,
     totalExpenses,
     totalRevenues,
     balance,

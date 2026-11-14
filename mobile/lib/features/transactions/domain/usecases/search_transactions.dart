@@ -16,11 +16,13 @@ class SearchTransactions {
     String? userId,
     TransactionFilters filters = const TransactionFilters(),
     String search = '',
+    String? financialEntryId,
   }) => _repository.search(
     offset: offset,
     limit: limit,
     userId: userId,
     filters: filters,
     search: search,
+    financialEntryId: financialEntryId,
   );
 }
