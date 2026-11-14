@@ -3,8 +3,8 @@ import uuid
 
 from sqlalchemy.orm import Session
 
-from domain.entities import BankAccount
-from domain.read_models import BankAccountWithOwner
+from domain.entities import BankAccount, CreditData
+from domain.read_models import AccountBalance, BankAccountWithOwner
 from infra.repositories import bank_account_repository
 from services.common.exceptions import translate_repository_errors
 from services.common.mappers import to_entities, to_entity, to_entity_or_none, to_values
@@ -110,3 +110,36 @@ def get_bank_account_with_owner(
     return BankAccountWithOwner(
         account=to_entity(BankAccount, account), user_id=owner_id
     )
+
+
+@translate_repository_errors
+def get_total_balance(
+    session: Session,
+    household_id: uuid.UUID,
+    account_type: str,
+    user_id: uuid.UUID | None = None,
+) -> decimal.Decimal:
+    """Sum of the balances Pluggy gave for the accounts of one type (BANK or CREDIT)."""
+    return bank_account_repository.sum_bank_accounts_balance(
+        session, household_id, account_type, user_id
+    )
+
+
+@translate_repository_errors
+def list_account_balances(
+    session: Session,
+    household_id: uuid.UUID,
+    account_type: str | None = None,
+    user_id: uuid.UUID | None = None,
+) -> list[AccountBalance]:
+    rows = bank_account_repository.list_account_balances(
+        session, household_id, account_type, user_id
+    )
+    return [
+        AccountBalance(
+            account=to_entity(BankAccount, account),
+            user_id=owner_id,
+            credit_data=to_entity_or_none(CreditData, credit_data),
+        )
+        for account, owner_id, credit_data in rows
+    ]

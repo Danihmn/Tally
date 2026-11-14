@@ -3,10 +3,10 @@ import decimal
 import uuid
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from infra.database.models import BankAccounts, PluggyItems
+from infra.database.models import BankAccounts, CreditDatas, PluggyItems
 from infra.repositories.common.exceptions import (
     RecordNotFoundError,
     translate_db_errors,
@@ -151,3 +151,54 @@ def get_bank_account_with_owner(
     if row is None:
         raise RecordNotFoundError("bank_accounts", "get_bank_account_with_owner")
     return row[0], row[1]
+
+
+@translate_db_errors("bank_accounts")
+def sum_bank_accounts_balance(
+    session: Session,
+    household_id: uuid.UUID,
+    account_type: str,
+    user_id: uuid.UUID | None = None,
+) -> decimal.Decimal:
+    """Sum of the balance of the accounts of one type (BANK or CREDIT) of connected items.
+
+    Accounts of removed items are left out: their balance is old. Accounts with no balance count
+    as zero. Zero when nothing matches."""
+    stmt = _with_owner(select(func.coalesce(func.sum(BankAccounts.balance), 0)))
+    stmt = stmt.where(
+        BankAccounts.household_id == household_id,
+        BankAccounts.type == account_type,
+        PluggyItems.deleted_at.is_(None),
+    )
+    if user_id is not None:
+        stmt = stmt.where(PluggyItems.user_id == user_id)
+    return session.scalar(stmt) or decimal.Decimal("0.00")
+
+
+@translate_db_errors("bank_accounts")
+def list_account_balances(
+    session: Session,
+    household_id: uuid.UUID,
+    account_type: str | None = None,
+    user_id: uuid.UUID | None = None,
+) -> list[tuple[BankAccounts, uuid.UUID, CreditDatas | None]]:
+    """Accounts of connected items with the owner's user id and, for cards, the credit data.
+
+    No pagination: a household has few accounts."""
+    stmt = _with_owner(
+        select(BankAccounts, PluggyItems.user_id, CreditDatas).outerjoin(
+            CreditDatas, CreditDatas.bank_account_id == BankAccounts.id
+        )
+    ).where(
+        BankAccounts.household_id == household_id,
+        PluggyItems.deleted_at.is_(None),
+    )
+    if account_type is not None:
+        stmt = stmt.where(BankAccounts.type == account_type)
+    if user_id is not None:
+        stmt = stmt.where(PluggyItems.user_id == user_id)
+    stmt = stmt.order_by(BankAccounts.created_at, BankAccounts.id)
+    return [
+        (account, owner_id, credit_data)
+        for account, owner_id, credit_data in session.execute(stmt)
+    ]
