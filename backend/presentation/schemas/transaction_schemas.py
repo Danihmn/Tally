@@ -32,6 +32,8 @@ class TransactionQuery(BaseModel):
         ]
         | None
     ) = None
+    # Only the transactions reconciled with this entry
+    financial_entry_id: uuid.UUID | None = None
     limit: int = Field(default=50, ge=1, le=200)
     offset: int = Field(default=0, ge=0)
 
@@ -56,6 +58,7 @@ class TransactionQuery(BaseModel):
             min_amount=self.min_amount,
             max_amount=self.max_amount,
             internal_transfer=self.internal_transfer,
+            financial_entry_id=self.financial_entry_id,
         )
 
 

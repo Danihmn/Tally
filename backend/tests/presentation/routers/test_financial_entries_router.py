@@ -396,3 +396,111 @@ class UpcomingEntriesEndpointTests(PlanningEndpointsTestCase):
 
         self.assertEqual(self.client.get("/financial-entries/upcoming").status_code, 401)
 
+
+
+class ListFinancialEntriesEndpointTests(unittest.TestCase):
+    """GET /financial-entries: the list of the Lançamentos screen."""
+
+    def setUp(self):
+        self.session = MagicMock()
+        self.current_user = make_user()
+
+        def _get_db():
+            yield self.session
+
+        app.dependency_overrides[get_db] = _get_db
+        app.dependency_overrides[get_current_user] = lambda: self.current_user
+        self.addCleanup(app.dependency_overrides.clear)
+        self.client = TestClient(app)
+
+        patcher = patch(f"{MODULE}.search_financial_entries")
+        self.search = patcher.start()
+        self.addCleanup(patcher.stop)
+        self.search.return_value = ([], 0)
+
+    def _filters(self):
+        return self.search.call_args.args[1]
+
+    def test_the_household_comes_from_the_logged_user(self):
+        response = self.client.get("/financial-entries")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(self._filters().household_id, HOUSEHOLD_ID)
+
+    def test_a_household_sent_in_the_request_is_rejected(self):
+        response = self.client.get(
+            "/financial-entries", params={"household_id": str(OTHER_HOUSEHOLD_ID)}
+        )
+
+        self.assertEqual(response.status_code, 422)
+        self.search.assert_not_called()
+
+    def test_every_filter_reaches_the_service(self):
+        account = uuid.UUID("00000000-0000-0000-0000-00000000a001")
+        transaction = uuid.UUID("00000000-0000-0000-0000-00000000b001")
+
+        self.client.get(
+            "/financial-entries",
+            params={
+                "user_id": str(self.current_user.id),
+                "bank_account_id": str(account),
+                "type": "EXPENSES",
+                "payment_type": "CREDIT",
+                "status": "PLANNED",
+                "search": "luz",
+                "reference_month_from": "2026-09-17",
+                "reference_month_to": "2026-11-20",
+                "due_date_from": "2026-11-01",
+                "due_date_to": "2026-11-30",
+                "min_amount": "10.50",
+                "max_amount": "200",
+                "transaction_id": str(transaction),
+            },
+        )
+
+        filters = self._filters()
+        self.assertEqual(filters.user_id, self.current_user.id)
+        self.assertEqual(filters.bank_account_id, account)
+        self.assertEqual((filters.type, filters.payment_type), ("EXPENSES", "CREDIT"))
+        self.assertEqual((filters.status, filters.search), ("PLANNED", "luz"))
+        # Any day of the month is moved to the first day
+        self.assertEqual(filters.reference_month_from, datetime.date(2026, 9, 1))
+        self.assertEqual(filters.reference_month_to, datetime.date(2026, 11, 1))
+        self.assertEqual(filters.due_date_from, datetime.date(2026, 11, 1))
+        self.assertEqual(filters.due_date_to, datetime.date(2026, 11, 30))
+        self.assertEqual(
+            (filters.min_amount, filters.max_amount), (Decimal("10.50"), Decimal("200"))
+        )
+        self.assertEqual(filters.transaction_id, transaction)
+
+    def test_without_filters_only_the_household_is_set(self):
+        self.client.get("/financial-entries")
+
+        filters = self._filters()
+        self.assertIsNone(filters.transaction_id)
+        self.assertIsNone(filters.status)
+        self.assertIsNone(filters.user_id)
+
+    def test_the_page_has_the_items_the_total_and_the_paging(self):
+        self.search.return_value = ([make_entry(created_at=utc(2026, 11, 1))], 41)
+
+        body = self.client.get(
+            "/financial-entries", params={"limit": 30, "offset": 30}
+        ).json()
+
+        self.assertEqual((body["total"], body["limit"], body["offset"]), (41, 30, 30))
+        self.assertEqual(len(body["items"]), 1)
+        self.assertEqual(self.search.call_args.kwargs, {"limit": 30, "offset": 30})
+
+    def test_dates_out_of_order_are_rejected(self):
+        response = self.client.get(
+            "/financial-entries",
+            params={"due_date_from": "2026-11-10", "due_date_to": "2026-11-01"},
+        )
+
+        self.assertEqual(response.status_code, 422)
+
+    def test_without_a_token_it_is_unauthorized(self):
+        app.dependency_overrides.pop(get_current_user)
+
+        self.assertEqual(self.client.get("/financial-entries").status_code, 401)

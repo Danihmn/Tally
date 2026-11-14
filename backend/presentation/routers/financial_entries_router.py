@@ -47,9 +47,10 @@ router = APIRouter(
 def list_financial_entries_endpoint(
     query: Annotated[FinancialEntryQuery, Query()],
     session: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
 ) -> Page[FinancialEntryResponse]:
     items, total = search_financial_entries(
-        session, query.to_filters(), limit=query.limit, offset=query.offset
+        session, query.to_filters(current_user.household_id), limit=query.limit, offset=query.offset
     )
     return Page[FinancialEntryResponse](
         items=[FinancialEntryResponse.from_entity(e) for e in items],

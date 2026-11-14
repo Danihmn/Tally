@@ -87,6 +87,8 @@ class TransactionFilters:
     # Leaves internal transfers out of the totals: SAME_PERSON always, SAME_HOUSEHOLD only
     # when there is no user_id (the household view). Not classified rows still count.
     exclude_internal_transfers: bool = False
+    # Only the transactions with an active reconciliation with this entry
+    financial_entry_id: uuid.UUID | None = None
 
 
 @dataclass(slots=True)
@@ -120,6 +122,8 @@ class FinancialEntryFilters:
     due_date_to: datetime.date | None = None  # inclusive
     min_amount: decimal.Decimal | None = None
     max_amount: decimal.Decimal | None = None
+    # Only the entries with an active reconciliation with this transaction
+    transaction_id: uuid.UUID | None = None
 
 
 @dataclass(slots=True)
