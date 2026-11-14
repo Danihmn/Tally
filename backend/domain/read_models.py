@@ -9,13 +9,22 @@ import decimal
 import uuid
 from dataclasses import dataclass, field
 
-from domain.entities import BankAccount, FinancialEntry, Transaction
+from domain.entities import BankAccount, CreditData, FinancialEntry, Transaction
 
 
 @dataclass(slots=True)
 class BankAccountWithOwner:
     account: BankAccount
     user_id: uuid.UUID
+
+
+@dataclass(slots=True)
+class AccountBalance:
+    """An account with its owner and, for a credit card, the limits that come with it."""
+
+    account: BankAccount
+    user_id: uuid.UUID
+    credit_data: CreditData | None = None
 
 
 @dataclass(slots=True)
