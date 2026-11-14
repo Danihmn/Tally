@@ -26,16 +26,6 @@ def list_pluggy_items_by_user(session: Session, user_id: uuid.UUID) -> list[Plug
 
 
 @translate_repository_errors
-def list_pluggy_items_expiring_before(
-    session: Session, limit_date: datetime.datetime
-) -> list[PluggyItem]:
-    items = pluggy_items_repository.list_pluggy_items_expiring_before(
-        session, limit_date
-    )
-    return to_entities(PluggyItem, items)
-
-
-@translate_repository_errors
 def create_pluggy_item(session: Session, item: PluggyItem) -> PluggyItem:
     created = pluggy_items_repository.create_pluggy_item(
         session,

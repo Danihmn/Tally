@@ -13,8 +13,3 @@ def get_household_by_id(session: Session, household_id: uuid.UUID) -> Household:
     return to_entity(
         Household, households_repository.get_household_by_id(session, household_id)
     )
-
-
-@translate_repository_errors
-def create_household(session: Session) -> Household:
-    return to_entity(Household, households_repository.create_household(session))
