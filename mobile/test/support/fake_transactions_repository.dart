@@ -1,7 +1,9 @@
 import 'dart:async';
 
+import 'package:decimal/decimal.dart';
 import 'package:mobile/core/pagination/page_result.dart';
 import 'package:mobile/core/result/result.dart';
+import 'package:mobile/features/accounts/domain/entities/account_balance.dart';
 import 'package:mobile/features/accounts/domain/entities/bank_account.dart';
 import 'package:mobile/features/accounts/domain/repositories/accounts_repository.dart';
 import 'package:mobile/features/transactions/domain/entities/transaction.dart';
@@ -131,5 +133,87 @@ class FakeAccountsRepository implements AccountsRepository {
   Future<Result<List<BankAccount>>> getAccounts() async {
     calls++;
     return result;
+  }
+
+  /// Accounts and cards with a balance. The two accounts and the two cards
+  /// belong to `m1` (Ana) and `m2` (Bia), one each.
+  List<AccountBalance> balances = [
+    AccountBalance(
+      id: 'a1',
+      ownerId: 'm1',
+      kind: AccountKind.bank,
+      name: 'Conta Corrente',
+      marketingName: 'Nubank',
+      number: '0001/12345-6',
+      balance: Decimal.parse('2301.45'),
+      credit: null,
+    ),
+    AccountBalance(
+      id: 'a3',
+      ownerId: 'm2',
+      kind: AccountKind.bank,
+      name: 'Conta Corrente',
+      marketingName: 'Inter',
+      number: '00099-1',
+      balance: Decimal.parse('1200.00'),
+      credit: null,
+    ),
+    AccountBalance(
+      id: 'a2',
+      ownerId: 'm1',
+      kind: AccountKind.credit,
+      name: 'Cartão Platinum',
+      marketingName: 'Itaú Card',
+      number: '5412 7700 0000 1234',
+      balance: Decimal.parse('1500.00'),
+      credit: CreditInfo(
+        creditLimit: Decimal.parse('5000.00'),
+        availableCreditLimit: Decimal.parse('3500.00'),
+        dueDate: DateTime.utc(2026, 11, 17),
+        closeDate: DateTime.utc(2026, 11, 8),
+      ),
+    ),
+    AccountBalance(
+      id: 'a4',
+      ownerId: 'm2',
+      kind: AccountKind.credit,
+      name: 'Cartão Nu',
+      marketingName: 'Nubank',
+      number: '9876',
+      balance: Decimal.parse('300.00'),
+      credit: null,
+    ),
+  ];
+
+  Result<List<AccountBalance>>? balancesForced;
+  Result<Decimal>? totalForced;
+  final List<String?> balanceCalls = [];
+  final List<(AccountKind, String?)> totalCalls = [];
+
+  @override
+  Future<Result<List<AccountBalance>>> getBalances({String? userId}) async {
+    balanceCalls.add(userId);
+    return balancesForced ??
+        Result.success([
+          for (final b in balances)
+            if (userId == null || b.ownerId == userId) b,
+        ]);
+  }
+
+  @override
+  Future<Result<Decimal>> getTotalBalance({
+    required AccountKind kind,
+    String? userId,
+  }) async {
+    totalCalls.add((kind, userId));
+    final forced = totalForced;
+    if (forced != null) return forced;
+    var sum = Decimal.zero;
+    for (final b in balances) {
+      if (b.kind == kind && (userId == null || b.ownerId == userId)) {
+        sum += b.balance ?? Decimal.zero;
+      }
+    }
+    return Result.success(sum);
   }
 }

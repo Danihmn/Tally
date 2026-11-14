@@ -8,6 +8,7 @@ import 'package:mobile/features/household/domain/entities/member.dart';
 import 'package:mobile/features/household/domain/usecases/get_household_members.dart';
 import 'package:mobile/features/household/domain/usecases/get_me.dart';
 import 'package:mobile/features/household/presentation/viewmodels/household_scope_controller.dart';
+import 'package:mobile/features/transactions/domain/transactions_filter_request.dart';
 import 'package:mobile/features/transactions/domain/usecases/search_transactions.dart';
 import 'package:mobile/features/transactions/presentation/viewmodels/transactions_view_model.dart';
 
@@ -28,6 +29,7 @@ class TransactionsKit {
         me: const Result<Member>.success(ana),
         users: Result<List<Member>>.success(users),
       ),
+      filterRequest = TransactionsFilterRequest(),
       notifier = SessionExpiredNotifier() {
     session = SessionController(
       tokenStore: SessionTokenStore(FakeSecureStorage()),
@@ -42,6 +44,7 @@ class TransactionsKit {
       scopeController: scope,
       searchTransactions: SearchTransactions(transactions),
       getAccounts: GetBankAccounts(accounts),
+      filterRequest: filterRequest,
       debouncer: Debouncer(),
       now: () => DateTime(2026, 11, 13, 9),
     );
@@ -50,6 +53,7 @@ class TransactionsKit {
   final FakeTransactionsRepository transactions;
   final FakeAccountsRepository accounts;
   final FakeHouseholdRepository household;
+  final TransactionsFilterRequest filterRequest;
   final SessionExpiredNotifier notifier;
   late final SessionController session;
   late final HouseholdScopeController scope;
@@ -57,6 +61,7 @@ class TransactionsKit {
 
   Future<void> dispose() async {
     viewModel.dispose();
+    filterRequest.dispose();
     scope.dispose();
     session.dispose();
     await notifier.dispose();

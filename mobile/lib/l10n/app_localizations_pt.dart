@@ -680,6 +680,79 @@ class AppLocalizationsPt extends AppLocalizations {
   String get linkedLoadError => 'Não foi possível carregar o vínculo.';
 
   @override
+  String get accountsTotalTitle => 'Saldo total em contas';
+
+  @override
+  String accountsBills(String amount) {
+    return 'Faturas abertas nos cartões: $amount';
+  }
+
+  @override
+  String get accountsNoCards => 'Sem cartões conectados';
+
+  @override
+  String get accountsTabBanks => 'Contas bancárias';
+
+  @override
+  String get accountsTabCards => 'Cartões de crédito';
+
+  @override
+  String get accountBalanceLabel => 'Saldo atual';
+
+  @override
+  String get accountBillLabel => 'Fatura atual';
+
+  @override
+  String accountSubBank(String number) {
+    return 'Conta •••• $number';
+  }
+
+  @override
+  String accountSubCard(String number) {
+    return 'Cartão •••• $number';
+  }
+
+  @override
+  String accountCardUsed(int percent) {
+    return 'Usado $percent%';
+  }
+
+  @override
+  String accountCardLimit(String amount) {
+    return 'Limite $amount';
+  }
+
+  @override
+  String accountCardAvailable(String amount) {
+    return 'Disponível $amount';
+  }
+
+  @override
+  String get accountSeeTransactions => 'Ver transações';
+
+  @override
+  String accountsEmptyNoBankTitle(String who) {
+    return '$who ainda não conectou nenhum banco';
+  }
+
+  @override
+  String get accountsEmptyNoBankText =>
+      'Conecte um banco pelo Meu Pluggy para ver contas e cartões aqui.';
+
+  @override
+  String get accountsEmptyBanks => 'Nenhuma conta bancária';
+
+  @override
+  String get accountsEmptyCards => 'Nenhum cartão de crédito';
+
+  @override
+  String get accountsEmptyKindText =>
+      'Não há itens deste tipo conectados para esta seleção.';
+
+  @override
+  String get accountsTotalsError => 'Não foi possível carregar os totais.';
+
+  @override
   String get configErrorTitle => 'Configuração ausente';
 
   @override

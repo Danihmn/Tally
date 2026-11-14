@@ -12,6 +12,7 @@ import 'package:mobile/features/household/presentation/viewmodels/household_scop
 import 'package:mobile/features/transactions/domain/entities/transaction.dart';
 import 'package:mobile/features/transactions/domain/entities/transaction_day_group.dart';
 import 'package:mobile/features/transactions/domain/entities/transaction_filters.dart';
+import 'package:mobile/features/transactions/domain/transactions_filter_request.dart';
 import 'package:mobile/features/transactions/domain/usecases/search_transactions.dart';
 
 /// State of the transactions list.
@@ -26,15 +27,18 @@ class TransactionsViewModel extends ChangeNotifier
     required this._scopeController,
     required this._searchTransactions,
     required this._getAccounts,
+    this._filterRequest,
     Debouncer? debouncer,
     this._now = DateTime.now,
   }) : _debouncer = debouncer ?? Debouncer() {
     _scopeController.addListener(_onScopeChanged);
+    _filterRequest?.addListener(_onFilterRequested);
   }
 
   final HouseholdScopeController _scopeController;
   final SearchTransactions _searchTransactions;
   final GetBankAccounts _getAccounts;
+  final TransactionsFilterRequest? _filterRequest;
   final Debouncer _debouncer;
   final DateTime Function() _now;
 
@@ -42,6 +46,7 @@ class TransactionsViewModel extends ChangeNotifier
   String _search = '';
   UiState<List<BankAccount>> _accounts = const UiInitial();
   bool _disposed = false;
+  bool _started = false;
 
   /// The choice that the list on screen was loaded for.
   ScopeOption? _appliedScope;
@@ -137,6 +142,8 @@ class TransactionsViewModel extends ChangeNotifier
       return;
     }
     _appliedScope = scope;
+    _started = true;
+    _applyRequestedAccount();
     unawaited(_loadAccounts());
     await load();
   }
@@ -246,6 +253,23 @@ class TransactionsViewModel extends ChangeNotifier
     }
   }
 
+  /// Another screen asked for the list of one account. Search and filters are
+  /// replaced by that account (the person stays the same).
+  void _applyRequestedAccount() {
+    final accountId = _filterRequest?.take();
+    if (accountId == null) return;
+    _debouncer.cancel();
+    _search = '';
+    _filters = TransactionFilters(accountId: accountId);
+  }
+
+  void _onFilterRequested() {
+    // Before the first load, `start` takes the request itself.
+    if (!_started || _filterRequest?.pendingAccountId == null) return;
+    _applyRequestedAccount();
+    unawaited(load());
+  }
+
   void _notify() {
     if (!_disposed) notifyListeners();
   }
@@ -254,6 +278,7 @@ class TransactionsViewModel extends ChangeNotifier
   void dispose() {
     _disposed = true;
     _scopeController.removeListener(_onScopeChanged);
+    _filterRequest?.removeListener(_onFilterRequested);
     _debouncer.dispose();
     super.dispose();
   }

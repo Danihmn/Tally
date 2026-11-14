@@ -42,6 +42,7 @@ void main() {
       login: const Text('LOGIN-PAGE'),
       transactions: const Text('TRANSACTIONS-PAGE'),
       entries: const Text('ENTRIES-PAGE'),
+      accounts: const Text('ACCOUNTS-PAGE'),
       transactionDetail: (args) => const Text('TX-DETAIL'),
       entryDetail: (args) => const Text('ENTRY-DETAIL'),
       initialLocation: initialLocation,

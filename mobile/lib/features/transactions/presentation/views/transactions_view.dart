@@ -55,6 +55,7 @@ class _TransactionsViewState extends State<TransactionsView> {
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    _viewModel.addListener(_syncSearchBox);
     unawaited(_viewModel.start());
   }
 
@@ -64,8 +65,18 @@ class _TransactionsViewState extends State<TransactionsView> {
       ..removeListener(_onScroll)
       ..dispose();
     _searchController.dispose();
-    _viewModel.dispose();
+    _viewModel
+      ..removeListener(_syncSearchBox)
+      ..dispose();
     super.dispose();
+  }
+
+  /// The search text can be cleared from outside (another screen asked for one
+  /// account): the box must follow.
+  void _syncSearchBox() {
+    if (_viewModel.search.isEmpty && _searchController.text.isNotEmpty) {
+      _searchController.clear();
+    }
   }
 
   void _onScroll() {

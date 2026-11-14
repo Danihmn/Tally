@@ -8,6 +8,8 @@ import 'package:mobile/app/router/app_routes.dart';
 import 'package:mobile/app/theme/theme_controller.dart';
 import 'package:mobile/core/config/app_config.dart';
 import 'package:mobile/core/session/session_controller.dart';
+import 'package:mobile/features/accounts/presentation/viewmodels/accounts_view_model.dart';
+import 'package:mobile/features/accounts/presentation/views/accounts_view.dart';
 import 'package:mobile/features/auth/presentation/viewmodels/login_view_model.dart';
 import 'package:mobile/features/auth/presentation/views/login_view.dart';
 import 'package:mobile/features/entries/presentation/viewmodels/entries_view_model.dart';
@@ -16,6 +18,7 @@ import 'package:mobile/features/entries/presentation/views/entries_view.dart';
 import 'package:mobile/features/entries/presentation/views/entry_detail_view.dart';
 import 'package:mobile/features/home/presentation/viewmodels/home_view_model.dart';
 import 'package:mobile/features/home/presentation/views/home_view.dart';
+import 'package:mobile/features/transactions/domain/transactions_filter_request.dart';
 import 'package:mobile/features/transactions/presentation/viewmodels/linked_entries_view_model.dart';
 import 'package:mobile/features/transactions/presentation/viewmodels/transactions_view_model.dart';
 import 'package:mobile/features/transactions/presentation/views/transaction_detail_view.dart';
@@ -52,6 +55,10 @@ Future<void> main() async {
           createViewModel: () => getIt<TransactionsViewModel>(),
         ),
         entries: EntriesView(createViewModel: () => getIt<EntriesViewModel>()),
+        accounts: AccountsView(
+          createViewModel: () => getIt<AccountsViewModel>(),
+          filterRequest: getIt<TransactionsFilterRequest>(),
+        ),
         transactionDetail: (args) => TransactionDetailView(
           args: args,
           createLinkedViewModel: (id) =>

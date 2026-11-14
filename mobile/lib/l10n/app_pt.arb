@@ -397,6 +397,74 @@
   "linkedEntryNoneText": "Esta transação ainda não foi ligada a nada que vocês planejaram.",
   "linkedTransactionNone": "Nenhuma transação ligada a este lançamento ainda.",
   "linkedLoadError": "Não foi possível carregar o vínculo.",
+  "accountsTotalTitle": "Saldo total em contas",
+  "accountsBills": "Faturas abertas nos cartões: {amount}",
+  "@accountsBills": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "accountsNoCards": "Sem cartões conectados",
+  "accountsTabBanks": "Contas bancárias",
+  "accountsTabCards": "Cartões de crédito",
+  "accountBalanceLabel": "Saldo atual",
+  "accountBillLabel": "Fatura atual",
+  "accountSubBank": "Conta •••• {number}",
+  "@accountSubBank": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "accountSubCard": "Cartão •••• {number}",
+  "@accountSubCard": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "accountCardUsed": "Usado {percent}%",
+  "@accountCardUsed": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "accountCardLimit": "Limite {amount}",
+  "@accountCardLimit": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "accountCardAvailable": "Disponível {amount}",
+  "@accountCardAvailable": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "accountSeeTransactions": "Ver transações",
+  "accountsEmptyNoBankTitle": "{who} ainda não conectou nenhum banco",
+  "@accountsEmptyNoBankTitle": {
+    "placeholders": {
+      "who": {
+        "type": "String"
+      }
+    }
+  },
+  "accountsEmptyNoBankText": "Conecte um banco pelo Meu Pluggy para ver contas e cartões aqui.",
+  "accountsEmptyBanks": "Nenhuma conta bancária",
+  "accountsEmptyCards": "Nenhum cartão de crédito",
+  "accountsEmptyKindText": "Não há itens deste tipo conectados para esta seleção.",
+  "accountsTotalsError": "Não foi possível carregar os totais.",
   "configErrorTitle": "Configuração ausente",
   "configErrorMessage": "O app não foi iniciado com uma URL de API válida. Rode com --dart-define=API_BASE_URL=<url>."
 }
