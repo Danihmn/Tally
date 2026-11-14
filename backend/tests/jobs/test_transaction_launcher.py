@@ -56,6 +56,7 @@ class SyncUserTransactionsTests(unittest.TestCase):
             "sync_bank_account",
             "get_all_transactions",
             "sync_account_transactions",
+            "update_pluggy_item_sync_info",
         ):
             patcher = patch(f"{MODULE}.{name}")
             self.mocks[name] = patcher.start()
@@ -167,6 +168,38 @@ class SyncUserTransactionsTests(unittest.TestCase):
         self.mocks["sync_bank_account"].assert_called_once()
         self.assertEqual(self.mocks["sync_bank_account"].call_args.args[1], working.id)
         self.mocks["sync_account_transactions"].assert_called_once()
+
+    def test_a_synced_item_gets_its_last_sync_date_and_keeps_its_consent_date(self):
+        consent = datetime.datetime(2027, 6, 1, tzinfo=datetime.UTC)
+        self.item = make_pluggy_item(consent_expires_at=consent)
+        self.mocks["list_pluggy_items_by_user"].return_value = [self.item]
+        self.mocks["get_all_transactions"].return_value = page([])
+
+        _sync_user_transactions(self.session, self.user)
+
+        update = self.mocks["update_pluggy_item_sync_info"]
+        update.assert_called_once()
+        session, item_id, synced_at, consent_expires_at = update.call_args.args
+        self.assertIs(session, self.session)
+        # Our own pluggy_items id, not Pluggy's
+        self.assertEqual(item_id, self.item.id)
+        self.assertEqual(synced_at.tzinfo, datetime.UTC)
+        self.assertEqual(consent_expires_at, consent)
+
+    def test_an_item_that_failed_is_not_marked_as_synced(self):
+        failing, working = make_pluggy_item(), make_pluggy_item()
+        self.mocks["list_pluggy_items_by_user"].return_value = [failing, working]
+        self.mocks["get_all_accounts"].side_effect = [
+            _pluggy_error(),
+            page([SimpleNamespace(id="acc-2")]),
+        ]
+        self.mocks["get_all_transactions"].return_value = page([])
+
+        _sync_user_transactions(self.session, self.user)
+
+        update = self.mocks["update_pluggy_item_sync_info"]
+        update.assert_called_once()
+        self.assertEqual(update.call_args.args[1], working.id)
 
     def test_syncs_every_account_of_the_item(self):
         self.mocks["get_all_accounts"].return_value = page(

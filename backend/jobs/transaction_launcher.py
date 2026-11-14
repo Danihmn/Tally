@@ -107,10 +107,11 @@ def _sync_user_transactions(session: Session, user: User) -> None:
                 pluggy_item.pluggy_item_id,
                 exc_info=True,
             )
-            return
+            continue
 
+        # Only after the whole item synced. Keeps the consent date it already had
         update_pluggy_item_sync_info(
-            session, pluggy_item.pluggy_item_id, datetime.now(UTC), None
+            session, item_id, datetime.now(UTC), pluggy_item.consent_expires_at
         )
 
 

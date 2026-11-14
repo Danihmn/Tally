@@ -3,7 +3,13 @@ import uuid
 
 from sqlalchemy.orm import Session
 
-from domain.internal_transfers import find_same_person_pairs
+from domain.internal_transfers import find_internal_pairs
+from domain.transfer_documents import (
+    SAME_HOUSEHOLD,
+    SAME_PERSON,
+    classify_by_documents,
+    normalize_cpf,
+)
 from infra.database.session import get_session
 from services.bank_accounts_service import list_bank_accounts_by_user
 from services.common.exceptions import ServiceError
@@ -16,35 +22,77 @@ from utils.ids import require_id
 
 logger = logging.getLogger(__name__)
 
-SAME_PERSON = "SAME_PERSON"
 AUTO = "AUTO"
 
 
-def _classificate_same_person(session: Session, user_id: uuid.UUID) -> int:
-    """Marks the transfers between two bank accounts of the user. Returns how many
-    transactions were marked (two for each transfer)."""
-    accounts = list_bank_accounts_by_user(session, user_id)
-    if len(accounts) < 2:
-        return 0  # A transfer needs two accounts
-
-    account_ids = [require_id(account, "Bank account") for account in accounts]
-    transactions = list_unclassified_transactions(session, account_ids)
-
-    ids = [
-        require_id(transaction, "Transaction")
-        for pair in find_same_person_pairs(transactions)
-        for transaction in pair
-    ]
-    return mark_internal_transfer(session, ids, SAME_PERSON, AUTO)
-
-
 def classificate_internal_transfers(session: Session, household_id: uuid.UUID) -> int:
-    """Classifies the transfers of the household. Does not commit: the caller does.
+    """Classifies the internal transfers of the household. Does not commit: the caller does.
+
+    Two signals, both about the unclassified transactions of the BANK accounts:
+    1. the documents in `payment_data` (who is the other party), which settle a transaction
+       on their own, even when its other leg is in a bank that did not sync yet;
+    2. the pairing by amount, date and accounts, for what the documents did not settle.
+    A transaction that nothing settles stays unclassified (it counts as any other one).
 
     Returns how many transactions were marked."""
-    marked = 0
+    owner_by_account: dict[uuid.UUID, uuid.UUID] = {}
+    cpf_by_account: dict[uuid.UUID, str] = {}
+    household_cpfs: set[str] = set()
+    all_cpfs_known = True
+
     for person in list_users_by_household(session, household_id):
-        marked += _classificate_same_person(session, require_id(person, "User"))
+        person_id = require_id(person, "User")
+        person_cpfs: set[str] = set()
+        for account in list_bank_accounts_by_user(session, person_id):
+            account_id = require_id(account, "Bank account")
+            owner_by_account[account_id] = person_id
+            cpf = normalize_cpf(account.tax_number)
+            if cpf is not None:
+                cpf_by_account[account_id] = cpf
+                person_cpfs.add(cpf)
+        household_cpfs |= person_cpfs
+        if not person_cpfs:
+            # A CPF outside the set cannot be called "a stranger" if someone's CPF is missing
+            all_cpfs_known = False
+
+    transactions = list_unclassified_transactions(session, list(owner_by_account))
+
+    verdicts = {
+        require_id(transaction, "Transaction"): classify_by_documents(
+            transaction,
+            cpf_by_account.get(transaction.bank_account_id),
+            household_cpfs,
+            all_cpfs_known,
+        )
+        for transaction in transactions
+    }
+
+    # dict (not set) to keep the order and not repeat a transaction
+    to_mark: dict[str, dict[uuid.UUID, None]] = {SAME_PERSON: {}, SAME_HOUSEHOLD: {}}
+    for transaction_id, verdict in verdicts.items():
+        if verdict in to_mark:
+            to_mark[verdict][transaction_id] = None
+    from_documents = sum(len(ids) for ids in to_mark.values())
+
+    for debit, credit, kind in find_internal_pairs(
+        transactions, owner_by_account, verdicts
+    ):
+        to_mark[kind][require_id(debit, "Transaction")] = None
+        to_mark[kind][require_id(credit, "Transaction")] = None
+
+    marked = 0
+    for kind, ids in to_mark.items():
+        if ids:
+            marked += mark_internal_transfer(session, list(ids), kind, AUTO)
+
+    # Only counts: the documents are personal data and never go to the log
+    logger.info(
+        "Household %s: %s unclassified, %s settled by documents, %s by pairing",
+        household_id,
+        len(transactions),
+        from_documents,
+        sum(len(ids) for ids in to_mark.values()) - from_documents,
+    )
     return marked
 
 

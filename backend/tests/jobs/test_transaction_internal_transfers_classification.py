@@ -1,5 +1,6 @@
 import unittest
 import uuid
+from decimal import Decimal
 from unittest.mock import MagicMock, patch
 
 from jobs.transaction_internal_transfers_classification import (
@@ -18,93 +19,204 @@ from tests.factories import (
 MODULE = "jobs.transaction_internal_transfers_classification"
 
 
+# Invented documents (never real ones)
+ME_CPF = "111.444.777-35"
+PARTNER_CPF = "529.982.247-25"
+STRANGER_CPF = "390.533.447-05"
+
+
+def _party(document=None):
+    return {"documentNumber": document}
+
+
+def _payment(payer=None, receiver=None):
+    return {"payer": _party(payer), "receiver": _party(receiver)}
+
+
+def _cpf(value):
+    return {"type": "CPF", "value": value}
+
+
+_CNPJ = {"type": "CNPJ", "value": "11.222.333/0001-81"}
+
+
+def _debit(account, amount="100.00", **overrides):
+    return make_transaction(
+        id=uuid.uuid4(),
+        bank_account_id=account.id,
+        type="DEBIT",
+        amount=-Decimal(amount),
+        **overrides,
+    )
+
+
+def _credit(account, amount="100.00", **overrides):
+    return make_transaction(
+        id=uuid.uuid4(),
+        bank_account_id=account.id,
+        type="CREDIT",
+        amount=Decimal(amount),
+        **overrides,
+    )
+
+
 class ClassificateInternalTransfersTests(unittest.TestCase):
     def setUp(self):
         self.session = MagicMock()
         self.ana = make_user(id=uuid.uuid4(), first_name="Ana")
         self.bia = make_user(id=uuid.uuid4(), first_name="Bia")
-        self.checking = make_bank_account(id=uuid.uuid4())
-        self.savings = make_bank_account(id=uuid.uuid4(), subtype="SAVINGS_ACCOUNT")
+        # Two accounts of Ana and one of Bia
+        self.checking = make_bank_account(id=uuid.uuid4(), tax_number=ME_CPF)
+        self.savings = make_bank_account(
+            id=uuid.uuid4(), subtype="SAVINGS_ACCOUNT", tax_number=ME_CPF
+        )
+        self.partners = make_bank_account(id=uuid.uuid4(), tax_number=PARTNER_CPF)
+        self.accounts_of = {
+            self.ana.id: [self.checking, self.savings],
+            self.bia.id: [self.partners],
+        }
 
         self.mocks = {}
         for name in (
             "list_users_by_household",
             "list_bank_accounts_by_user",
             "list_unclassified_transactions",
-            "find_same_person_pairs",
             "mark_internal_transfer",
         ):
             patcher = patch(f"{MODULE}.{name}")
             self.mocks[name] = patcher.start()
             self.addCleanup(patcher.stop)
-        self.mocks["list_users_by_household"].return_value = [self.ana]
-        self.mocks["list_bank_accounts_by_user"].return_value = [
-            self.checking,
-            self.savings,
-        ]
+        self.mocks["list_users_by_household"].return_value = [self.ana, self.bia]
+        self.mocks["list_bank_accounts_by_user"].side_effect = (
+            lambda session, user_id: self.accounts_of[user_id]
+        )
         self.mocks["list_unclassified_transactions"].return_value = []
-        self.mocks["find_same_person_pairs"].return_value = []
-        self.mocks["mark_internal_transfer"].return_value = 0
-
-    def test_marks_both_legs_of_each_pair_as_same_person_by_the_job(self):
-        out, entry = make_transaction(), make_transaction(type="CREDIT")
-        other_out, other_entry = make_transaction(), make_transaction(type="CREDIT")
-        self.mocks["find_same_person_pairs"].return_value = [
-            (out, entry),
-            (other_out, other_entry),
-        ]
-        self.mocks["mark_internal_transfer"].return_value = 4
-
-        marked = classificate_internal_transfers(self.session, HOUSEHOLD_ID)
-
-        self.assertEqual(marked, 4)
-        self.mocks["mark_internal_transfer"].assert_called_once_with(
-            self.session,
-            [out.id, entry.id, other_out.id, other_entry.id],
-            "SAME_PERSON",
-            "AUTO",
+        # What the service returns: how many it changed
+        self.mocks["mark_internal_transfer"].side_effect = (
+            lambda session, ids, value, source: len(ids)
         )
 
-    def test_looks_for_the_transactions_of_all_the_bank_accounts_of_the_person(self):
-        classificate_internal_transfers(self.session, HOUSEHOLD_ID)
+    def _run(self, transactions):
+        self.mocks["list_unclassified_transactions"].return_value = transactions
+        return classificate_internal_transfers(self.session, HOUSEHOLD_ID)
 
-        self.mocks["list_bank_accounts_by_user"].assert_called_once_with(
-            self.session, self.ana.id
-        )
+    def _marked(self):
+        """{kind: [ids]} of what was written, and the source used."""
+        result, sources = {}, set()
+        for call in self.mocks["mark_internal_transfer"].call_args_list:
+            _, ids, kind, source = call.args
+            result[kind] = ids
+            sources.add(source)
+        return result, sources
+
+    def test_looks_in_every_bank_account_of_every_person_in_one_query(self):
+        self._run([])
+
         self.mocks["list_unclassified_transactions"].assert_called_once_with(
-            self.session, [self.checking.id, self.savings.id]
+            self.session, [self.checking.id, self.savings.id, self.partners.id]
         )
 
-    def test_a_person_with_one_account_has_nothing_to_pair(self):
-        self.mocks["list_bank_accounts_by_user"].return_value = [self.checking]
+    # -- the documents -----------------------------------------------------------------
 
-        marked = classificate_internal_transfers(self.session, HOUSEHOLD_ID)
+    def test_a_transfer_to_my_own_cpf_is_marked_without_waiting_for_its_other_leg(self):
+        lonely = _debit(self.checking, payment_data=_payment(_cpf(ME_CPF), _cpf(ME_CPF)))
+
+        marked = self._run([lonely])
+
+        self.assertEqual(marked, 1)
+        self.assertEqual(self._marked(), ({"SAME_PERSON": [lonely.id]}, {"AUTO"}))
+
+    def test_a_transfer_to_my_partners_cpf_is_a_same_household_transfer(self):
+        sent = _debit(self.checking, payment_data=_payment(_cpf(ME_CPF), _cpf(PARTNER_CPF)))
+
+        self._run([sent])
+
+        self.assertEqual(self._marked()[0], {"SAME_HOUSEHOLD": [sent.id]})
+
+    def test_a_payment_to_a_company_or_a_stranger_is_not_marked(self):
+        company = _debit(self.checking, payment_data=_payment(_cpf(ME_CPF), _CNPJ))
+        stranger = _debit(
+            self.checking, "50.00", payment_data=_payment(_cpf(ME_CPF), _cpf(STRANGER_CPF))
+        )
+
+        marked = self._run([company, stranger])
 
         self.assertEqual(marked, 0)
-        self.mocks["list_unclassified_transactions"].assert_not_called()
         self.mocks["mark_internal_transfer"].assert_not_called()
 
-    def test_each_person_is_paired_on_their_own_and_the_counts_add_up(self):
-        self.mocks["list_users_by_household"].return_value = [self.ana, self.bia]
-        self.mocks["mark_internal_transfer"].side_effect = [2, 4]
-        out, entry = make_transaction(), make_transaction(type="CREDIT")
-        self.mocks["find_same_person_pairs"].return_value = [(out, entry)]
+    def test_a_stranger_cpf_is_not_trusted_while_someones_cpf_is_unknown(self):
+        # Bia has no bank account, so her CPF is unknown: the "stranger" may be her
+        self.accounts_of[self.bia.id] = []
+        out = _debit(
+            self.checking, payment_data=_payment(_cpf(ME_CPF), _cpf(STRANGER_CPF))
+        )
+        entry = _credit(self.savings)
 
-        marked = classificate_internal_transfers(self.session, HOUSEHOLD_ID)
+        self._run([out, entry])
 
-        self.assertEqual(marked, 6)
-        self.assertEqual(
-            [c.args[1] for c in self.mocks["list_bank_accounts_by_user"].call_args_list],
-            [self.ana.id, self.bia.id],
+        # Not ruled out as external, so the pairing by amount still happens
+        self.assertEqual(self._marked()[0], {"SAME_PERSON": [out.id, entry.id]})
+
+    # -- the pairing -------------------------------------------------------------------
+
+    def test_two_of_my_accounts_with_the_same_amount_are_a_same_person_pair(self):
+        out, entry = _debit(self.checking), _credit(self.savings)
+
+        marked = self._run([out, entry])
+
+        self.assertEqual(marked, 2)
+        self.assertEqual(self._marked(), ({"SAME_PERSON": [out.id, entry.id]}, {"AUTO"}))
+
+    def test_my_account_and_my_partners_account_are_a_same_household_pair(self):
+        out, entry = _debit(self.checking), _credit(self.partners)
+
+        self._run([out, entry])
+
+        self.assertEqual(self._marked()[0], {"SAME_HOUSEHOLD": [out.id, entry.id]})
+
+    def test_a_pair_where_one_leg_has_the_document_marks_both_legs(self):
+        out = _debit(self.checking, payment_data=_payment(_cpf(ME_CPF), _cpf(ME_CPF)))
+        entry = _credit(self.savings)  # No payment_data at all
+
+        self._run([out, entry])
+
+        self.assertEqual(self._marked()[0], {"SAME_PERSON": [out.id, entry.id]})
+
+    def test_the_documents_rule_out_a_pair_made_only_of_coincidence(self):
+        out = _debit(self.checking, payment_data=_payment(_cpf(ME_CPF), _CNPJ))
+        entry = _credit(self.savings)
+
+        marked = self._run([out, entry])
+
+        self.assertEqual(marked, 0)
+        self.mocks["mark_internal_transfer"].assert_not_called()
+
+    def test_a_transaction_without_a_partner_or_documents_stays_unclassified(self):
+        self.assertEqual(self._run([_debit(self.checking)]), 0)
+        self.mocks["mark_internal_transfer"].assert_not_called()
+
+    def test_an_ambiguous_pair_stays_unclassified(self):
+        out = _debit(self.checking)
+        mine, partners = _credit(self.savings), _credit(self.partners)
+
+        self.assertEqual(self._run([out, mine, partners]), 0)
+
+    # -- the rest ----------------------------------------------------------------------
+
+    def test_nothing_to_classify_marks_nothing(self):
+        self.assertEqual(self._run([]), 0)
+        self.mocks["mark_internal_transfer"].assert_not_called()
+
+    def test_a_household_without_accounts_marks_nothing(self):
+        self.accounts_of = {self.ana.id: [], self.bia.id: []}
+
+        self.assertEqual(self._run([]), 0)
+        self.mocks["list_unclassified_transactions"].assert_called_once_with(
+            self.session, []
         )
 
-    def test_a_household_without_people_marks_nothing(self):
-        self.mocks["list_users_by_household"].return_value = []
-
-        self.assertEqual(classificate_internal_transfers(self.session, HOUSEHOLD_ID), 0)
-
     def test_it_does_not_commit_the_caller_does(self):
-        classificate_internal_transfers(self.session, HOUSEHOLD_ID)
+        self._run([_debit(self.checking), _credit(self.savings)])
 
         self.session.commit.assert_not_called()
 
