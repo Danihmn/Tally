@@ -150,7 +150,6 @@
   "noSpendTitle": "Ainda não há gastos neste mês",
   "noSpendMessage": "Quando o mês começar, as transações importadas aparecem aqui. Os lançamentos planejados já estão logo abaixo.",
   "transactionsSearchHint": "Buscar na descrição",
-  "transactionsSearchLabel": "Buscar nas transações",
   "transactionsClearSearch": "Limpar busca",
   "transactionsFilterButton": "Abrir filtros",
   "transactionsRemoveFilter": "Remover filtro {label}",

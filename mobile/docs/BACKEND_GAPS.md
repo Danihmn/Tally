@@ -12,7 +12,7 @@ behind a repository interface.
 | 3 | No endpoint to create a household; `POST /users` needs `household_id` | "Nova casa" in "Adicionar pessoa" | Hidden. New people join the current household |
 | 4 | No reconciliation endpoints (table `007_reconciliations_table.sql` and matching logic exist) | Conciliação: list pairs, confirm, undo, manual link | Fake data source |
 | 5 | Partial analysis. Done: `GET /transactions/total-expenses`, `/total-revenues`, `/balance` (filters `date_from`+`date_to` together or none, optional `user_id`; default period is day 1 until yesterday, or the whole previous month on day 1). Planning (entries) also done: `GET /financial-entries/total-planned`, `/total-reconciled`, `/reconciliation-counts` (`type` REVENUES or EXPENSES is required; the period is by month, any day picks the month, default is the current month; reconciled is the entry status, CANCELLED is left out). Also done: `GET /transactions/top-expenses` (`limit`, default 5), `/transactions/daily-expenses` (every day of the period, 0 when nothing was spent), `/transactions/average-daily-expenses` and `GET /financial-entries/upcoming` (`days`, default 7; PLANNED entries due from today until today + days; each item has `description`, `amount`, `type`, `category` (may be null) and `due_date`). Missing: by month, by category, by member | Home dashboard, charts | Totals from the API; the rest from a fake data source |
-| 6 | No update/delete for entries and recurrences | Edit/cancel actions | Not built |
+| 6 | No update/delete for entries | Edit/cancel actions | Not built |
 | 7 | No credit limit or due date in `BankAccountResponse` | Card details | Not shown |
 | 8 | `GET /bank-accounts` and `GET /users` return plain lists (no `total`) | "Has more" is guessed from a full page | `PaginatedViewModel` handles it |
 | 9 | Chat is stateless (`POST /tally/chat {message}`); no conversation id or history | "Nova conversa", history list | The thread lives in memory. History will be owned by the API |
@@ -29,15 +29,13 @@ behind a repository interface.
 | 20 | `GET /financial-entries` did not filter by household | Anyone logged in could list the entries of other houses | Fixed in the backend: the household comes from the JWT (`GET /financial-entries/{id}` still does not check it; the app does not use it) |
 | 21 | The list of entries is ordered by month of reference and then due date; the prototype orders by due date only | In "Todos" the order differs from the prototype | The app shows the order of the API |
 | 22 | The entry has no "who created it" and no reconciliation source or date in its response | The timeline says "Criado … por <titular>" and "Vinculado a uma transação do banco" | Uses the owner and `created_at`. Whether it was AUTO or MANUAL is not shown |
-| 23 | Read only: no endpoints to create (the app does not use the existing POST), edit, cancel, reopen, link or unlink entries | The FAB "Novo lançamento" and the buttons of the entry detail | Left out |
+| 23 | Read only: no endpoints to create, edit, cancel, reopen, link or unlink entries (the old `POST /financial-entries` was removed as dead code) | The FAB "Novo lançamento" and the buttons of the entry detail | Left out |
 | 24 | No last-sync date of an account (`updated_at` is when our row changed, not when Pluggy synced) | "Atualizado há X" of the Contas prototype | Left out |
-| 25 | No real-time refresh of the balance. The client `get_real_time_balance` exists but is not used and its schema is wrong (`blockedBalance` and `automaticallyInvestedBalance` are required `int`; Pluggy sends floats and omits them when the bank does not report; `closingBalance` is missing). It works only on Open Finance connectors and shares the rate limit with the sync | The balance can be up to ~24h old (Meu Pluggy refresh) | Shows the stored balance. A future "Atualizar" button needs the client fixed and an endpoint that saves the new balance |
+| 25 | No real-time refresh of the balance. The Pluggy client for it was removed as dead code (it was never used, its schema was wrong, it works only on Open Finance connectors and shares the rate limit with the sync). It can come back from the git history | The balance can be up to ~24h old (Meu Pluggy refresh) | Shows the stored balance. A future "Atualizar" button needs the client and an endpoint that saves the new balance |
 | 26 | On Open Finance the balance of a card is the **used limit**, not always the open bill | The prototype label "Fatura atual" and "Faturas abertas nos cartões" may not match | Shown as in the prototype |
 | 27 | The limits of a card (`credit_limit`, `available_credit_limit`) and the dates may be null | The usage bar | The bar is left out when there is no limit |
 | 28 | No endpoint for the bank connections (see gap 1) | "Conexões bancárias" and "Conectar banco" on Contas | Left out |
 
-Not in the original app brief but present in the API: `POST /recurrences/provision`
-(creates the month's PLANNED entries from recurrences) and `GET /users/{id}`.
 
 **Known limit of the totals (gap 5):** they sum every DEBIT / CREDIT. A credit card bill payment is a DEBIT in the bank account and a CREDIT in the card, and transfers between own accounts are both, so expenses can be counted twice and revenues inflated. A filter will come later.
 
