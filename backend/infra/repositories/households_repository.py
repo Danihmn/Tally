@@ -15,11 +15,3 @@ def get_household_by_id(session: Session, household_id: uuid.UUID) -> Households
     if household is None:
         raise RecordNotFoundError("households", "get_household_by_id")
     return household
-
-
-@translate_db_errors("households")
-def create_household(session: Session) -> Households:
-    household = Households()
-    session.add(household)
-    session.flush()
-    return household

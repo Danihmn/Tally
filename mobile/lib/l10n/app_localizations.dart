@@ -538,12 +538,6 @@ abstract class AppLocalizations {
   /// **'Buscar na descrição'**
   String get transactionsSearchHint;
 
-  /// No description provided for @transactionsSearchLabel.
-  ///
-  /// In pt, this message translates to:
-  /// **'Buscar nas transações'**
-  String get transactionsSearchLabel;
-
   /// No description provided for @transactionsClearSearch.
   ///
   /// In pt, this message translates to:

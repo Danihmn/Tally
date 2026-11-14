@@ -13,13 +13,7 @@ from domain.read_models import (
 )
 from infra.repositories import financial_entries_repository
 from services.common.exceptions import translate_repository_errors
-from services.common.mappers import to_entities, to_entity, to_values
-
-
-@translate_repository_errors
-def get_financial_entry_by_id(session: Session, entry_id: uuid.UUID) -> FinancialEntry:
-    entry = financial_entries_repository.get_financial_entry_by_id(session, entry_id)
-    return to_entity(FinancialEntry, entry)
+from services.common.mappers import to_entities
 
 
 @translate_repository_errors
@@ -43,46 +37,6 @@ def list_financial_entries_by_user(
 
 
 @translate_repository_errors
-def list_financial_entries_by_household(
-    session: Session,
-    household_id: uuid.UUID,
-    reference_month_from: datetime.date | None = None,
-    reference_month_to: datetime.date | None = None,
-    status: str | None = None,
-    bank_account_id: uuid.UUID | None = None,
-) -> list[FinancialEntry]:
-    entries = financial_entries_repository.list_financial_entries_by_household(
-        session,
-        household_id,
-        reference_month_from,
-        reference_month_to,
-        status,
-        bank_account_id,
-    )
-    return to_entities(FinancialEntry, entries)
-
-
-@translate_repository_errors
-def create_financial_entry(session: Session, entry: FinancialEntry) -> FinancialEntry:
-    created = financial_entries_repository.create_financial_entry(
-        session, to_values(entry)
-    )
-    return to_entity(FinancialEntry, created)
-
-
-@translate_repository_errors
-def update_financial_entry(
-    session: Session, entry_id: uuid.UUID, entry: FinancialEntry
-) -> FinancialEntry:
-    """Overwrites every column with the entity's values (id and created_at are kept)."""
-    values = to_values(entry, exclude=("id", "created_at"))
-    updated = financial_entries_repository.update_financial_entry(
-        session, entry_id, values
-    )
-    return to_entity(FinancialEntry, updated)
-
-
-@translate_repository_errors
 def mark_financial_entries_status(
     session: Session,
     ids: list[uuid.UUID],
@@ -92,24 +46,6 @@ def mark_financial_entries_status(
     financial_entries_repository.update_financial_entries_status(
         session, ids, status, only_from
     )
-
-
-@translate_repository_errors
-def mark_financial_entry_deleted(
-    session: Session, entry_id: uuid.UUID
-) -> FinancialEntry:
-    entry = financial_entries_repository.soft_delete_financial_entry(session, entry_id)
-    return to_entity(FinancialEntry, entry)
-
-
-@translate_repository_errors
-def get_active_financial_entry_by_id(
-    session: Session, entry_id: uuid.UUID
-) -> FinancialEntry:
-    entry = financial_entries_repository.get_active_financial_entry_by_id(
-        session, entry_id
-    )
-    return to_entity(FinancialEntry, entry)
 
 
 @translate_repository_errors

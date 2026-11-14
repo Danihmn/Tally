@@ -10,12 +10,6 @@ from services.common.mappers import to_entities, to_entity, to_entity_or_none
 
 
 @translate_repository_errors
-def get_pluggy_item_by_id(session: Session, item_id: uuid.UUID) -> PluggyItem:
-    item = pluggy_items_repository.get_pluggy_item_by_id(session, item_id)
-    return to_entity(PluggyItem, item)
-
-
-@translate_repository_errors
 def get_pluggy_item_by_pluggy_item_id(
     session: Session, pluggy_item_id: uuid.UUID
 ) -> PluggyItem | None:
@@ -28,16 +22,6 @@ def get_pluggy_item_by_pluggy_item_id(
 @translate_repository_errors
 def list_pluggy_items_by_user(session: Session, user_id: uuid.UUID) -> list[PluggyItem]:
     items = pluggy_items_repository.list_pluggy_items_by_user(session, user_id)
-    return to_entities(PluggyItem, items)
-
-
-@translate_repository_errors
-def list_pluggy_items_expiring_before(
-    session: Session, limit_date: datetime.datetime
-) -> list[PluggyItem]:
-    items = pluggy_items_repository.list_pluggy_items_expiring_before(
-        session, limit_date
-    )
     return to_entities(PluggyItem, items)
 
 

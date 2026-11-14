@@ -10,16 +10,6 @@ from services.financial_entries_service import mark_financial_entries_status
 
 
 @translate_repository_errors
-def get_reconciliation_by_id(
-    session: Session, reconciliation_id: uuid.UUID
-) -> Reconciliation:
-    reconciliation = reconciliations_repository.get_reconciliation_by_id(
-        session, reconciliation_id
-    )
-    return to_entity(Reconciliation, reconciliation)
-
-
-@translate_repository_errors
 def create_reconciliation(
     session: Session, reconciliation: Reconciliation
 ) -> Reconciliation:

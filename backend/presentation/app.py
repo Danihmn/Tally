@@ -10,7 +10,6 @@ from presentation.routers import (
     bank_accounts_router,
     financial_entries_router,
     pluggy_items_router,
-    recurrences_router,
     tally_router,
     transactions_router,
     users_router,
@@ -34,6 +33,5 @@ app.include_router(pluggy_items_router.router)
 app.include_router(bank_accounts_router.router)
 app.include_router(transactions_router.router)
 app.include_router(financial_entries_router.router)
-app.include_router(recurrences_router.router)
 app.include_router(tally_router.router)
 app.include_router(item_webhooks.router)

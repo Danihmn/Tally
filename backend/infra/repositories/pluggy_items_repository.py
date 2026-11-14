@@ -41,20 +41,6 @@ def list_pluggy_items_by_user(
 
 
 @translate_db_errors("pluggy_items")
-def list_pluggy_items_expiring_before(
-    session: Session, limit_date: datetime.datetime
-) -> list[PluggyItems]:
-    stmt = (
-        select(PluggyItems)
-        .where(PluggyItems.deleted_at.is_(None))
-        .where(PluggyItems.consent_expires_at.is_not(None))
-        .where(PluggyItems.consent_expires_at < limit_date)
-        .order_by(PluggyItems.consent_expires_at, PluggyItems.id)
-    )
-    return list(session.scalars(stmt).all())
-
-
-@translate_db_errors("pluggy_items")
 def create_pluggy_item(
     session: Session,
     user_id: uuid.UUID,

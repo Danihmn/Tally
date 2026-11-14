@@ -279,9 +279,6 @@ class AppLocalizationsPt extends AppLocalizations {
   String get transactionsSearchHint => 'Buscar na descrição';
 
   @override
-  String get transactionsSearchLabel => 'Buscar nas transações';
-
-  @override
   String get transactionsClearSearch => 'Limpar busca';
 
   @override

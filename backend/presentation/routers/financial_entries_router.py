@@ -1,11 +1,10 @@
 import datetime
-import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
-from domain.entities import FinancialEntry, User
+from domain.entities import User
 from domain.read_models import FinancialEntryFilters
 from infra.database.session import get_db
 from presentation.dependencies.auth import get_current_user
@@ -13,7 +12,6 @@ from presentation.schemas.common_schemas import Page
 from presentation.schemas.financial_entry_schemas import (
     EntryPeriodQuery,
     EntryTotalResponse,
-    FinancialEntryCreate,
     FinancialEntryQuery,
     FinancialEntryResponse,
     ReconciliationCountsResponse,
@@ -21,18 +19,14 @@ from presentation.schemas.financial_entry_schemas import (
     UpcomingEntriesResponse,
     UpcomingEntryItem,
 )
-from services.common.exceptions import NotFoundError
 from services.financial_entries_service import (
     count_not_reconciled_entries,
     count_reconciled_entries,
-    create_financial_entry,
-    get_active_financial_entry_by_id,
     get_total_planned,
     get_total_reconciled,
     list_upcoming_entries,
     search_financial_entries,
 )
-from services.users_service import get_user_by_id
 from utils.dates import first_day_of_month, today_local
 
 # Both people of the household see every entry (the app is private, for two people).
@@ -159,50 +153,3 @@ def upcoming_entries_endpoint(
             )
         )
     return UpcomingEntriesResponse(date_from=date_from, date_to=date_to, items=items)
-
-
-@router.get("/{entry_id}", response_model=FinancialEntryResponse)
-def get_financial_entry_endpoint(
-    entry_id: uuid.UUID,
-    session: Annotated[Session, Depends(get_db)],
-) -> FinancialEntryResponse:
-    return FinancialEntryResponse.from_entity(
-        get_active_financial_entry_by_id(session, entry_id)
-    )
-
-
-@router.post(
-    "", response_model=FinancialEntryResponse, status_code=status.HTTP_201_CREATED
-)
-def create_financial_entry_endpoint(
-    body: FinancialEntryCreate,
-    session: Annotated[Session, Depends(get_db)],
-    current_user: Annotated[User, Depends(get_current_user)],
-) -> FinancialEntryResponse:
-    assert current_user.id is not None
-    if body.user_id is not None and body.user_id != current_user.id:  # noqa: SIM102
-        # An entry can only be assigned to someone of the same household
-        if (
-            get_user_by_id(session, body.user_id).household_id
-            != current_user.household_id
-        ):
-            raise NotFoundError("User not found")
-    entry = FinancialEntry(
-        household_id=current_user.household_id,
-        user_id=body.user_id or current_user.id,
-        description=body.description,
-        type=body.type,
-        payment_type=body.payment_type,
-        category=body.category,
-        amount=body.amount,
-        currency_code=body.currency_code.upper(),
-        reference_month=first_day_of_month(body.reference_month),
-        due_date=body.due_date,
-        bank_account_id=body.bank_account_id,
-        installment_number=body.installment_number,
-        installment_total=body.installment_total,
-        notes=body.notes,
-    )
-    created = create_financial_entry(session, entry)
-    session.commit()
-    return FinancialEntryResponse.from_entity(created)

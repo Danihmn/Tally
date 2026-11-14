@@ -147,46 +147,6 @@ class UpcomingEntriesResponse(BaseModel):
     items: list[UpcomingEntryItem]  # The nearest due date first
 
 
-class FinancialEntryCreate(BaseModel):
-    """Body of POST /financial-entries. `user_id` defaults to the logged user.
-
-    `reference_month` accepts any day of the month (it is moved to the 1st).
-    The status of a new entry is always PLANNED.
-    """
-
-    model_config = ConfigDict(extra="forbid")
-
-    description: str = Field(min_length=1, max_length=255)
-    type: Literal["REVENUES", "EXPENSES"]
-    payment_type: Literal["DEBIT", "CREDIT"] | None = None
-    category: str | None = Field(default=None, min_length=1, max_length=100)
-    amount: decimal.Decimal = Field(gt=0, max_digits=18, decimal_places=2)
-    currency_code: str = Field(default="BRL", min_length=3, max_length=3)
-    reference_month: datetime.date
-    due_date: datetime.date | None = None
-    bank_account_id: uuid.UUID | None = None
-    installment_number: int | None = Field(default=None, ge=1, le=32767)
-    installment_total: int | None = Field(default=None, ge=1, le=32767)
-    notes: str | None = Field(default=None, min_length=1, max_length=1000)
-    user_id: uuid.UUID | None = None
-
-    @model_validator(mode="after")
-    def _check_installments(self) -> FinancialEntryCreate:
-        if (self.installment_number is None) != (self.installment_total is None):
-            raise ValueError(
-                "installment_number and installment_total must be sent together"
-            )
-        if (
-            self.installment_number is not None
-            and self.installment_total is not None
-            and self.installment_total < self.installment_number
-        ):
-            raise ValueError(
-                "installment_total must not be less than installment_number"
-            )
-        return self
-
-
 class FinancialEntryResponse(BaseModel):
     id: uuid.UUID
     user_id: uuid.UUID

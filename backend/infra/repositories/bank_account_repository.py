@@ -1,4 +1,3 @@
-import datetime
 import decimal
 import uuid
 from typing import Any
@@ -8,31 +7,9 @@ from sqlalchemy.orm import Session
 
 from infra.database.models import BankAccounts, CreditDatas, PluggyItems
 from infra.repositories.common.exceptions import (
-    RecordNotFoundError,
     translate_db_errors,
 )
 from infra.repositories.common.upsert import upsert_one
-
-
-@translate_db_errors("bank_accounts")
-def get_all_stored_bank_accounts(
-    session: Session, limit: int = 10, offset: int = 0
-) -> list[BankAccounts]:
-    stmt = (
-        select(BankAccounts)
-        .order_by(BankAccounts.created_at, BankAccounts.id)
-        .limit(limit)
-        .offset(offset)
-    )
-    return list(session.scalars(stmt).all())
-
-
-@translate_db_errors("bank_accounts")
-def get_bank_account_by_id(session: Session, account_id: uuid.UUID) -> BankAccounts:
-    account = session.get(BankAccounts, account_id)
-    if account is None:
-        raise RecordNotFoundError("bank_accounts", "get_bank_account_by_id")
-    return account
 
 
 @translate_db_errors("bank_accounts")
@@ -43,31 +20,6 @@ def get_bank_account_by_pluggy_account_id(
         BankAccounts.pluggy_account_id == pluggy_account_id
     )
     return session.scalars(stmt).one_or_none()
-
-
-@translate_db_errors("bank_accounts")
-def list_bank_accounts_by_item(
-    session: Session, pluggy_item_id: uuid.UUID
-) -> list[BankAccounts]:
-    stmt = (
-        select(BankAccounts)
-        .where(BankAccounts.pluggy_item_id == pluggy_item_id)
-        .order_by(BankAccounts.created_at, BankAccounts.id)
-    )
-    return list(session.scalars(stmt).all())
-
-
-@translate_db_errors("bank_accounts")
-def list_bank_accounts_by_household(
-    session: Session, household_id: uuid.UUID
-) -> list[BankAccounts]:
-    """Every account of the household, with no pagination (few accounts per household)."""
-    stmt = (
-        select(BankAccounts)
-        .where(BankAccounts.household_id == household_id)
-        .order_by(BankAccounts.created_at, BankAccounts.id)
-    )
-    return list(session.scalars(stmt).all())
 
 
 @translate_db_errors("bank_accounts")
@@ -93,17 +45,6 @@ def upsert_bank_account(session: Session, values: dict[str, Any]) -> BankAccount
     return upsert_one(
         session, BankAccounts, values, "pluggy_account_id", set_updated_at=True
     )
-
-
-@translate_db_errors("bank_accounts")
-def update_bank_account_balance(
-    session: Session, account_id: uuid.UUID, balance: decimal.Decimal | None
-) -> BankAccounts:
-    account = get_bank_account_by_id(session, account_id)
-    account.balance = balance
-    account.updated_at = datetime.datetime.now(datetime.UTC)
-    session.flush()
-    return account
 
 
 def _with_owner(stmt):
@@ -138,19 +79,6 @@ def search_bank_accounts(
         .offset(offset)
     )
     return [(account, owner_id) for account, owner_id in session.execute(stmt)]
-
-
-@translate_db_errors("bank_accounts")
-def get_bank_account_with_owner(
-    session: Session, account_id: uuid.UUID
-) -> tuple[BankAccounts, uuid.UUID]:
-    stmt = _with_owner(select(BankAccounts, PluggyItems.user_id)).where(
-        BankAccounts.id == account_id
-    )
-    row = session.execute(stmt).one_or_none()
-    if row is None:
-        raise RecordNotFoundError("bank_accounts", "get_bank_account_with_owner")
-    return row[0], row[1]
 
 
 @translate_db_errors("bank_accounts")
