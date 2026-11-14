@@ -18,6 +18,7 @@ class TransactionsRepositoryImpl implements TransactionsRepository {
     String? userId,
     TransactionFilters filters = const TransactionFilters(),
     String search = '',
+    String? financialEntryId,
   }) async {
     final result = await _remote.search(
       offset: offset,
@@ -25,6 +26,7 @@ class TransactionsRepositoryImpl implements TransactionsRepository {
       userId: userId,
       filters: filters,
       search: search,
+      financialEntryId: financialEntryId,
     );
     return result.map(
       (page) => PageResult<Transaction>(

@@ -1,10 +1,9 @@
 import 'package:decimal/decimal.dart';
-import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:mobile/app/theme/app_spacing.dart';
 import 'package:mobile/core/utils/date_formatter.dart';
-import 'package:mobile/core/utils/date_mask_formatter.dart';
 import 'package:mobile/core/utils/money_formatter.dart';
+import 'package:mobile/core/widgets/filter_fields.dart';
 import 'package:mobile/features/accounts/domain/entities/bank_account.dart';
 import 'package:mobile/features/household/presentation/viewmodels/household_scope_controller.dart';
 import 'package:mobile/features/transactions/domain/entities/transaction.dart';
@@ -210,7 +209,7 @@ class _TransactionFilterSheetState extends State<TransactionFilterSheet> {
                   TextButton(onPressed: _reset, child: Text(l10n.filterReset)),
                 ],
               ),
-              _Label(l10n.filterPerson),
+              FilterSectionLabel(l10n.filterPerson),
               Wrap(
                 spacing: AppSpacing.xs,
                 runSpacing: AppSpacing.xs,
@@ -223,7 +222,7 @@ class _TransactionFilterSheetState extends State<TransactionFilterSheet> {
                     ),
                 ],
               ),
-              _Label(l10n.filterAccount),
+              FilterSectionLabel(l10n.filterAccount),
               Wrap(
                 spacing: AppSpacing.xs,
                 runSpacing: AppSpacing.xs,
@@ -242,11 +241,11 @@ class _TransactionFilterSheetState extends State<TransactionFilterSheet> {
                     ),
                 ],
               ),
-              _Label(l10n.filterPeriod),
+              FilterSectionLabel(l10n.filterPeriod),
               Row(
                 children: [
                   Expanded(
-                    child: _DateField(
+                    child: FilterDateField(
                       controller: _from,
                       label: l10n.filterFrom,
                       error: _errorText(l10n, FilterField.from),
@@ -254,7 +253,7 @@ class _TransactionFilterSheetState extends State<TransactionFilterSheet> {
                   ),
                   const SizedBox(width: AppSpacing.sm),
                   Expanded(
-                    child: _DateField(
+                    child: FilterDateField(
                       controller: _to,
                       label: l10n.filterTo,
                       error: _errorText(l10n, FilterField.to),
@@ -262,7 +261,7 @@ class _TransactionFilterSheetState extends State<TransactionFilterSheet> {
                   ),
                 ],
               ),
-              _Label(l10n.filterType),
+              FilterSectionLabel(l10n.filterType),
               SizedBox(
                 width: double.infinity,
                 child: SegmentedButton<_DirectionChoice>(
@@ -286,7 +285,7 @@ class _TransactionFilterSheetState extends State<TransactionFilterSheet> {
                       setState(() => _direction = values.first),
                 ),
               ),
-              _Label(l10n.filterStatus),
+              FilterSectionLabel(l10n.filterStatus),
               SizedBox(
                 width: double.infinity,
                 child: SegmentedButton<_StatusChoice>(
@@ -310,11 +309,11 @@ class _TransactionFilterSheetState extends State<TransactionFilterSheet> {
                       setState(() => _status = values.first),
                 ),
               ),
-              _Label(l10n.filterAmount),
+              FilterSectionLabel(l10n.filterAmount),
               Row(
                 children: [
                   Expanded(
-                    child: _AmountField(
+                    child: FilterAmountField(
                       controller: _min,
                       label: l10n.filterMin,
                       hint: l10n.filterAmountHint,
@@ -323,7 +322,7 @@ class _TransactionFilterSheetState extends State<TransactionFilterSheet> {
                   ),
                   const SizedBox(width: AppSpacing.sm),
                   Expanded(
-                    child: _AmountField(
+                    child: FilterAmountField(
                       controller: _max,
                       label: l10n.filterMax,
                       hint: l10n.filterAmountHint,
@@ -343,83 +342,6 @@ class _TransactionFilterSheetState extends State<TransactionFilterSheet> {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _Label extends StatelessWidget {
-  const _Label(this.text);
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.only(top: AppSpacing.md, bottom: AppSpacing.xs),
-      child: Text(
-        text,
-        style: theme.textTheme.labelLarge?.copyWith(
-          color: theme.colorScheme.onSurfaceVariant,
-        ),
-      ),
-    );
-  }
-}
-
-class _DateField extends StatelessWidget {
-  const _DateField({
-    required this.controller,
-    required this.label,
-    required this.error,
-  });
-
-  final TextEditingController controller;
-  final String label;
-  final String? error;
-
-  @override
-  Widget build(BuildContext context) {
-    return TextField(
-      controller: controller,
-      keyboardType: TextInputType.number,
-      inputFormatters: const [DateMaskFormatter()],
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: AppLocalizations.of(context).filterDateHint,
-        errorText: error,
-        errorMaxLines: 2,
-      ),
-    );
-  }
-}
-
-class _AmountField extends StatelessWidget {
-  const _AmountField({
-    required this.controller,
-    required this.label,
-    required this.hint,
-    required this.error,
-  });
-
-  final TextEditingController controller;
-  final String label;
-  final String hint;
-  final String? error;
-
-  @override
-  Widget build(BuildContext context) {
-    return TextField(
-      controller: controller,
-      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-      inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]'))],
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: hint,
-        prefixText: 'R\$ ',
-        errorText: error,
-        errorMaxLines: 2,
       ),
     );
   }

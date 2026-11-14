@@ -5,15 +5,15 @@ import 'package:mobile/app/router/app_shell.dart';
 import 'package:mobile/core/session/session_controller.dart';
 import 'package:mobile/features/accounts/presentation/views/accounts_view.dart';
 import 'package:mobile/features/chat/presentation/views/chat_view.dart';
-import 'package:mobile/features/entries/presentation/views/entries_view.dart';
+import 'package:mobile/features/entries/presentation/views/entry_detail_args.dart';
 import 'package:mobile/features/transactions/presentation/views/transaction_detail_args.dart';
-import 'package:mobile/features/transactions/presentation/views/transaction_detail_view.dart';
 
 /// Builds the app router.
 ///
-/// [home], [login] and [transactions] are the screens that need their own
-/// ViewModel, so the caller builds them (the app with its DI container, tests
-/// with fakes).
+/// [home], [login], [transactions] and [entries] are the screens that need
+/// their own ViewModel, so the caller builds them (the app with its DI
+/// container, tests with fakes). The same for the two detail screens, which
+/// get what the list handed over (or `null` when they were opened without it).
 ///
 /// [redirect] and [refreshListenable] are the hook for the auth redirect, see
 /// [sessionRedirect]: the session state decides between login and the tabs,
@@ -22,11 +22,14 @@ GoRouter createAppRouter({
   required Widget home,
   required Widget login,
   required Widget transactions,
+  required Widget entries,
+  required Widget Function(TransactionDetailArgs? args) transactionDetail,
+  required Widget Function(EntryDetailArgs? args) entryDetail,
   String initialLocation = AppRoutes.home,
   GoRouterRedirect? redirect,
   Listenable? refreshListenable,
 }) {
-  // The detail of a transaction opens on this navigator, over the tabs.
+  // The detail screens open on this navigator, over the tabs.
   final rootNavigatorKey = GlobalKey<NavigatorState>();
   return GoRouter(
     navigatorKey: rootNavigatorKey,
@@ -46,16 +49,28 @@ GoRouter createAppRouter({
               GoRoute(
                 path: 'detail',
                 parentNavigatorKey: rootNavigatorKey,
-                builder: (context, state) => TransactionDetailView(
-                  args: switch (state.extra) {
-                    final TransactionDetailArgs args => args,
-                    _ => null,
-                  },
-                ),
+                builder: (context, state) =>
+                    transactionDetail(switch (state.extra) {
+                      final TransactionDetailArgs args => args,
+                      _ => null,
+                    }),
               ),
             ],
           ),
-          _branch(AppRoutes.entries, const EntriesView()),
+          _branch(
+            AppRoutes.entries,
+            entries,
+            subRoutes: [
+              GoRoute(
+                path: 'detail',
+                parentNavigatorKey: rootNavigatorKey,
+                builder: (context, state) => entryDetail(switch (state.extra) {
+                  final EntryDetailArgs args => args,
+                  _ => null,
+                }),
+              ),
+            ],
+          ),
           _branch(AppRoutes.accounts, const AccountsView()),
           _branch(AppRoutes.chat, const ChatView()),
         ],

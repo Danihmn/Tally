@@ -10,9 +10,15 @@ import 'package:mobile/core/config/app_config.dart';
 import 'package:mobile/core/session/session_controller.dart';
 import 'package:mobile/features/auth/presentation/viewmodels/login_view_model.dart';
 import 'package:mobile/features/auth/presentation/views/login_view.dart';
+import 'package:mobile/features/entries/presentation/viewmodels/entries_view_model.dart';
+import 'package:mobile/features/entries/presentation/viewmodels/linked_transactions_view_model.dart';
+import 'package:mobile/features/entries/presentation/views/entries_view.dart';
+import 'package:mobile/features/entries/presentation/views/entry_detail_view.dart';
 import 'package:mobile/features/home/presentation/viewmodels/home_view_model.dart';
 import 'package:mobile/features/home/presentation/views/home_view.dart';
+import 'package:mobile/features/transactions/presentation/viewmodels/linked_entries_view_model.dart';
 import 'package:mobile/features/transactions/presentation/viewmodels/transactions_view_model.dart';
+import 'package:mobile/features/transactions/presentation/views/transaction_detail_view.dart';
 import 'package:mobile/features/transactions/presentation/views/transactions_view.dart';
 
 /// Entry point. It only starts things up: config, dependencies, root widget.
@@ -44,6 +50,17 @@ Future<void> main() async {
         ),
         transactions: TransactionsView(
           createViewModel: () => getIt<TransactionsViewModel>(),
+        ),
+        entries: EntriesView(createViewModel: () => getIt<EntriesViewModel>()),
+        transactionDetail: (args) => TransactionDetailView(
+          args: args,
+          createLinkedViewModel: (id) =>
+              getIt<LinkedEntriesViewModel>(param1: id),
+        ),
+        entryDetail: (args) => EntryDetailView(
+          args: args,
+          createLinkedViewModel: (id) =>
+              getIt<LinkedTransactionsViewModel>(param1: id),
         ),
         initialLocation: session.isLoggedIn ? AppRoutes.home : AppRoutes.login,
         redirect: sessionRedirect(session),

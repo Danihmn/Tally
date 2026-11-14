@@ -18,6 +18,7 @@ class SearchCall {
     required this.userId,
     required this.filters,
     required this.search,
+    this.financialEntryId,
   });
 
   final int offset;
@@ -25,6 +26,7 @@ class SearchCall {
   final String? userId;
   final TransactionFilters filters;
   final String search;
+  final String? financialEntryId;
 }
 
 /// [TransactionsRepository] that pages [all], and records every call. Set
@@ -52,6 +54,7 @@ class FakeTransactionsRepository implements TransactionsRepository {
     String? userId,
     TransactionFilters filters = const TransactionFilters(),
     String search = '',
+    String? financialEntryId,
   }) {
     calls.add(
       SearchCall(
@@ -60,6 +63,7 @@ class FakeTransactionsRepository implements TransactionsRepository {
         userId: userId,
         filters: filters,
         search: search,
+        financialEntryId: financialEntryId,
       ),
     );
     final held = gate;

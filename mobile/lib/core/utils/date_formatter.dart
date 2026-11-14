@@ -22,6 +22,10 @@ abstract final class DateFormatter {
   static String monthName(DateTime value) =>
       DateFormat('MMMM', 'pt_BR').format(value);
 
+  /// `nov`.
+  static String monthShort(DateTime value) =>
+      DateFormat('MMM', 'pt_BR').format(value).replaceAll('.', '');
+
   /// `Seg`, `Ter`, ... Needs the same locale data as [monthName].
   static String weekdayShort(DateTime value) {
     final text = DateFormat('E', 'pt_BR').format(value).replaceAll('.', '');

@@ -922,6 +922,342 @@ abstract class AppLocalizations {
   /// **'Voltar para a lista'**
   String get detailBack;
 
+  /// No description provided for @entriesSearchHint.
+  ///
+  /// In pt, this message translates to:
+  /// **'Buscar lançamento'**
+  String get entriesSearchHint;
+
+  /// No description provided for @entriesTabPlanned.
+  ///
+  /// In pt, this message translates to:
+  /// **'Planejados'**
+  String get entriesTabPlanned;
+
+  /// No description provided for @entriesTabReconciled.
+  ///
+  /// In pt, this message translates to:
+  /// **'Conciliados'**
+  String get entriesTabReconciled;
+
+  /// No description provided for @entriesTabCancelled.
+  ///
+  /// In pt, this message translates to:
+  /// **'Cancelados'**
+  String get entriesTabCancelled;
+
+  /// No description provided for @entriesMonthAll.
+  ///
+  /// In pt, this message translates to:
+  /// **'Todos'**
+  String get entriesMonthAll;
+
+  /// No description provided for @entriesShowing.
+  ///
+  /// In pt, this message translates to:
+  /// **'Mostrando {shown} de {total}'**
+  String entriesShowing(int shown, int total);
+
+  /// No description provided for @entriesLoadingMore.
+  ///
+  /// In pt, this message translates to:
+  /// **'Carregando mais lançamentos…'**
+  String get entriesLoadingMore;
+
+  /// No description provided for @entriesEnd.
+  ///
+  /// In pt, this message translates to:
+  /// **'Fim da lista'**
+  String get entriesEnd;
+
+  /// No description provided for @entriesEmptyTitlePlanned.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nenhum lançamento planejado'**
+  String get entriesEmptyTitlePlanned;
+
+  /// No description provided for @entriesEmptyTitleReconciled.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nenhum lançamento conciliado'**
+  String get entriesEmptyTitleReconciled;
+
+  /// No description provided for @entriesEmptyTitleCancelled.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nenhum lançamento cancelado'**
+  String get entriesEmptyTitleCancelled;
+
+  /// No description provided for @entriesEmptyInMonth.
+  ///
+  /// In pt, this message translates to:
+  /// **'{title} em {month}'**
+  String entriesEmptyInMonth(String title, String month);
+
+  /// No description provided for @entriesEmptyPlain.
+  ///
+  /// In pt, this message translates to:
+  /// **'Quando houver lançamentos aqui, eles aparecem nesta lista.'**
+  String get entriesEmptyPlain;
+
+  /// No description provided for @entriesEmptyFiltered.
+  ///
+  /// In pt, this message translates to:
+  /// **'Tente outro termo de busca, outro mês ou remova alguns filtros.'**
+  String get entriesEmptyFiltered;
+
+  /// No description provided for @entryStatusPlanned.
+  ///
+  /// In pt, this message translates to:
+  /// **'Planejado'**
+  String get entryStatusPlanned;
+
+  /// No description provided for @entryStatusOverdue.
+  ///
+  /// In pt, this message translates to:
+  /// **'Vencido'**
+  String get entryStatusOverdue;
+
+  /// No description provided for @entryStatusReconciled.
+  ///
+  /// In pt, this message translates to:
+  /// **'Conciliado'**
+  String get entryStatusReconciled;
+
+  /// No description provided for @entryStatusCancelled.
+  ///
+  /// In pt, this message translates to:
+  /// **'Cancelado'**
+  String get entryStatusCancelled;
+
+  /// No description provided for @entryTypeRevenue.
+  ///
+  /// In pt, this message translates to:
+  /// **'Receita'**
+  String get entryTypeRevenue;
+
+  /// No description provided for @entryTypeExpense.
+  ///
+  /// In pt, this message translates to:
+  /// **'Despesa'**
+  String get entryTypeExpense;
+
+  /// No description provided for @entryPayDebit.
+  ///
+  /// In pt, this message translates to:
+  /// **'Débito'**
+  String get entryPayDebit;
+
+  /// No description provided for @entryPayCredit.
+  ///
+  /// In pt, this message translates to:
+  /// **'Crédito'**
+  String get entryPayCredit;
+
+  /// No description provided for @entryDue.
+  ///
+  /// In pt, this message translates to:
+  /// **'Venc. {date}'**
+  String entryDue(String date);
+
+  /// No description provided for @entryRef.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ref. {month}'**
+  String entryRef(String month);
+
+  /// No description provided for @entriesFiltersTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Filtrar lançamentos'**
+  String get entriesFiltersTitle;
+
+  /// No description provided for @entriesFilterPayment.
+  ///
+  /// In pt, this message translates to:
+  /// **'Pagamento'**
+  String get entriesFilterPayment;
+
+  /// No description provided for @entriesFilterDue.
+  ///
+  /// In pt, this message translates to:
+  /// **'Vencimento'**
+  String get entriesFilterDue;
+
+  /// No description provided for @chipRevenues.
+  ///
+  /// In pt, this message translates to:
+  /// **'Receitas'**
+  String get chipRevenues;
+
+  /// No description provided for @chipExpenses.
+  ///
+  /// In pt, this message translates to:
+  /// **'Despesas'**
+  String get chipExpenses;
+
+  /// No description provided for @chipDueFrom.
+  ///
+  /// In pt, this message translates to:
+  /// **'Venc. de {date}'**
+  String chipDueFrom(String date);
+
+  /// No description provided for @chipDueTo.
+  ///
+  /// In pt, this message translates to:
+  /// **'Venc. até {date}'**
+  String chipDueTo(String date);
+
+  /// No description provided for @entryDetailTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Lançamento'**
+  String get entryDetailTitle;
+
+  /// No description provided for @entryDetailReference.
+  ///
+  /// In pt, this message translates to:
+  /// **'Mês de referência'**
+  String get entryDetailReference;
+
+  /// No description provided for @entryDetailDue.
+  ///
+  /// In pt, this message translates to:
+  /// **'Vencimento'**
+  String get entryDetailDue;
+
+  /// No description provided for @entryDetailInstallment.
+  ///
+  /// In pt, this message translates to:
+  /// **'Parcela'**
+  String get entryDetailInstallment;
+
+  /// No description provided for @entryDetailInstallmentOf.
+  ///
+  /// In pt, this message translates to:
+  /// **'{number} de {total}'**
+  String entryDetailInstallmentOf(int number, int total);
+
+  /// No description provided for @entryDetailNotes.
+  ///
+  /// In pt, this message translates to:
+  /// **'Observações'**
+  String get entryDetailNotes;
+
+  /// No description provided for @entryDetailPayment.
+  ///
+  /// In pt, this message translates to:
+  /// **'Pagamento'**
+  String get entryDetailPayment;
+
+  /// No description provided for @entryDetailMissing.
+  ///
+  /// In pt, this message translates to:
+  /// **'Não foi possível abrir este lançamento.'**
+  String get entryDetailMissing;
+
+  /// No description provided for @entryTimelineCreated.
+  ///
+  /// In pt, this message translates to:
+  /// **'Criado'**
+  String get entryTimelineCreated;
+
+  /// No description provided for @entryTimelineCreatedBy.
+  ///
+  /// In pt, this message translates to:
+  /// **'{date} · por {name}'**
+  String entryTimelineCreatedBy(String date, String name);
+
+  /// No description provided for @entryTimelinePlanned.
+  ///
+  /// In pt, this message translates to:
+  /// **'Planejado'**
+  String get entryTimelinePlanned;
+
+  /// No description provided for @entryTimelineDueOn.
+  ///
+  /// In pt, this message translates to:
+  /// **'Vence em {date}'**
+  String entryTimelineDueOn(String date);
+
+  /// No description provided for @entryTimelineNoDue.
+  ///
+  /// In pt, this message translates to:
+  /// **'Sem data de vencimento'**
+  String get entryTimelineNoDue;
+
+  /// No description provided for @entryTimelineReconciled.
+  ///
+  /// In pt, this message translates to:
+  /// **'Conciliado'**
+  String get entryTimelineReconciled;
+
+  /// No description provided for @entryTimelineReconciledText.
+  ///
+  /// In pt, this message translates to:
+  /// **'Vinculado a uma transação do banco.'**
+  String get entryTimelineReconciledText;
+
+  /// No description provided for @entryTimelineCancelled.
+  ///
+  /// In pt, this message translates to:
+  /// **'Cancelado'**
+  String get entryTimelineCancelled;
+
+  /// No description provided for @entryTimelineCancelledText.
+  ///
+  /// In pt, this message translates to:
+  /// **'Não será cobrado nem conciliado.'**
+  String get entryTimelineCancelledText;
+
+  /// No description provided for @entryTimelineWaiting.
+  ///
+  /// In pt, this message translates to:
+  /// **'Aguardando conciliação'**
+  String get entryTimelineWaiting;
+
+  /// No description provided for @entryTimelineWaitingText.
+  ///
+  /// In pt, this message translates to:
+  /// **'Quando a transação aparecer no banco, ela será ligada a este lançamento.'**
+  String get entryTimelineWaitingText;
+
+  /// No description provided for @linkedTransactionTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Transação do banco'**
+  String get linkedTransactionTitle;
+
+  /// No description provided for @linkedEntryTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Lançamento vinculado'**
+  String get linkedEntryTitle;
+
+  /// No description provided for @linkedEntryNone.
+  ///
+  /// In pt, this message translates to:
+  /// **'Sem lançamento'**
+  String get linkedEntryNone;
+
+  /// No description provided for @linkedEntryNoneText.
+  ///
+  /// In pt, this message translates to:
+  /// **'Esta transação ainda não foi ligada a nada que vocês planejaram.'**
+  String get linkedEntryNoneText;
+
+  /// No description provided for @linkedTransactionNone.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nenhuma transação ligada a este lançamento ainda.'**
+  String get linkedTransactionNone;
+
+  /// No description provided for @linkedLoadError.
+  ///
+  /// In pt, this message translates to:
+  /// **'Não foi possível carregar o vínculo.'**
+  String get linkedLoadError;
+
   /// No description provided for @configErrorTitle.
   ///
   /// In pt, this message translates to:

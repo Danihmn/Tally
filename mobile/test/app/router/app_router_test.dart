@@ -18,6 +18,11 @@ void main() {
       home: const SizedBox(),
       login: const SizedBox(),
       transactions: const SizedBox(),
+      entries: const SizedBox(),
+      transactionDetail: (args) =>
+          Text(args == null ? 'TX-DETAIL-NONE' : 'TX-DETAIL'),
+      entryDetail: (args) =>
+          Text(args == null ? 'ENTRY-DETAIL-NONE' : 'ENTRY-DETAIL'),
       redirect: redirect == null
           ? null
           : (context, state) => redirect(context, state),
@@ -61,7 +66,7 @@ void main() {
       expect(AppRoutes.home, '/home');
     });
 
-    testWidgets('the_detail_route_without_a_transaction_says_so', (
+    testWidgets('the_transaction_detail_without_args_gets_null', (
       tester,
     ) async {
       await pumpRouter(tester);
@@ -71,10 +76,19 @@ void main() {
           .go(AppRoutes.transactionDetail);
       await tester.pumpAndSettle();
 
-      expect(
-        find.text('Não foi possível abrir esta transação.'),
-        findsOneWidget,
-      );
+      expect(find.text('TX-DETAIL-NONE'), findsOneWidget);
+      expect(find.byType(NavigationBar), findsNothing);
+    });
+
+    testWidgets('the_entry_detail_without_args_gets_null', (tester) async {
+      await pumpRouter(tester);
+      await tester.pumpAndSettle();
+
+      GoRouter.of(tester.element(find.byType(NavigationBar)))
+          .go(AppRoutes.entryDetail);
+      await tester.pumpAndSettle();
+
+      expect(find.text('ENTRY-DETAIL-NONE'), findsOneWidget);
       expect(find.byType(NavigationBar), findsNothing);
     });
 

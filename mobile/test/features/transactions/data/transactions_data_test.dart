@@ -197,6 +197,17 @@ void main() {
       });
     });
 
+    test('the_entry_that_a_transaction_is_matched_with_can_be_asked', () async {
+      final adapter = answering(page([]));
+
+      await build(adapter).search(offset: 0, limit: 5, financialEntryId: 'e1');
+
+      expect(
+        adapter.requests.single.queryParameters['financial_entry_id'],
+        'e1',
+      );
+    });
+
     test('the_search_text_is_trimmed_and_an_empty_one_is_not_sent', () async {
       final adapter = answering(page([]));
 

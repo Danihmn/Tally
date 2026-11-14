@@ -21,6 +21,7 @@ class TransactionsRemoteDataSource {
     String? userId,
     TransactionFilters filters = const TransactionFilters(),
     String search = '',
+    String? financialEntryId,
   }) => apiCall(() async {
     final text = search.trim();
     final from = filters.dateFrom;
@@ -38,6 +39,7 @@ class TransactionsRemoteDataSource {
         'date_to': ?(to == null ? null : DateFormatter.toApiDate(to)),
         'min_amount': ?filters.minAmount?.toString(),
         'max_amount': ?filters.maxAmount?.toString(),
+        'financial_entry_id': ?financialEntryId,
         if (text.isNotEmpty)
           'search': text.length > maxSearchLength
               ? text.substring(0, maxSearchLength)

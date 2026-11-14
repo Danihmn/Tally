@@ -75,6 +75,16 @@ Numbers are never calculated in the ViewModel with `double`. Money stays `Decima
 - The filter sheet has no category field on purpose (the API may not have categories). The category text of a transaction is shown as the bank sends it (maybe in English).
 - The detail screen (`/transactions/detail`) opens on the root navigator, over the tabs. It receives the transaction by `extra`, so it needs no request. Opened without it (for example after a restore), it says so and goes back to the list.
 
+## Lançamentos (list and detail, read only)
+
+`EntriesViewModel` uses `PaginatedViewModel` (pages of 30). The list shows **one tab (status) of one month** for the chosen person (the shared scope). Tabs are Planejados / Conciliados / Cancelados; the number on each is the `total` of a one-item request with the same month, person, search and filters, so it does not change when the tab changes. The month chips are "Todos" plus three months back, the current month (selected on open) and the next one; they use `reference_month_from/to`.
+
+- "Vencido" is a planned entry whose due date is before today. It is calculated in the app.
+- The order is the one the API gives (month of reference, then due date).
+- The filter sheet has no category (same reason as Transações). There is no button to create, edit, cancel or reconcile an entry: the screens only read.
+- The **link between a transaction and an entry** is read with two filters that look in the active reconciliations: `GET /financial-entries?transaction_id=` (block "Lançamento vinculado" in the transaction detail) and `GET /transactions?financial_entry_id=` (block "Transação do banco" in the entry detail, only for reconciled entries). Each block has its own small ViewModel (`LinkedEntriesViewModel`, `LinkedTransactionsViewModel`) and loads by itself, so a failure there does not break the rest of the screen.
+- The two detail screens open each other with `context.push`, so the back button goes back one step.
+
 ## Dependency injection
 
 `get_it` in `app/di/injection.dart`. Services are lazy singletons, ViewModels are factories (one per screen). Tests build a fresh container with fakes (`registerCoreDependencies`).

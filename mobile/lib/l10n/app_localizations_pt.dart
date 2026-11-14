@@ -488,6 +488,198 @@ class AppLocalizationsPt extends AppLocalizations {
   String get detailBack => 'Voltar para a lista';
 
   @override
+  String get entriesSearchHint => 'Buscar lançamento';
+
+  @override
+  String get entriesTabPlanned => 'Planejados';
+
+  @override
+  String get entriesTabReconciled => 'Conciliados';
+
+  @override
+  String get entriesTabCancelled => 'Cancelados';
+
+  @override
+  String get entriesMonthAll => 'Todos';
+
+  @override
+  String entriesShowing(int shown, int total) {
+    return 'Mostrando $shown de $total';
+  }
+
+  @override
+  String get entriesLoadingMore => 'Carregando mais lançamentos…';
+
+  @override
+  String get entriesEnd => 'Fim da lista';
+
+  @override
+  String get entriesEmptyTitlePlanned => 'Nenhum lançamento planejado';
+
+  @override
+  String get entriesEmptyTitleReconciled => 'Nenhum lançamento conciliado';
+
+  @override
+  String get entriesEmptyTitleCancelled => 'Nenhum lançamento cancelado';
+
+  @override
+  String entriesEmptyInMonth(String title, String month) {
+    return '$title em $month';
+  }
+
+  @override
+  String get entriesEmptyPlain =>
+      'Quando houver lançamentos aqui, eles aparecem nesta lista.';
+
+  @override
+  String get entriesEmptyFiltered =>
+      'Tente outro termo de busca, outro mês ou remova alguns filtros.';
+
+  @override
+  String get entryStatusPlanned => 'Planejado';
+
+  @override
+  String get entryStatusOverdue => 'Vencido';
+
+  @override
+  String get entryStatusReconciled => 'Conciliado';
+
+  @override
+  String get entryStatusCancelled => 'Cancelado';
+
+  @override
+  String get entryTypeRevenue => 'Receita';
+
+  @override
+  String get entryTypeExpense => 'Despesa';
+
+  @override
+  String get entryPayDebit => 'Débito';
+
+  @override
+  String get entryPayCredit => 'Crédito';
+
+  @override
+  String entryDue(String date) {
+    return 'Venc. $date';
+  }
+
+  @override
+  String entryRef(String month) {
+    return 'Ref. $month';
+  }
+
+  @override
+  String get entriesFiltersTitle => 'Filtrar lançamentos';
+
+  @override
+  String get entriesFilterPayment => 'Pagamento';
+
+  @override
+  String get entriesFilterDue => 'Vencimento';
+
+  @override
+  String get chipRevenues => 'Receitas';
+
+  @override
+  String get chipExpenses => 'Despesas';
+
+  @override
+  String chipDueFrom(String date) {
+    return 'Venc. de $date';
+  }
+
+  @override
+  String chipDueTo(String date) {
+    return 'Venc. até $date';
+  }
+
+  @override
+  String get entryDetailTitle => 'Lançamento';
+
+  @override
+  String get entryDetailReference => 'Mês de referência';
+
+  @override
+  String get entryDetailDue => 'Vencimento';
+
+  @override
+  String get entryDetailInstallment => 'Parcela';
+
+  @override
+  String entryDetailInstallmentOf(int number, int total) {
+    return '$number de $total';
+  }
+
+  @override
+  String get entryDetailNotes => 'Observações';
+
+  @override
+  String get entryDetailPayment => 'Pagamento';
+
+  @override
+  String get entryDetailMissing => 'Não foi possível abrir este lançamento.';
+
+  @override
+  String get entryTimelineCreated => 'Criado';
+
+  @override
+  String entryTimelineCreatedBy(String date, String name) {
+    return '$date · por $name';
+  }
+
+  @override
+  String get entryTimelinePlanned => 'Planejado';
+
+  @override
+  String entryTimelineDueOn(String date) {
+    return 'Vence em $date';
+  }
+
+  @override
+  String get entryTimelineNoDue => 'Sem data de vencimento';
+
+  @override
+  String get entryTimelineReconciled => 'Conciliado';
+
+  @override
+  String get entryTimelineReconciledText =>
+      'Vinculado a uma transação do banco.';
+
+  @override
+  String get entryTimelineCancelled => 'Cancelado';
+
+  @override
+  String get entryTimelineCancelledText => 'Não será cobrado nem conciliado.';
+
+  @override
+  String get entryTimelineWaiting => 'Aguardando conciliação';
+
+  @override
+  String get entryTimelineWaitingText =>
+      'Quando a transação aparecer no banco, ela será ligada a este lançamento.';
+
+  @override
+  String get linkedTransactionTitle => 'Transação do banco';
+
+  @override
+  String get linkedEntryTitle => 'Lançamento vinculado';
+
+  @override
+  String get linkedEntryNone => 'Sem lançamento';
+
+  @override
+  String get linkedEntryNoneText =>
+      'Esta transação ainda não foi ligada a nada que vocês planejaram.';
+
+  @override
+  String get linkedTransactionNone =>
+      'Nenhuma transação ligada a este lançamento ainda.';
+
+  @override
+  String get linkedLoadError => 'Não foi possível carregar o vínculo.';
+
+  @override
   String get configErrorTitle => 'Configuração ausente';
 
   @override
