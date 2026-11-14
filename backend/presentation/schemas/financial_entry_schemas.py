@@ -34,6 +34,8 @@ class FinancialEntryQuery(BaseModel):
     due_date_to: datetime.date | None = None
     min_amount: decimal.Decimal | None = Field(default=None, ge=0)
     max_amount: decimal.Decimal | None = Field(default=None, ge=0)
+    # Only the entries reconciled with this transaction
+    transaction_id: uuid.UUID | None = None
     limit: int = Field(default=50, ge=1, le=200)
     offset: int = Field(default=0, ge=0)
 
@@ -55,8 +57,10 @@ class FinancialEntryQuery(BaseModel):
         check_amount_range(self.min_amount, self.max_amount)
         return self
 
-    def to_filters(self) -> FinancialEntryFilters:
+    def to_filters(self, household_id: uuid.UUID) -> FinancialEntryFilters:
+        """The filters of the query, always inside the household of the logged user."""
         return FinancialEntryFilters(
+            household_id=household_id,
             user_id=self.user_id,
             bank_account_id=self.bank_account_id,
             type=self.type,
@@ -78,6 +82,7 @@ class FinancialEntryQuery(BaseModel):
             due_date_to=self.due_date_to,
             min_amount=self.min_amount,
             max_amount=self.max_amount,
+            transaction_id=self.transaction_id,
         )
 
 

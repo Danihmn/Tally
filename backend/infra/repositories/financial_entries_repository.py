@@ -3,11 +3,11 @@ import decimal
 import uuid
 from typing import Any
 
-from sqlalchemy import Select, func, select, update
+from sqlalchemy import Select, exists, func, select, update
 from sqlalchemy.orm import Session
 
 from domain.read_models import FinancialEntryFilters
-from infra.database.models import FinancialEntries
+from infra.database.models import FinancialEntries, Reconciliations
 from infra.repositories.common.exceptions import (
     RecordNotFoundError,
     translate_db_errors,
@@ -177,6 +177,16 @@ def _apply_search_filters(stmt: Select, filters: FinancialEntryFilters) -> Selec
         stmt = stmt.where(FinancialEntries.amount >= filters.min_amount)
     if filters.max_amount is not None:
         stmt = stmt.where(FinancialEntries.amount <= filters.max_amount)
+    if filters.transaction_id is not None:
+        stmt = stmt.where(
+            exists(
+                select(Reconciliations.id).where(
+                    Reconciliations.financial_entry_id == FinancialEntries.id,
+                    Reconciliations.transaction_id == filters.transaction_id,
+                    Reconciliations.deleted_at.is_(None),
+                )
+            )
+        )
     return stmt
 
 

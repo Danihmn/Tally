@@ -1,7 +1,12 @@
-from sqlalchemy import Select, func, or_
+from sqlalchemy import Select, exists, func, or_, select
 
 from domain.read_models import TransactionFilters
-from infra.database.models import BankAccounts, PluggyItems, Transactions
+from infra.database.models import (
+    BankAccounts,
+    PluggyItems,
+    Reconciliations,
+    Transactions,
+)
 from infra.repositories.common.like import ilike_contains
 
 SAME_PERSON = "SAME_PERSON"
@@ -58,6 +63,16 @@ def apply_filters(stmt: Select, filters: TransactionFilters) -> Select:
             or_(
                 Transactions.internal_transfer.is_(None),
                 Transactions.internal_transfer.not_in(excluded),
+            )
+        )
+    if filters.financial_entry_id is not None:
+        stmt = stmt.where(
+            exists(
+                select(Reconciliations.id).where(
+                    Reconciliations.transaction_id == Transactions.id,
+                    Reconciliations.financial_entry_id == filters.financial_entry_id,
+                    Reconciliations.deleted_at.is_(None),
+                )
             )
         )
     return stmt

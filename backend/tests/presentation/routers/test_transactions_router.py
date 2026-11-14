@@ -456,6 +456,18 @@ class ListTransactionsEndpointTests(unittest.TestCase):
         self.assertIsNone(items[1]["internal_transfer"])
         self.assertIsNone(items[1]["internal_transfer_classification_source"])
 
+    def test_the_financial_entry_filter_reaches_the_service(self):
+        entry = uuid.UUID("00000000-0000-0000-0000-00000000e001")
+
+        self.client.get("/transactions", params={"financial_entry_id": str(entry)})
+
+        self.assertEqual(self._filters().financial_entry_id, entry)
+
+    def test_without_the_financial_entry_filter_it_is_not_set(self):
+        self.client.get("/transactions")
+
+        self.assertIsNone(self._filters().financial_entry_id)
+
     def test_the_period_is_whole_utc_days_with_both_ends_inclusive(self):
         self.client.get(
             "/transactions", params={"date_from": "2026-11-01", "date_to": "2026-11-12"}
