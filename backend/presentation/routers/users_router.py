@@ -1,4 +1,3 @@
-import uuid
 from typing import Annotated
 
 from fastapi import APIRouter, BackgroundTasks, Depends, Query, status
@@ -12,7 +11,7 @@ from jobs.webhook_registration import register_webhooks
 from presentation.dependencies.auth import get_current_user
 from presentation.schemas.user_schemas import UserCreate, UserResponse
 from services.households_service import get_household_by_id
-from services.users_service import create_user, get_user_by_id, list_users
+from services.users_service import create_user, list_users
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -64,16 +63,3 @@ def list_users_endpoint(
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> list[User]:
     return list_users(session, limit=limit, offset=offset)
-
-
-# Declared after "/me", otherwise "me" would be read as a user id
-@router.get(
-    "/{user_id}",
-    response_model=UserResponse,
-    dependencies=[Depends(get_current_user)],
-)
-def get_user_endpoint(
-    user_id: uuid.UUID,
-    session: Annotated[Session, Depends(get_db)],
-) -> User:
-    return get_user_by_id(session, user_id)

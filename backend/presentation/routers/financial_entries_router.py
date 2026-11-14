@@ -1,5 +1,4 @@
 import datetime
-import uuid
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query, status
@@ -26,7 +25,6 @@ from services.financial_entries_service import (
     count_not_reconciled_entries,
     count_reconciled_entries,
     create_financial_entry,
-    get_active_financial_entry_by_id,
     get_total_planned,
     get_total_reconciled,
     list_upcoming_entries,
@@ -159,16 +157,6 @@ def upcoming_entries_endpoint(
             )
         )
     return UpcomingEntriesResponse(date_from=date_from, date_to=date_to, items=items)
-
-
-@router.get("/{entry_id}", response_model=FinancialEntryResponse)
-def get_financial_entry_endpoint(
-    entry_id: uuid.UUID,
-    session: Annotated[Session, Depends(get_db)],
-) -> FinancialEntryResponse:
-    return FinancialEntryResponse.from_entity(
-        get_active_financial_entry_by_id(session, entry_id)
-    )
 
 
 @router.post(

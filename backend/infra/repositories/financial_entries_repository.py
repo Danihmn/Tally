@@ -9,7 +9,6 @@ from sqlalchemy.orm import Session
 from domain.read_models import FinancialEntryFilters
 from infra.database.models import FinancialEntries, Reconciliations
 from infra.repositories.common.exceptions import (
-    RecordNotFoundError,
     translate_db_errors,
 )
 from infra.repositories.common.like import ilike_contains
@@ -223,16 +222,3 @@ def summarize_financial_entries(
         (type_, status, total, count)
         for type_, status, total, count in session.execute(stmt)
     ]
-
-
-@translate_db_errors("financial_entries")
-def get_active_financial_entry_by_id(
-    session: Session, entry_id: uuid.UUID
-) -> FinancialEntries:
-    """Like get_financial_entry_by_id, but a soft deleted entry counts as not found."""
-    entry = session.get(FinancialEntries, entry_id)
-    if entry is None or entry.deleted_at is not None:
-        raise RecordNotFoundError(
-            "financial_entries", "get_active_financial_entry_by_id"
-        )
-    return entry

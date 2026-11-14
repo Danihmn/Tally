@@ -77,16 +77,6 @@ def mark_financial_entries_status(
 
 
 @translate_repository_errors
-def get_active_financial_entry_by_id(
-    session: Session, entry_id: uuid.UUID
-) -> FinancialEntry:
-    entry = financial_entries_repository.get_active_financial_entry_by_id(
-        session, entry_id
-    )
-    return to_entity(FinancialEntry, entry)
-
-
-@translate_repository_errors
 def search_financial_entries(
     session: Session,
     filters: FinancialEntryFilters,

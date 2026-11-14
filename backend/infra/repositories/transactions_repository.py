@@ -20,7 +20,6 @@ from sqlalchemy.orm import Session
 from domain.read_models import TransactionFilters
 from infra.database.models import BankAccounts, PluggyItems, Transactions
 from infra.repositories.common.exceptions import (
-    RecordNotFoundError,
     translate_db_errors,
 )
 from infra.repositories.common.transaction_filters import apply_filters, join_owner
@@ -286,19 +285,3 @@ def summarize_transactions_by(
         (user_id, category_, type_, total, count)
         for user_id, category_, type_, total, count in session.execute(stmt)
     ]
-
-
-@translate_db_errors("transactions")
-def get_transaction_with_owner(
-    session: Session, transaction_id: uuid.UUID
-) -> tuple[Transactions, uuid.UUID]:
-    """A transaction that was not soft deleted, with the owner's user id."""
-    stmt = (
-        join_owner(select(Transactions, PluggyItems.user_id))
-        .where(Transactions.id == transaction_id)
-        .where(Transactions.deleted_at.is_(None))
-    )
-    row = session.execute(stmt).one_or_none()
-    if row is None:
-        raise RecordNotFoundError("transactions", "get_transaction_with_owner")
-    return row[0], row[1]

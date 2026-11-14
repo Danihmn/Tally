@@ -1,4 +1,3 @@
-import uuid
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
@@ -17,7 +16,6 @@ from presentation.schemas.bank_account_schemas import (
     TotalBalanceResponse,
 )
 from services.bank_accounts_service import (
-    get_bank_account_with_owner,
     get_total_balance,
     list_account_balances,
     search_bank_accounts,
@@ -97,11 +95,3 @@ def list_balances_endpoint(
         session, current_user.household_id, query.type, query.user_id
     )
     return [AccountBalanceResponse.from_read_model(item) for item in items]
-
-
-@router.get("/{account_id}", response_model=BankAccountResponse)
-def get_bank_account_endpoint(
-    account_id: uuid.UUID,
-    session: Annotated[Session, Depends(get_db)],
-) -> BankAccountResponse:
-    return _to_response(get_bank_account_with_owner(session, account_id))

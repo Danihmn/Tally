@@ -7,7 +7,6 @@ from sqlalchemy.orm import Session
 
 from infra.database.models import BankAccounts, CreditDatas, PluggyItems
 from infra.repositories.common.exceptions import (
-    RecordNotFoundError,
     translate_db_errors,
 )
 from infra.repositories.common.upsert import upsert_one
@@ -80,19 +79,6 @@ def search_bank_accounts(
         .offset(offset)
     )
     return [(account, owner_id) for account, owner_id in session.execute(stmt)]
-
-
-@translate_db_errors("bank_accounts")
-def get_bank_account_with_owner(
-    session: Session, account_id: uuid.UUID
-) -> tuple[BankAccounts, uuid.UUID]:
-    stmt = _with_owner(select(BankAccounts, PluggyItems.user_id)).where(
-        BankAccounts.id == account_id
-    )
-    row = session.execute(stmt).one_or_none()
-    if row is None:
-        raise RecordNotFoundError("bank_accounts", "get_bank_account_with_owner")
-    return row[0], row[1]
 
 
 @translate_db_errors("bank_accounts")

@@ -55,18 +55,6 @@ def search_bank_accounts(
 
 
 @translate_repository_errors
-def get_bank_account_with_owner(
-    session: Session, account_id: uuid.UUID
-) -> BankAccountWithOwner:
-    account, owner_id = bank_account_repository.get_bank_account_with_owner(
-        session, account_id
-    )
-    return BankAccountWithOwner(
-        account=to_entity(BankAccount, account), user_id=owner_id
-    )
-
-
-@translate_repository_errors
 def get_total_balance(
     session: Session,
     household_id: uuid.UUID,

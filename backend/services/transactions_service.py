@@ -104,18 +104,6 @@ def search_transactions(
 
 
 @translate_repository_errors
-def get_transaction_with_owner(
-    session: Session, transaction_id: uuid.UUID
-) -> TransactionWithOwner:
-    transaction, user_id = transactions_repository.get_transaction_with_owner(
-        session, transaction_id
-    )
-    return TransactionWithOwner(
-        transaction=to_entity(Transaction, transaction), user_id=user_id
-    )
-
-
-@translate_repository_errors
 def summarize_transactions(
     session: Session, filters: TransactionFilters
 ) -> TransactionSummary:

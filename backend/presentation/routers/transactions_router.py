@@ -1,5 +1,4 @@
 import datetime
-import uuid
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
@@ -30,7 +29,6 @@ from services.transactions_service import (
     get_top_expenses,
     get_total_expenses,
     get_total_revenues,
-    get_transaction_with_owner,
     search_transactions,
 )
 from utils.dates import (
@@ -201,11 +199,3 @@ def average_daily_expenses_endpoint(
         date_to=date_to,
         average=get_average_daily_expenses(session, filters),
     )
-
-
-@router.get("/{transaction_id}", response_model=TransactionResponse)
-def get_transaction_endpoint(
-    transaction_id: uuid.UUID,
-    session: Annotated[Session, Depends(get_db)],
-) -> TransactionResponse:
-    return _to_response(get_transaction_with_owner(session, transaction_id))
