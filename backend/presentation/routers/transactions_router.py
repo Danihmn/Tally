@@ -27,8 +27,8 @@ from services.transactions_service import (
     get_average_daily_expenses,
     get_balance,
     get_daily_expenses,
-    get_top_expenses,
-    get_total_expenses,
+    get_top_expenses_without_credit_card_paiment,
+    get_total_expenses_without_credit_card_paiment,
     get_total_revenues,
     get_transaction_with_owner,
     search_transactions,
@@ -114,7 +114,7 @@ def _period_filters(
 
 # The fixed paths below must stay before "/{transaction_id}"
 @router.get("/total-expenses", response_model=TotalResponse)
-def total_expenses_endpoint(
+def total_posted_expenses_without_credit_card_paiment_endpoint(
     query: Annotated[TransactionPeriodQuery, Query()],
     session: Annotated[Session, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_user)],
@@ -123,7 +123,7 @@ def total_expenses_endpoint(
     return TotalResponse(
         date_from=date_from,
         date_to=date_to,
-        total=get_total_expenses(session, filters),
+        total=get_total_expenses_without_credit_card_paiment(session, filters),
     )
 
 
@@ -156,7 +156,7 @@ def balance_endpoint(
 
 
 @router.get("/top-expenses", response_model=TopExpensesResponse)
-def top_expenses_endpoint(
+def top_expenses_without_credit_card_paiment_endpoint(
     query: Annotated[TopExpensesQuery, Query()],
     session: Annotated[Session, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_user)],
@@ -167,7 +167,9 @@ def top_expenses_endpoint(
         date_to=date_to,
         items=[
             TopExpenseItem(date=e.date, amount=e.amount, description=e.description)
-            for e in get_top_expenses(session, filters, query.limit)
+            for e in get_top_expenses_without_credit_card_paiment(
+                session, filters, query.limit
+            )
         ],
     )
 

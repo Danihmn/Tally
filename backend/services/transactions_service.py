@@ -188,11 +188,11 @@ def summarize_transactions(
 
 
 @translate_repository_errors
-def get_total_expenses(
+def get_total_expenses_without_credit_card_paiment(
     session: Session, filters: TransactionFilters
 ) -> decimal.Decimal:
-    """Sum of the debits (money out) that match the filters. Absolute value."""
-    return transactions_repository.sum_transactions_amount(
+    """Sum of the debits (money out) that match the filters. Absolute value. Excludes credit card payments."""
+    return transactions_repository.sum_transactions_amount_without_credit_card_paiment(
         session, dataclasses.replace(filters, type="DEBIT")
     )
 
@@ -202,22 +202,25 @@ def get_total_revenues(
     session: Session, filters: TransactionFilters
 ) -> decimal.Decimal:
     """Sum of the credits (money in) that match the filters. Absolute value."""
-    return transactions_repository.sum_transactions_amount(
-        session, dataclasses.replace(filters, type="CREDIT")
+    return transactions_repository.sum_transactions_amount_without_credit_card_paiment(
+        session,
+        dataclasses.replace(filters, type="CREDIT"),
     )
 
 
 def get_balance(session: Session, filters: TransactionFilters) -> decimal.Decimal:
     """Revenues minus expenses of the period. Negative when the period spent more than it got."""
-    return get_total_revenues(session, filters) - get_total_expenses(session, filters)
+    return get_total_revenues(
+        session, filters
+    ) - get_total_expenses_without_credit_card_paiment(session, filters)
 
 
 @translate_repository_errors
-def get_top_expenses(
+def get_top_expenses_without_credit_card_paiment(
     session: Session, filters: TransactionFilters, limit: int
 ) -> list[TopExpense]:
-    """The `limit` biggest debits that match the filters, biggest first."""
-    rows = transactions_repository.list_top_transactions(
+    """The `limit` biggest debits that match the filters, biggest first (no credit card payments)."""
+    rows = transactions_repository.list_top_transactions_without_credit_card_paiment(
         session, dataclasses.replace(filters, type="DEBIT"), limit
     )
     return [

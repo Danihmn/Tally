@@ -9,8 +9,8 @@ from services.transactions_service import (
     get_average_daily_expenses,
     get_balance,
     get_daily_expenses,
-    get_top_expenses,
-    get_total_expenses,
+    get_top_expenses_without_credit_card_paiment,
+    get_total_expenses_without_credit_card_paiment,
     get_total_revenues,
     list_unclassified_transactions,
     mark_internal_transfer,
@@ -104,10 +104,18 @@ class SummarizeTransactionsTests(unittest.TestCase):
         return summary
 
     def test_maps_each_type_to_its_total_and_count(self):
-        summary = self._summarize([("DEBIT", Decimal("10.50"), 3), ("CREDIT", Decimal("99"), 1)])
+        summary = self._summarize([
+            ("DEBIT", Decimal("10.50"), 3),
+            ("CREDIT", Decimal("99"), 1),
+        ])
 
         self.assertEqual(
-            (summary.debit_total, summary.debit_count, summary.credit_total, summary.credit_count),
+            (
+                summary.debit_total,
+                summary.debit_count,
+                summary.credit_total,
+                summary.credit_count,
+            ),
             (Decimal("10.50"), 3, Decimal("99"), 1),
         )
 
@@ -120,7 +128,10 @@ class SummarizeTransactionsTests(unittest.TestCase):
     def test_no_transactions_is_all_zero(self):
         summary = self._summarize([])
 
-        self.assertEqual((summary.debit_total, summary.credit_total), (Decimal("0.00"), Decimal("0.00")))
+        self.assertEqual(
+            (summary.debit_total, summary.credit_total),
+            (Decimal("0.00"), Decimal("0.00")),
+        )
 
 
 class SummarizeTransactionsByTests(unittest.TestCase):
@@ -176,7 +187,9 @@ class SummarizeTransactionsByTests(unittest.TestCase):
     def test_a_group_with_only_credits_has_zero_debits(self):
         groups = self._summarize([(self.ANA, None, "CREDIT", Decimal("40"), 1)])
 
-        self.assertEqual((groups[0].debit_total, groups[0].debit_count), (Decimal("0.00"), 0))
+        self.assertEqual(
+            (groups[0].debit_total, groups[0].debit_count), (Decimal("0.00"), 0)
+        )
 
     def test_no_transactions_is_no_groups(self):
         self.assertEqual(self._summarize([]), [])
@@ -195,7 +208,9 @@ class TotalsOfThePeriodTests(unittest.TestCase):
         return result, repository.sum_transactions_amount.call_args_list, filters
 
     def test_expenses_sum_only_the_debits(self):
-        total, calls, _ = self._run(get_total_expenses, [Decimal("150.75")])
+        total, calls, _ = self._run(
+            get_total_expenses_without_credit_card_paiment, [Decimal("150.75")]
+        )
 
         self.assertEqual(total, Decimal("150.75"))
         self.assertEqual(calls[0].args[1].type, "DEBIT")
@@ -207,14 +222,18 @@ class TotalsOfThePeriodTests(unittest.TestCase):
         self.assertEqual(calls[0].args[1].type, "CREDIT")
 
     def test_the_other_filters_are_kept_and_the_callers_filters_are_not_changed(self):
-        _, calls, filters = self._run(get_total_expenses, [Decimal("1")])
+        _, calls, filters = self._run(
+            get_total_expenses_without_credit_card_paiment, [Decimal("1")]
+        )
 
         self.assertEqual(calls[0].args[1].household_id, self.HOUSEHOLD)
         self.assertIsNone(filters.type)
 
     def test_balance_is_revenues_minus_expenses(self):
         # get_balance asks for the revenues first, then for the expenses
-        balance, calls, _ = self._run(get_balance, [Decimal("3000.00"), Decimal("1200.50")])
+        balance, calls, _ = self._run(
+            get_balance, [Decimal("3000.00"), Decimal("1200.50")]
+        )
 
         self.assertEqual(balance, Decimal("1799.50"))
         self.assertEqual([c.args[1].type for c in calls], ["CREDIT", "DEBIT"])
@@ -239,7 +258,9 @@ class TopExpensesTests(unittest.TestCase):
         session, filters = MagicMock(), TransactionFilters()
         with patch(f"{MODULE}.transactions_repository") as repository:
             repository.list_top_transactions.return_value = rows
-            result = get_top_expenses(session, filters, limit)
+            result = get_top_expenses_without_credit_card_paiment(
+                session, filters, limit
+            )
         return result, repository.list_top_transactions.call_args, filters
 
     def test_asks_only_for_debits_and_passes_the_limit(self):
@@ -281,7 +302,9 @@ class DailyExpensesTests(unittest.TestCase):
     def _run(self, rows, date_from=1, date_to=6):
         """Period from day `date_from` until the end of day `date_to - 1` (exclusive bound)."""
         session = MagicMock()
-        filters = TransactionFilters(date_from=_utc_day(date_from), date_to=_utc_day(date_to))
+        filters = TransactionFilters(
+            date_from=_utc_day(date_from), date_to=_utc_day(date_to)
+        )
         with patch(f"{MODULE}.transactions_repository") as repository:
             repository.sum_transactions_by_day.return_value = rows
             result = get_daily_expenses(session, filters)
@@ -318,7 +341,9 @@ class DailyExpensesTests(unittest.TestCase):
         self.assertEqual(result[-1].day, datetime.date(2026, 11, 12))
 
     def test_a_period_of_one_day_has_one_item(self):
-        result, _, _ = self._run([(datetime.date(2026, 11, 5), Decimal("9"))], date_from=5, date_to=6)
+        result, _, _ = self._run(
+            [(datetime.date(2026, 11, 5), Decimal("9"))], date_from=5, date_to=6
+        )
 
         self.assertEqual([(d.day.day, d.total) for d in result], [(5, Decimal("9"))])
 
@@ -330,7 +355,9 @@ class DailyExpensesTests(unittest.TestCase):
 class AverageDailyExpensesTests(unittest.TestCase):
     def _average(self, rows, date_from=1, date_to=13):
         session = MagicMock()
-        filters = TransactionFilters(date_from=_utc_day(date_from), date_to=_utc_day(date_to))
+        filters = TransactionFilters(
+            date_from=_utc_day(date_from), date_to=_utc_day(date_to)
+        )
         with patch(f"{MODULE}.transactions_repository") as repository:
             repository.sum_transactions_by_day.return_value = rows
             return get_average_daily_expenses(session, filters)
@@ -346,7 +373,9 @@ class AverageDailyExpensesTests(unittest.TestCase):
         self.assertEqual(self._average(rows), Decimal("50.00"))
 
     def test_is_rounded_to_cents(self):
-        average = self._average([(datetime.date(2026, 11, 1), Decimal("100"))], date_from=1, date_to=4)
+        average = self._average(
+            [(datetime.date(2026, 11, 1), Decimal("100"))], date_from=1, date_to=4
+        )
 
         self.assertEqual(average, Decimal("33.33"))
 

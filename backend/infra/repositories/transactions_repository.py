@@ -18,7 +18,7 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
 from domain.read_models import TransactionFilters
-from infra.database.models import PluggyItems, Transactions
+from infra.database.models import BankAccounts, PluggyItems, Transactions
 from infra.repositories.common.exceptions import (
     RecordNotFoundError,
     translate_db_errors,
@@ -278,26 +278,34 @@ def summarize_transactions(
 
 
 @translate_db_errors("transactions")
-def sum_transactions_amount(
+def sum_transactions_amount_without_credit_card_paiment(
     session: Session, filters: TransactionFilters
 ) -> decimal.Decimal:
-    """Sum of abs(amount) of everything the filters match (0 when nothing matches)."""
+    """Sum of abs(amount) of everything the filters match (0 when nothing matches, no credit card payments)."""
     stmt = apply_filters(
-        join_owner(select(func.coalesce(func.sum(func.abs(Transactions.amount)), 0))),
+        join_owner(
+            select(func.coalesce(func.sum(func.abs(Transactions.amount)), 0)).where(
+                BankAccounts.subtype != "CREDIT_CARD"
+            )
+        ),
         filters,
     )
     return session.scalar(stmt) or decimal.Decimal("0.00")
 
 
 @translate_db_errors("transactions")
-def list_top_transactions(
+def list_top_transactions_without_credit_card_paiment(
     session: Session, filters: TransactionFilters, limit: int
 ) -> list[tuple[datetime.datetime, str | None, decimal.Decimal]]:
-    """(date, description, abs(amount)) of the `limit` biggest transactions the filters match."""
+    """(date, description, abs(amount)) of the `limit` biggest transactions the filters match (no credit card payments)."""
     amount = func.abs(Transactions.amount)
     stmt = (
         apply_filters(
-            join_owner(select(Transactions.date, Transactions.description, amount)),
+            join_owner(
+                select(Transactions.date, Transactions.description, amount).where(
+                    BankAccounts.subtype != "CREDIT_CARD"
+                )
+            ),
             filters,
         )
         .order_by(amount.desc(), Transactions.date.desc(), Transactions.id)
