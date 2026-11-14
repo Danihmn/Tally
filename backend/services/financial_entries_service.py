@@ -13,7 +13,7 @@ from domain.read_models import (
 )
 from infra.repositories import financial_entries_repository
 from services.common.exceptions import translate_repository_errors
-from services.common.mappers import to_entities, to_entity, to_values
+from services.common.mappers import to_entities
 
 
 @translate_repository_errors
@@ -34,14 +34,6 @@ def list_financial_entries_by_user(
         bank_account_id,
     )
     return to_entities(FinancialEntry, entries)
-
-
-@translate_repository_errors
-def create_financial_entry(session: Session, entry: FinancialEntry) -> FinancialEntry:
-    created = financial_entries_repository.create_financial_entry(
-        session, to_values(entry)
-    )
-    return to_entity(FinancialEntry, created)
 
 
 @translate_repository_errors

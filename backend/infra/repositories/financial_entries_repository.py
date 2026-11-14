@@ -1,7 +1,6 @@
 import datetime
 import decimal
 import uuid
-from typing import Any
 
 from sqlalchemy import Select, exists, func, select, update
 from sqlalchemy.orm import Session
@@ -46,17 +45,6 @@ def list_financial_entries_by_user(
         FinancialEntries.id,
     )
     return list(session.scalars(stmt).all())
-
-
-@translate_db_errors("financial_entries")
-def create_financial_entry(
-    session: Session, values: dict[str, Any]
-) -> FinancialEntries:
-    """`values` uses FinancialEntries column names."""
-    entry = FinancialEntries(**values)
-    session.add(entry)
-    session.flush()
-    return entry
 
 
 @translate_db_errors("financial_entries")
