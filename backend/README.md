@@ -37,6 +37,19 @@ Rules:
 - A schema change = a **new script** (`004_...sql`). Never edit a script that was already applied.
 - The SQLAlchemy models (`infra/database/models.py`) are **generated** with `sqlacodegen`, never written by hand.
 
+### Regenerating the models (`sqlacodegen`)
+
+The database also holds tables that are **not ours**: the LangGraph `PostgresSaver` (the Tally conversation history) creates `checkpoints`, `checkpoint_blobs`, `checkpoint_writes` and `checkpoint_migrations` in the same schema (`public`) when the app calls `setup()`. They must **never** appear in `models.py`.
+
+`sqlacodegen` 4.0.4 has no option to exclude tables, only `--tables` (an allowlist, comma-delimited). So always generate **only the domain tables**, the ones created in `sql_scripts/`:
+
+```bash
+TABLES=$(grep -ohiE 'CREATE TABLE (IF NOT EXISTS )?[a-z_]+' sql_scripts/*.sql | awk '{print $NF}' | paste -sd,)
+uv run sqlacodegen "$DATABASE_URL" --generator declarative --tables "$TABLES" --outfile infra/database/models.py
+```
+
+Never run `sqlacodegen` without `--tables`: it would pick up the LangGraph tables. If a new script drops a table, remove it from the list (the command above does not read `DROP TABLE`). `DATABASE_URL` is the one in the `.env`. Use the plain `postgresql+psycopg2://` form that `sqlacodegen` (SQLAlchemy) understands. After generating, run `git diff infra/database/models.py`: the only changes should be the ones from the new script.
+
 ## Configuration (`.env`)
 
 ```bash

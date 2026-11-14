@@ -4,6 +4,7 @@ from langchain.agents import create_agent
 from langchain.agents.middleware import ModelRequest, dynamic_prompt
 
 from agents.common.chat_model import build_chat_model
+from agents.common.checkpointer import get_checkpointer
 from agents.common.clock import today
 from agents.tally.context import TallyContext
 from agents.tools.accounts import (
@@ -111,6 +112,7 @@ def build_tally_ai():
         ],
         middleware=[_system_prompt],
         context_schema=TallyContext,
+        checkpointer=get_checkpointer(),
         name="tally_ai",
     )
 

@@ -45,6 +45,7 @@ def chat_endpoint(
         )
         result = get_tally_ai().invoke(
             {"messages": [{"role": "user", "content": body.message}]},
+            config={"configurable": {"thread_id": str(current_user.id)}},
             context=TallyContext(user=current_user, partner_names=partner_names),
         )
         answer = _text_of(result["messages"][-1].content).strip()

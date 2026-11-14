@@ -3,12 +3,14 @@ import decimal
 import uuid
 
 from sqlalchemy import (
+    BigInteger,
     Boolean,
     CheckConstraint,
     Date,
     DateTime,
     ForeignKeyConstraint,
     Index,
+    Integer,
     Numeric,
     PrimaryKeyConstraint,
     SmallInteger,
@@ -84,6 +86,9 @@ class Users(Base):
     pluggy_webhook_secret_hash: Mapped[str | None] = mapped_column(Text)
 
     household: Mapped[Households] = relationship("Households", back_populates="users")
+    conversations: Mapped[list[Conversations]] = relationship(
+        "Conversations", back_populates="user"
+    )
     pluggy_items: Mapped[list[PluggyItems]] = relationship(
         "PluggyItems", back_populates="user"
     )
@@ -93,6 +98,49 @@ class Users(Base):
     recurrences: Mapped[list[Recurrences]] = relationship(
         "Recurrences", back_populates="user"
     )
+
+
+class Conversations(Base):
+    __tablename__ = "conversations"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["user_id"],
+            ["users.id"],
+            ondelete="RESTRICT",
+            name="conversations_user_id_fkey",
+        ),
+        PrimaryKeyConstraint("id", name="conversations_pkey"),
+        Index(
+            "idx_conversations_user_recent",
+            "user_id",
+            "last_message_at",
+            postgresql_where="(deleted_at IS NULL)",
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, primary_key=True, server_default=text("gen_random_uuid()")
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    total_input_tokens: Mapped[int] = mapped_column(
+        BigInteger, nullable=False, server_default=text("0")
+    )
+    total_output_tokens: Mapped[int] = mapped_column(
+        BigInteger, nullable=False, server_default=text("0")
+    )
+    context_tokens: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default=text("0")
+    )
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(True), nullable=False, server_default=text("now()")
+    )
+    title: Mapped[str | None] = mapped_column(Text)
+    token_limit: Mapped[int | None] = mapped_column(Integer)
+    last_message_at: Mapped[datetime.datetime | None] = mapped_column(DateTime(True))
+    updated_at: Mapped[datetime.datetime | None] = mapped_column(DateTime(True))
+    deleted_at: Mapped[datetime.datetime | None] = mapped_column(DateTime(True))
+
+    user: Mapped[Users] = relationship("Users", back_populates="conversations")
 
 
 class PluggyItems(Base):

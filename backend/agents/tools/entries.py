@@ -15,8 +15,8 @@ from agents.common.context import AgentContext
 from agents.common.formatting import (
     clamp_limit,
     day,
-    month,
     money,
+    month,
     period_note,
     scope_line,
     text,

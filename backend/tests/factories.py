@@ -12,6 +12,7 @@ from unittest.mock import MagicMock
 from domain.entities import (
     BankAccount,
     BankData,
+    Conversation,
     CreditData,
     FinancialEntry,
     PluggyItem,
@@ -96,6 +97,12 @@ def make_reconciliation(**overrides: Any) -> Reconciliation:
     }
     values.update(overrides)
     return Reconciliation(**values)
+
+
+def make_conversation(**overrides: Any) -> Conversation:
+    values: dict[str, Any] = {"id": uuid.uuid4(), "user_id": USER_ID}
+    values.update(overrides)
+    return Conversation(**values)
 
 
 def make_user(**overrides: Any) -> User:

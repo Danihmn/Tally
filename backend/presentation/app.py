@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.concurrency import run_in_threadpool
 
+from agents.common.checkpointer import get_checkpointer
 from jobs.webhook_registration import register_webhooks
 from presentation.exception_handlers import register_exception_handlers
 from presentation.routers import (
@@ -20,6 +21,7 @@ from presentation.webhooks.pluggy import item_webhooks
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await run_in_threadpool(register_webhooks)
+    get_checkpointer().setup()  # Setups the LangGraph checkpointer with the database
     yield
 
 
