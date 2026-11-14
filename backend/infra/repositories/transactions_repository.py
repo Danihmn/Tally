@@ -148,6 +148,23 @@ def set_internal_transfer(
 
 
 @translate_db_errors("transactions")
+def clear_auto_internal_transfers(session: Session, household_id: uuid.UUID) -> int:
+    """Undoes the AUTO classification of the household's transactions, so the next run
+    classifies them again. MANUAL ones are someone's choice and stay. Returns how many."""
+    result = session.execute(
+        update(Transactions)
+        .where(Transactions.household_id == household_id)
+        .where(Transactions.internal_transfer_classification_source == "AUTO")
+        .values(
+            internal_transfer=None,
+            internal_transfer_classification_source=None,
+            updated_at=datetime.datetime.now(datetime.UTC),
+        )
+    )
+    return result.rowcount  # type: ignore[attr-defined]
+
+
+@translate_db_errors("transactions")
 def search_transactions(
     session: Session,
     filters: TransactionFilters,

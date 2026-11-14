@@ -21,5 +21,7 @@ extension AccountBalanceDtoMapper on AccountBalanceDto {
       ),
       null => null,
     },
+    outgoingTransfersAreIncome: outgoingTransfersAreIncome,
+    bankCode: bankCode,
   );
 }

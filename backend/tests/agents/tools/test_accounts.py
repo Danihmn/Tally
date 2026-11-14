@@ -196,6 +196,25 @@ class BankAccountsOutputTests(ToolTestCase):
 
         self.assertIn("? | TEST HOLDER", result)
 
+    def test_a_salary_account_is_explained_to_the_model(self):
+        self.accounts(
+            (
+                make_bank_account(
+                    id=uuid.uuid4(),
+                    name="Conta Salário",
+                    outgoing_transfers_are_income=True,
+                    bank_code="001",
+                ),
+                USER_ID,
+            ),
+            (make_bank_account(id=uuid.uuid4(), name="Conta Corrente"), USER_ID),
+        )
+
+        result = get_my_bank_accounts.func(runtime=self.runtime)
+
+        self.assertIn("Conta Salário (Ana) is a salary account", result)
+        self.assertNotIn("Conta Corrente (Ana) is a salary account", result)
+
 
 class CreditCardsOutputTests(ToolTestCase):
     def test_no_cards_says_so(self):

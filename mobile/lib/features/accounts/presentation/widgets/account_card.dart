@@ -7,7 +7,8 @@ import 'package:mobile/l10n/app_localizations.dart';
 
 /// One account or card: icon, name, "Conta •••• 1234", the owner, the balance
 /// (or the open bill) and, for a card, how much of the limit is used. Tapping
-/// it opens the transactions of that account.
+/// it opens the transactions of that account. A bank account also has the
+/// "Conta salário" switch when [onSalaryAccountChanged] is given.
 class AccountCard extends StatelessWidget {
   const AccountCard({
     super.key,
@@ -15,12 +16,24 @@ class AccountCard extends StatelessWidget {
     required this.ownerInitial,
     required this.ownerColor,
     required this.onTap,
+    this.onSalaryAccountChanged,
+    this.onEditBankCode,
+    this.saving = false,
   });
 
   final AccountBalance account;
   final String ownerInitial;
   final Color ownerColor;
   final VoidCallback onTap;
+
+  /// Called with the new value of the switch. `null` hides the switch.
+  final ValueChanged<bool>? onSalaryAccountChanged;
+
+  /// Opens the bank code of a salary account to be corrected.
+  final VoidCallback? onEditBankCode;
+
+  /// The settings are being saved: the switch is disabled meanwhile.
+  final bool saving;
 
   @override
   Widget build(BuildContext context) {
@@ -97,6 +110,13 @@ class AccountCard extends StatelessWidget {
               ),
               if (isCard && balance != null)
                 _CardUsage(credit: account.credit, balance: balance),
+              if (!isCard && onSalaryAccountChanged != null)
+                _SalaryAccountRow(
+                  account: account,
+                  saving: saving,
+                  onChanged: onSalaryAccountChanged!,
+                  onEditBankCode: onEditBankCode,
+                ),
               const SizedBox(height: AppSpacing.sm),
               Align(
                 alignment: Alignment.centerRight,
@@ -120,6 +140,63 @@ class AccountCard extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// "Conta salário": the switch, what it means and the bank code when on.
+class _SalaryAccountRow extends StatelessWidget {
+  const _SalaryAccountRow({
+    required this.account,
+    required this.saving,
+    required this.onChanged,
+    this.onEditBankCode,
+  });
+
+  final AccountBalance account;
+  final bool saving;
+  final ValueChanged<bool> onChanged;
+  final VoidCallback? onEditBankCode;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final muted = theme.textTheme.bodySmall?.copyWith(
+      color: theme.colorScheme.onSurfaceVariant,
+    );
+    final on = account.outgoingTransfersAreIncome;
+    final code = account.bankCode;
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.sm),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.accountSalaryTitle,
+                  style: theme.textTheme.labelLarge,
+                ),
+                Text(
+                  on && code != null
+                      ? '${l10n.accountSalaryText} · ${l10n.accountSalaryBank(code)}'
+                      : l10n.accountSalaryText,
+                  style: muted,
+                ),
+              ],
+            ),
+          ),
+          if (on && onEditBankCode != null)
+            IconButton(
+              icon: const Icon(Icons.edit_outlined),
+              tooltip: l10n.accountSalaryEditCode,
+              onPressed: saving ? null : onEditBankCode,
+            ),
+          Switch(value: on, onChanged: saving ? null : onChanged),
+        ],
       ),
     );
   }

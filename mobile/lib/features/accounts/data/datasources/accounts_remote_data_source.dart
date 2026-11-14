@@ -54,4 +54,20 @@ class AccountsRemoteDataSource {
     );
     return parseDecimal(response.data!['total']);
   });
+
+  /// Changes the "conta salário" settings of a bank account. Only what is
+  /// given is sent.
+  Future<Result<void>> updateSettings(
+    String id, {
+    bool? outgoingTransfersAreIncome,
+    String? bankCode,
+  }) => apiCall(() async {
+    await _dio.patch<Map<String, dynamic>>(
+      ApiEndpoints.updateBankAccount.path.replaceFirst('{id}', id),
+      data: {
+        'outgoing_transfers_are_income': ?outgoingTransfersAreIncome,
+        'bank_code': ?bankCode,
+      },
+    );
+  });
 }

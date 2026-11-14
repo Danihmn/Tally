@@ -17,4 +17,12 @@ abstract interface class AccountsRepository {
     required AccountKind kind,
     String? userId,
   });
+
+  /// Changes the "conta salário" settings of a bank account. Turning the
+  /// flag on needs a [bankCode] (sent now or already stored).
+  Future<Result<void>> updateSettings(
+    String accountId, {
+    bool? outgoingTransfersAreIncome,
+    String? bankCode,
+  });
 }

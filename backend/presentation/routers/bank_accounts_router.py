@@ -1,3 +1,4 @@
+import uuid
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
@@ -6,12 +7,16 @@ from sqlalchemy.orm import Session
 from domain.entities import User
 from domain.read_models import BankAccountWithOwner
 from infra.database.session import get_db
+from jobs.transaction_internal_transfers_classification import (
+    reclassify_internal_transfers,
+)
 from presentation.dependencies.auth import get_current_user
 from presentation.schemas.bank_account_schemas import (
     AccountBalanceResponse,
     BalanceQuery,
     BankAccountQuery,
     BankAccountResponse,
+    BankAccountUpdate,
     TotalBalanceQuery,
     TotalBalanceResponse,
 )
@@ -19,6 +24,7 @@ from services.bank_accounts_service import (
     get_total_balance,
     list_account_balances,
     search_bank_accounts,
+    update_bank_account_settings,
 )
 
 # Both people of the household see every account of the household (the app is private, for two
@@ -45,6 +51,8 @@ def _to_response(item: BankAccountWithOwner) -> BankAccountResponse:
         currency_code=account.currency_code,
         owner=account.owner,
         balance=account.balance,
+        outgoing_transfers_are_income=account.outgoing_transfers_are_income,
+        bank_code=account.bank_code,
         created_at=account.created_at,
         updated_at=account.updated_at,
     )
@@ -95,3 +103,28 @@ def list_balances_endpoint(
         session, current_user.household_id, query.type, query.user_id
     )
     return [AccountBalanceResponse.from_read_model(item) for item in items]
+
+
+@router.patch("/{account_id}", response_model=BankAccountResponse)
+def update_bank_account_endpoint(
+    account_id: uuid.UUID,
+    body: BankAccountUpdate,
+    session: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
+) -> BankAccountResponse:
+    """Changes the settings of a bank account of the household (not a card).
+
+    A change reclassifies the internal transfers of the household, so the totals follow it
+    for the past months too. Turning the flag on without a bank code takes it from the
+    account's transfer number. 404 outside the household, 422 for a card or the flag on
+    when no bank code is sent, stored or found in the transfer number."""
+    item, changed = update_bank_account_settings(
+        session,
+        current_user.household_id,
+        account_id,
+        body.model_dump(exclude_unset=True),
+    )
+    if changed:
+        reclassify_internal_transfers(session, current_user.household_id)
+    session.commit()
+    return _to_response(item)

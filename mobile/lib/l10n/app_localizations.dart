@@ -1330,6 +1330,96 @@ abstract class AppLocalizations {
   /// **'Ver transações'**
   String get accountSeeTransactions;
 
+  /// No description provided for @accountSalaryTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Conta salário'**
+  String get accountSalaryTitle;
+
+  /// No description provided for @accountSalaryText.
+  ///
+  /// In pt, this message translates to:
+  /// **'TEDs que saem dela para suas contas contam como recebido'**
+  String get accountSalaryText;
+
+  /// No description provided for @accountSalaryBank.
+  ///
+  /// In pt, this message translates to:
+  /// **'Banco {code}'**
+  String accountSalaryBank(String code);
+
+  /// No description provided for @accountSalaryEditCode.
+  ///
+  /// In pt, this message translates to:
+  /// **'Alterar código do banco'**
+  String get accountSalaryEditCode;
+
+  /// No description provided for @salaryConfirmOnTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Marcar como conta salário?'**
+  String get salaryConfirmOnTitle;
+
+  /// No description provided for @salaryConfirmOnText.
+  ///
+  /// In pt, this message translates to:
+  /// **'Os TEDs que saem de {account} para as suas contas passam a contar como recebido. As transferências da casa serão reclassificadas, o que pode levar alguns instantes.'**
+  String salaryConfirmOnText(String account);
+
+  /// No description provided for @salaryConfirmOffTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Desmarcar conta salário?'**
+  String get salaryConfirmOffTitle;
+
+  /// No description provided for @salaryConfirmOffText.
+  ///
+  /// In pt, this message translates to:
+  /// **'Os TEDs que saem de {account} para as suas contas voltam a ser transferências internas. As transferências da casa serão reclassificadas, o que pode levar alguns instantes.'**
+  String salaryConfirmOffText(String account);
+
+  /// No description provided for @salaryConfirmCancel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Cancelar'**
+  String get salaryConfirmCancel;
+
+  /// No description provided for @salaryConfirmOk.
+  ///
+  /// In pt, this message translates to:
+  /// **'Confirmar'**
+  String get salaryConfirmOk;
+
+  /// No description provided for @bankCodeDialogTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Código do banco'**
+  String get bankCodeDialogTitle;
+
+  /// No description provided for @bankCodeDialogText.
+  ///
+  /// In pt, this message translates to:
+  /// **'O código de 3 dígitos do banco da conta salário (por exemplo, 001 para o Banco do Brasil). Os TEDs com o seu CPF vindos desse banco passam a contar como recebido.'**
+  String get bankCodeDialogText;
+
+  /// No description provided for @bankCodeDialogLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Código do banco'**
+  String get bankCodeDialogLabel;
+
+  /// No description provided for @bankCodeDialogCancel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Cancelar'**
+  String get bankCodeDialogCancel;
+
+  /// No description provided for @bankCodeDialogConfirm.
+  ///
+  /// In pt, this message translates to:
+  /// **'Salvar'**
+  String get bankCodeDialogConfirm;
+
   /// No description provided for @accountsEmptyNoBankTitle.
   ///
   /// In pt, this message translates to:

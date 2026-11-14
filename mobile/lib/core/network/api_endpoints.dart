@@ -63,6 +63,13 @@ abstract final class ApiEndpoints {
     usedBy: 'Contas',
   );
 
+  /// The "conta salário" setting of a bank account. `{id}` is the account id.
+  static const updateBankAccount = ApiEndpoint(
+    'PATCH',
+    '/bank-accounts/{id}',
+    usedBy: 'Contas',
+  );
+
   // Entries list (and the transactions they are matched with)
 
   static const financialEntries = ApiEndpoint(
@@ -148,6 +155,7 @@ abstract final class ApiEndpoints {
     bankAccounts,
     accountBalances,
     totalAccountBalance,
+    updateBankAccount,
     financialEntries,
     totalExpenses,
     totalRevenues,

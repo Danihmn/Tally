@@ -95,6 +95,15 @@ def _bank_accounts(user: User, only_mine: bool) -> str:
             ])
         )
     lines.append(f"{len(rows)} bank accounts.")
+    for item, _ in rows:
+        account = item.account
+        if account.outgoing_transfers_are_income:
+            lines.append(
+                f"{_account_name(account)} ({names.get(item.user_id, '?')}) is a salary "
+                "account: its bank does not report the salary coming in, so the TEDs it "
+                "sends to the owner's other accounts count as income, not as internal "
+                "transfers."
+            )
     for currency, total in sorted(totals.items()):
         lines.append(f"Total available balance ({currency}): {money(total)}")
     lines.append(

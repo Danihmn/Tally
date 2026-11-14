@@ -180,4 +180,70 @@ void main() {
       expect(kit.accounts.totalCalls, hasLength(2));
     });
   });
+
+  group('salary account', () {
+    test('turning_it_on_saves_the_code_and_loads_everything_again', () async {
+      await started();
+      final account = kit.viewModel.banks.single;
+      kit.accounts.balanceCalls.clear();
+      kit.accounts.totalCalls.clear();
+
+      final failure = await kit.viewModel.setSalaryAccount(
+        account,
+        enabled: true,
+        bankCode: '001',
+      );
+
+      expect(failure, isNull);
+      expect(kit.accounts.updateCalls, [('a1', true, '001')]);
+      expect(kit.accounts.balanceCalls, ['m1']);
+      expect(kit.accounts.totalCalls, hasLength(2));
+      final saved = kit.viewModel.banks.single;
+      expect(saved.outgoingTransfersAreIncome, isTrue);
+      expect(saved.bankCode, '001');
+      expect(kit.viewModel.isSaving('a1'), isFalse);
+    });
+
+    test('turning_it_on_without_a_code_lets_the_server_find_it', () async {
+      await started();
+
+      final failure = await kit.viewModel.setSalaryAccount(
+        kit.viewModel.banks.single,
+        enabled: true,
+      );
+
+      expect(failure, isNull);
+      expect(kit.accounts.updateCalls, [('a1', true, null)]);
+      expect(kit.viewModel.banks.single.bankCode, '001');
+    });
+
+    test('turning_it_off_does_not_send_a_code', () async {
+      await started();
+
+      await kit.viewModel.setSalaryAccount(
+        kit.viewModel.banks.single,
+        enabled: false,
+        bankCode: '001',
+      );
+
+      expect(kit.accounts.updateCalls, [('a1', false, null)]);
+    });
+
+    test('a_failure_is_returned_and_nothing_is_reloaded', () async {
+      await started();
+      kit.accounts.updateForced = const Result.failure(ValidationFailure());
+      kit.accounts.balanceCalls.clear();
+
+      final failure = await kit.viewModel.setSalaryAccount(
+        kit.viewModel.banks.single,
+        enabled: true,
+        bankCode: '001',
+      );
+
+      expect(failure, isA<ValidationFailure>());
+      expect(kit.accounts.balanceCalls, isEmpty);
+      expect(kit.viewModel.banks.single.outgoingTransfersAreIncome, isFalse);
+      expect(kit.viewModel.isSaving('a1'), isFalse);
+    });
+  });
 }

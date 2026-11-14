@@ -3,7 +3,7 @@ import decimal
 import uuid
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from domain.read_models import AccountBalance
 
@@ -33,8 +33,32 @@ class BankAccountResponse(BaseModel):
     currency_code: str
     owner: str | None
     balance: decimal.Decimal | None
+    # The TEDs that leave this account to the owner's other accounts count as income
+    outgoing_transfers_are_income: bool
+    bank_code: str | None  # COMPE code, set by the user
     created_at: datetime.datetime | None
     updated_at: datetime.datetime | None
+
+
+class BankAccountUpdate(BaseModel):
+    """Body of PATCH /bank-accounts/{id}: the settings the user chooses. Send only what changes."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    outgoing_transfers_are_income: bool | None = None
+    # COMPE code of the bank (3 digits). null removes it
+    bank_code: str | None = Field(default=None, pattern=r"^[0-9]{3}$")
+
+    @model_validator(mode="after")
+    def _check_fields(self) -> "BankAccountUpdate":  # noqa: UP037
+        if not self.model_fields_set:
+            raise ValueError("send at least one field")
+        if (
+            "outgoing_transfers_are_income" in self.model_fields_set
+            and self.outgoing_transfers_are_income is None
+        ):
+            raise ValueError("outgoing_transfers_are_income cannot be null")
+        return self
 
 
 class BalanceQuery(BaseModel):
@@ -84,11 +108,13 @@ class AccountBalanceResponse(BaseModel):
     number: str
     currency_code: str
     balance: decimal.Decimal | None
+    outgoing_transfers_are_income: bool
+    bank_code: str | None
     updated_at: datetime.datetime | None
     credit: CreditInfoResponse | None  # Only for cards that have credit data
 
     @classmethod
-    def from_read_model(cls, item: AccountBalance) -> "AccountBalanceResponse":
+    def from_read_model(cls, item: AccountBalance) -> "AccountBalanceResponse":  # noqa: UP037
         account = item.account
         assert account.id is not None
         credit = item.credit_data
@@ -102,6 +128,8 @@ class AccountBalanceResponse(BaseModel):
             number=account.number,
             currency_code=account.currency_code,
             balance=account.balance,
+            outgoing_transfers_are_income=account.outgoing_transfers_are_income,
+            bank_code=account.bank_code,
             updated_at=account.updated_at,
             credit=None
             if credit is None

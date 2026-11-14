@@ -263,4 +263,168 @@ void main() {
       expect(request.pendingAccountId, 'a1');
     });
   });
+
+  group('AccountsView salary account', () {
+    Finder salarySwitch() => find.byType(Switch);
+
+    /// Taps the switch and confirms the change.
+    Future<void> toggleAndConfirm(WidgetTester tester) async {
+      await tester.tap(salarySwitch());
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, 'Confirmar'));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('only_bank_accounts_have_the_switch', (tester) async {
+      await pumpView(tester);
+
+      expect(find.text('Conta salário'), findsOneWidget);
+      expect(salarySwitch(), findsOneWidget);
+
+      await tester.tap(find.text('Cartões de crédito 1'));
+      await tester.pumpAndSettle();
+
+      expect(salarySwitch(), findsNothing);
+    });
+
+    testWidgets('turning_it_on_saves_at_once_with_the_code_from_the_server', (
+      tester,
+    ) async {
+      await pumpView(tester);
+
+      await toggleAndConfirm(tester);
+
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(kit.accounts.updateCalls, [('a1', true, null)]);
+      expect(tester.widget<Switch>(salarySwitch()).value, isTrue);
+      expect(find.textContaining('Banco 001'), findsOneWidget);
+      // The switch does not open the transactions
+      expect(request.pendingAccountId, isNull);
+    });
+
+    testWidgets('without_a_code_on_the_server_it_asks_for_one', (tester) async {
+      kit.accounts.transferBankCode = null;
+      await pumpView(tester);
+
+      await toggleAndConfirm(tester);
+
+      expect(find.byType(SnackBar), findsNothing);
+      expect(find.text('Código do banco'), findsWidgets);
+      final save = find.widgetWithText(FilledButton, 'Salvar');
+      expect(tester.widget<FilledButton>(save).onPressed, isNull);
+
+      await tester.enterText(find.byType(TextField), '1a');
+      await tester.pump();
+      expect(tester.widget<FilledButton>(save).onPressed, isNull);
+
+      await tester.enterText(find.byType(TextField), '001');
+      await tester.pump();
+      await tester.tap(save);
+      await tester.pumpAndSettle();
+
+      expect(kit.accounts.updateCalls, [
+        ('a1', true, null),
+        ('a1', true, '001'),
+      ]);
+      expect(tester.widget<Switch>(salarySwitch()).value, isTrue);
+      expect(find.textContaining('Banco 001'), findsOneWidget);
+    });
+
+    testWidgets('the_switch_asks_for_confirmation_before_saving', (
+      tester,
+    ) async {
+      await pumpView(tester);
+
+      await tester.tap(salarySwitch());
+      await tester.pumpAndSettle();
+
+      expect(find.text('Marcar como conta salário?'), findsOneWidget);
+      expect(find.textContaining('passam a contar como recebido'), findsOne);
+      expect(kit.accounts.updateCalls, isEmpty);
+    });
+
+    testWidgets('cancelling_the_confirmation_saves_nothing', (tester) async {
+      await pumpView(tester);
+
+      await tester.tap(salarySwitch());
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Cancelar'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(kit.accounts.updateCalls, isEmpty);
+      expect(tester.widget<Switch>(salarySwitch()).value, isFalse);
+    });
+
+    testWidgets('turning_it_off_also_asks_for_confirmation', (tester) async {
+      await pumpView(tester);
+      await toggleAndConfirm(tester);
+
+      await tester.tap(salarySwitch());
+      await tester.pumpAndSettle();
+
+      expect(find.text('Desmarcar conta salário?'), findsOneWidget);
+      expect(
+        find.textContaining('voltam a ser transferências internas'),
+        findsOne,
+      );
+      expect(kit.accounts.updateCalls, [('a1', true, null)]);
+
+      await tester.tap(find.widgetWithText(FilledButton, 'Confirmar'));
+      await tester.pumpAndSettle();
+
+      expect(kit.accounts.updateCalls.last, ('a1', false, null));
+      expect(tester.widget<Switch>(salarySwitch()).value, isFalse);
+    });
+
+    testWidgets('cancelling_the_dialog_keeps_it_off', (tester) async {
+      kit.accounts.transferBankCode = null;
+      await pumpView(tester);
+
+      await toggleAndConfirm(tester);
+      await tester.tap(find.text('Cancelar'));
+      await tester.pumpAndSettle();
+
+      expect(kit.accounts.updateCalls, [('a1', true, null)]);
+      expect(tester.widget<Switch>(salarySwitch()).value, isFalse);
+    });
+
+    testWidgets('the_code_of_a_salary_account_can_be_changed', (tester) async {
+      await pumpView(tester);
+      await toggleAndConfirm(tester);
+
+      await tester.tap(find.byTooltip('Alterar código do banco'));
+      await tester.pumpAndSettle();
+      // The pencil goes straight to the code: no confirmation
+      expect(find.text('Marcar como conta salário?'), findsNothing);
+      expect(
+        tester.widget<TextField>(find.byType(TextField)).controller?.text,
+        '001',
+      );
+      await tester.enterText(find.byType(TextField), '237');
+      await tester.pump();
+      await tester.tap(find.widgetWithText(FilledButton, 'Salvar'));
+      await tester.pumpAndSettle();
+
+      expect(kit.accounts.updateCalls.last, ('a1', true, '237'));
+      expect(find.textContaining('Banco 237'), findsOneWidget);
+    });
+
+    testWidgets('only_a_salary_account_shows_the_edit_button', (tester) async {
+      await pumpView(tester);
+
+      expect(find.byTooltip('Alterar código do banco'), findsNothing);
+    });
+
+    testWidgets('a_failure_shows_a_message', (tester) async {
+      kit.accounts.updateForced = const Result.failure(NetworkFailure());
+      await pumpView(tester);
+
+      await toggleAndConfirm(tester);
+
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(find.byType(SnackBar), findsOneWidget);
+      expect(tester.widget<Switch>(salarySwitch()).value, isFalse);
+    });
+  });
 }

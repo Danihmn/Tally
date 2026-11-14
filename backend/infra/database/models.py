@@ -3,6 +3,7 @@ import decimal
 import uuid
 
 from sqlalchemy import (
+    Boolean,
     CheckConstraint,
     Date,
     DateTime,
@@ -134,6 +135,10 @@ class BankAccounts(Base):
     __tablename__ = "bank_accounts"
     __table_args__ = (
         CheckConstraint(
+            "bank_code::text ~ '^[0-9]{3}$'::text",
+            name="bank_accounts_bank_code_check",
+        ),
+        CheckConstraint(
             "subtype = ANY (ARRAY['CHECKING_ACCOUNT'::text, 'SAVINGS_ACCOUNT'::text, 'CREDIT_CARD'::text])",
             name="bank_accounts_subtype_check",
         ),
@@ -180,6 +185,10 @@ class BankAccounts(Base):
     updated_at: Mapped[datetime.datetime | None] = mapped_column(DateTime(True))
     household_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
     balance: Mapped[decimal.Decimal | None] = mapped_column(Numeric(18, 2))
+    outgoing_transfers_are_income: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default=text("false")
+    )
+    bank_code: Mapped[str | None] = mapped_column(String(3))
 
     household: Mapped[Households] = relationship(
         "Households", back_populates="bank_accounts"

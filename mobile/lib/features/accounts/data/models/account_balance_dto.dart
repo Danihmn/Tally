@@ -34,6 +34,8 @@ class AccountBalanceDto {
     required this.number,
     required this.balance,
     required this.credit,
+    this.outgoingTransfersAreIncome = false,
+    this.bankCode,
   });
 
   /// Throws [FormatException] when a required field is missing or invalid.
@@ -50,6 +52,9 @@ class AccountBalanceDto {
       credit: credit is Map<String, dynamic>
           ? CreditInfoDto.fromJson(credit)
           : null,
+      outgoingTransfersAreIncome:
+          json['outgoing_transfers_are_income'] as bool? ?? false,
+      bankCode: json['bank_code'] as String?,
     );
   }
 
@@ -63,4 +68,6 @@ class AccountBalanceDto {
   final String number;
   final Decimal? balance;
   final CreditInfoDto? credit;
+  final bool outgoingTransfersAreIncome;
+  final String? bankCode;
 }

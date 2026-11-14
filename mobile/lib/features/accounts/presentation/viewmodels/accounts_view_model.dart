@@ -2,11 +2,13 @@ import 'dart:async';
 
 import 'package:decimal/decimal.dart';
 import 'package:flutter/foundation.dart';
+import 'package:mobile/core/error/failure.dart';
 import 'package:mobile/core/result/result.dart';
 import 'package:mobile/core/state/ui_state.dart';
 import 'package:mobile/features/accounts/domain/entities/account_balance.dart';
 import 'package:mobile/features/accounts/domain/usecases/get_account_balances.dart';
 import 'package:mobile/features/accounts/domain/usecases/get_total_balance.dart';
+import 'package:mobile/features/accounts/domain/usecases/update_account_settings.dart';
 import 'package:mobile/features/household/domain/entities/member.dart';
 import 'package:mobile/features/household/presentation/viewmodels/household_scope_controller.dart';
 
@@ -22,6 +24,7 @@ class AccountsViewModel extends ChangeNotifier {
     required this._scopeController,
     required this._getBalances,
     required this._getTotal,
+    required this._updateSettings,
   }) {
     _scopeController.addListener(_onScopeChanged);
   }
@@ -29,6 +32,8 @@ class AccountsViewModel extends ChangeNotifier {
   final HouseholdScopeController _scopeController;
   final GetAccountBalances _getBalances;
   final GetTotalBalance _getTotal;
+  final UpdateAccountSettings _updateSettings;
+  final Set<String> _saving = {};
 
   AccountKind _tab = AccountKind.bank;
   UiState<List<AccountBalance>> _list = const UiInitial();
@@ -126,6 +131,37 @@ class AccountsViewModel extends ChangeNotifier {
 
   /// Retries the totals after they failed.
   Future<void> retryTotals() => _loadTotals(_generation);
+
+  /// Whether the settings of that account are being saved now.
+  bool isSaving(String accountId) => _saving.contains(accountId);
+
+  /// Turns "conta salário" on or off. Without [bankCode] the server keeps the
+  /// stored one or takes it from the account's transfer number. On success the
+  /// list and the totals load again (the server reclassified the transfers);
+  /// on failure the account stays as it was and the failure is returned.
+  Future<Failure?> setSalaryAccount(
+    AccountBalance account, {
+    required bool enabled,
+    String? bankCode,
+  }) async {
+    if (_saving.contains(account.id)) return null;
+    _saving.add(account.id);
+    _notify();
+    final result = await _updateSettings(
+      account.id,
+      outgoingTransfersAreIncome: enabled,
+      bankCode: enabled ? bankCode : null,
+    );
+    _saving.remove(account.id);
+    if (_disposed) return null;
+    final failure = result.failureOrNull;
+    if (failure == null) {
+      await _loadAll();
+    } else {
+      _notify();
+    }
+    return failure;
+  }
 
   void selectTab(AccountKind kind) {
     if (kind == _tab) return;

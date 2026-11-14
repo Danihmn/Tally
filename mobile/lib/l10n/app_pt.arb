@@ -451,6 +451,42 @@
     }
   },
   "accountSeeTransactions": "Ver transações",
+  "accountSalaryTitle": "Conta salário",
+  "accountSalaryText": "TEDs que saem dela para suas contas contam como recebido",
+  "accountSalaryBank": "Banco {code}",
+  "@accountSalaryBank": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "accountSalaryEditCode": "Alterar código do banco",
+  "salaryConfirmOnTitle": "Marcar como conta salário?",
+  "salaryConfirmOnText": "Os TEDs que saem de {account} para as suas contas passam a contar como recebido. As transferências da casa serão reclassificadas, o que pode levar alguns instantes.",
+  "@salaryConfirmOnText": {
+    "placeholders": {
+      "account": {
+        "type": "String"
+      }
+    }
+  },
+  "salaryConfirmOffTitle": "Desmarcar conta salário?",
+  "salaryConfirmOffText": "Os TEDs que saem de {account} para as suas contas voltam a ser transferências internas. As transferências da casa serão reclassificadas, o que pode levar alguns instantes.",
+  "@salaryConfirmOffText": {
+    "placeholders": {
+      "account": {
+        "type": "String"
+      }
+    }
+  },
+  "salaryConfirmCancel": "Cancelar",
+  "salaryConfirmOk": "Confirmar",
+  "bankCodeDialogTitle": "Código do banco",
+  "bankCodeDialogText": "O código de 3 dígitos do banco da conta salário (por exemplo, 001 para o Banco do Brasil). Os TEDs com o seu CPF vindos desse banco passam a contar como recebido.",
+  "bankCodeDialogLabel": "Código do banco",
+  "bankCodeDialogCancel": "Cancelar",
+  "bankCodeDialogConfirm": "Salvar",
   "accountsEmptyNoBankTitle": "{who} ainda não conectou nenhum banco",
   "@accountsEmptyNoBankTitle": {
     "placeholders": {

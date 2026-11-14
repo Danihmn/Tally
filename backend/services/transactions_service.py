@@ -87,6 +87,12 @@ def mark_internal_transfer(
 
 
 @translate_repository_errors
+def clear_auto_internal_transfers(session: Session, household_id: uuid.UUID) -> int:
+    """Undoes the AUTO internal transfer classification of the household (MANUAL stays)."""
+    return transactions_repository.clear_auto_internal_transfers(session, household_id)
+
+
+@translate_repository_errors
 def search_transactions(
     session: Session,
     filters: TransactionFilters,

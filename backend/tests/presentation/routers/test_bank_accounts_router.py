@@ -6,6 +6,7 @@ from unittest.mock import MagicMock, patch
 from fastapi.testclient import TestClient
 
 from domain.read_models import AccountBalance, BankAccountWithOwner
+from services.common.exceptions import InvalidDataError, NotFoundError
 from infra.database.session import get_db
 from presentation.app import app
 from presentation.dependencies.auth import get_current_user
@@ -106,6 +107,8 @@ class ListBankAccountsEndpointTests(unittest.TestCase):
         self.assertEqual(item["number"], "0001/12345-0")
         self.assertEqual((item["type"], item["subtype"]), ("BANK", "CHECKING_ACCOUNT"))
         self.assertEqual(item["balance"], "2301.45")
+        self.assertFalse(item["outgoing_transfers_are_income"])
+        self.assertIsNone(item["bank_code"])
 
     def test_the_holder_tax_number_is_never_in_the_answer(self):
         account = make_bank_account()
@@ -254,6 +257,15 @@ class ListBalancesEndpointTests(_BalanceEndpointsTestCase):
         self.assertEqual(item["balance"], "2301.45")
         self.assertIsNone(item["credit"])
 
+    def test_the_salary_account_settings_are_in_the_answer(self):
+        account = make_bank_account(outgoing_transfers_are_income=True, bank_code="001")
+        self.service.return_value = [AccountBalance(account=account, user_id=OWNER_ID)]
+
+        item = self.client.get("/bank-accounts/balances").json()[0]
+
+        self.assertTrue(item["outgoing_transfers_are_income"])
+        self.assertEqual(item["bank_code"], "001")
+
     def test_a_card_has_its_limits(self):
         account = make_bank_account(
             type="CREDIT", subtype="CREDIT_CARD", number="1234", balance=Decimal("142.41")
@@ -289,6 +301,108 @@ class ListBalancesEndpointTests(_BalanceEndpointsTestCase):
         app.dependency_overrides.pop(get_current_user)
 
         self.assertEqual(self.client.get("/bank-accounts/balances").status_code, 401)
+
+
+class UpdateBankAccountEndpointTests(unittest.TestCase):
+    """PATCH /bank-accounts/{id}: the "Conta salário" setting of the Contas screen."""
+
+    def setUp(self):
+        self.session = MagicMock()
+        self.current_user = make_user()
+
+        def _get_db():
+            yield self.session
+
+        app.dependency_overrides[get_db] = _get_db
+        app.dependency_overrides[get_current_user] = lambda: self.current_user
+        self.addCleanup(app.dependency_overrides.clear)
+        self.client = TestClient(app)
+
+        self.account = make_bank_account(outgoing_transfers_are_income=True, bank_code="001")
+        self.mocks = {}
+        for name in ("update_bank_account_settings", "reclassify_internal_transfers"):
+            patcher = patch(f"{MODULE}.{name}")
+            self.mocks[name] = patcher.start()
+            self.addCleanup(patcher.stop)
+        self.mocks["update_bank_account_settings"].return_value = (
+            BankAccountWithOwner(account=self.account, user_id=OWNER_ID),
+            True,
+        )
+        self.url = f"/bank-accounts/{self.account.id}"
+
+    def _patch(self, body):
+        return self.client.patch(self.url, json=body)
+
+    def test_only_the_sent_fields_go_to_the_service_in_the_users_household(self):
+        response = self._patch({"outgoing_transfers_are_income": True, "bank_code": "001"})
+
+        self.assertEqual(response.status_code, 200)
+        self.mocks["update_bank_account_settings"].assert_called_once_with(
+            self.session,
+            HOUSEHOLD_ID,
+            self.account.id,
+            {"outgoing_transfers_are_income": True, "bank_code": "001"},
+        )
+
+    def test_a_change_reclassifies_the_household_and_commits(self):
+        item = self._patch({"outgoing_transfers_are_income": True}).json()
+
+        self.mocks["reclassify_internal_transfers"].assert_called_once_with(
+            self.session, HOUSEHOLD_ID
+        )
+        self.session.commit.assert_called_once()
+        self.assertTrue(item["outgoing_transfers_are_income"])
+        self.assertEqual(item["bank_code"], "001")
+        self.assertEqual(item["user_id"], str(OWNER_ID))
+
+    def test_nothing_changed_means_no_reclassification(self):
+        self.mocks["update_bank_account_settings"].return_value = (
+            BankAccountWithOwner(account=self.account, user_id=OWNER_ID),
+            False,
+        )
+
+        self.assertEqual(self._patch({"bank_code": "001"}).status_code, 200)
+
+        self.mocks["reclassify_internal_transfers"].assert_not_called()
+
+    def test_the_bank_code_can_be_removed_with_null(self):
+        self._patch({"bank_code": None})
+
+        self.assertEqual(
+            self.mocks["update_bank_account_settings"].call_args.args[3],
+            {"bank_code": None},
+        )
+
+    def test_a_bad_body_is_rejected_before_the_service(self):
+        for body in (
+            {},
+            {"bank_code": "1"},
+            {"bank_code": "abcd"},
+            {"outgoing_transfers_are_income": None},
+            {"name": "Outra"},
+        ):
+            with self.subTest(body=body):
+                self.assertEqual(self._patch(body).status_code, 422)
+        self.mocks["update_bank_account_settings"].assert_not_called()
+
+    def test_an_account_outside_the_household_is_not_found(self):
+        self.mocks["update_bank_account_settings"].side_effect = NotFoundError("x")
+
+        self.assertEqual(self._patch({"bank_code": "001"}).status_code, 404)
+        self.session.commit.assert_not_called()
+
+    def test_a_card_or_the_flag_without_a_code_is_invalid(self):
+        self.mocks["update_bank_account_settings"].side_effect = InvalidDataError("x")
+
+        response = self._patch({"outgoing_transfers_are_income": True})
+
+        self.assertEqual(response.status_code, 422)
+        self.session.commit.assert_not_called()
+
+    def test_without_a_token_it_is_unauthorized(self):
+        app.dependency_overrides.pop(get_current_user)
+
+        self.assertEqual(self._patch({"bank_code": "001"}).status_code, 401)
 
 
 if __name__ == "__main__":

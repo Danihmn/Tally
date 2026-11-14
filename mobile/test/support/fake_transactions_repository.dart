@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:decimal/decimal.dart';
+import 'package:mobile/core/error/failure.dart';
 import 'package:mobile/core/pagination/page_result.dart';
 import 'package:mobile/core/result/result.dart';
 import 'package:mobile/features/accounts/domain/entities/account_balance.dart';
@@ -215,5 +216,52 @@ class FakeAccountsRepository implements AccountsRepository {
       }
     }
     return Result.success(sum);
+  }
+
+  /// Set to make [updateSettings] fail.
+  Result<void>? updateForced;
+  final List<(String, bool?, String?)> updateCalls = [];
+
+  /// The code the server takes from the account's transfer number when the
+  /// flag is turned on without one. Null: there is none, so it answers 422.
+  String? transferBankCode = '001';
+
+  @override
+  Future<Result<void>> updateSettings(
+    String accountId, {
+    bool? outgoingTransfersAreIncome,
+    String? bankCode,
+  }) async {
+    updateCalls.add((accountId, outgoingTransfersAreIncome, bankCode));
+    final forced = updateForced;
+    if (forced != null) return forced;
+    final current = balances.where((b) => b.id == accountId).firstOrNull;
+    var code = bankCode;
+    if (outgoingTransfersAreIncome == true &&
+        code == null &&
+        current?.bankCode == null) {
+      code = transferBankCode;
+      if (code == null) return const Result.failure(ValidationFailure());
+    }
+    balances = [
+      for (final b in balances)
+        if (b.id == accountId)
+          AccountBalance(
+            id: b.id,
+            ownerId: b.ownerId,
+            kind: b.kind,
+            name: b.name,
+            marketingName: b.marketingName,
+            number: b.number,
+            balance: b.balance,
+            credit: b.credit,
+            outgoingTransfersAreIncome:
+                outgoingTransfersAreIncome ?? b.outgoingTransfersAreIncome,
+            bankCode: code ?? b.bankCode,
+          )
+        else
+          b,
+    ];
+    return const Result.success(null);
   }
 }

@@ -21,3 +21,6 @@ class BankAccount:
     owner: str | None = None
     updated_at: datetime.datetime | None = None
     balance: decimal.Decimal | None = None
+    # Set by the user, never by the Pluggy sync. See domain/income_accounts.py
+    outgoing_transfers_are_income: bool = False
+    bank_code: str | None = None  # COMPE code of the bank (3 digits)

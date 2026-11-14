@@ -4,6 +4,7 @@ import 'package:mobile/core/session/session_controller.dart';
 import 'package:mobile/core/storage/session_token_store.dart';
 import 'package:mobile/features/accounts/domain/usecases/get_account_balances.dart';
 import 'package:mobile/features/accounts/domain/usecases/get_total_balance.dart';
+import 'package:mobile/features/accounts/domain/usecases/update_account_settings.dart';
 import 'package:mobile/features/accounts/presentation/viewmodels/accounts_view_model.dart';
 import 'package:mobile/features/household/domain/entities/member.dart';
 import 'package:mobile/features/household/domain/usecases/get_household_members.dart';
@@ -37,6 +38,7 @@ class AccountsKit {
       scopeController: scope,
       getBalances: GetAccountBalances(accounts),
       getTotal: GetTotalBalance(accounts),
+      updateSettings: UpdateAccountSettings(accounts),
     );
   }
 

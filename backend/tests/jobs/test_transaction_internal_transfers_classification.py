@@ -6,6 +6,7 @@ from unittest.mock import MagicMock, patch
 from jobs.transaction_internal_transfers_classification import (
     classificate_internal_transfers,
     launch_internal_transfers_classification,
+    reclassify_internal_transfers,
 )
 from services.common.exceptions import ServiceError
 from tests.factories import (
@@ -31,6 +32,14 @@ def _party(document=None):
 
 def _payment(payer=None, receiver=None):
     return {"payer": _party(payer), "receiver": _party(receiver)}
+
+
+def _ted_from_bank(bank_code, payer=None, receiver=None, method="TED"):
+    """What a received TED carries: the payer's bank, no branch or account number."""
+    data = _payment(payer, receiver)
+    data["payer"]["routingNumber"] = bank_code
+    data["paymentMethod"] = method
+    return data
 
 
 def _cpf(value):
@@ -219,6 +228,129 @@ class ClassificateInternalTransfersTests(unittest.TestCase):
         self._run([_debit(self.checking), _credit(self.savings)])
 
         self.session.commit.assert_not_called()
+
+    # -- the salary account (outgoing TEDs are income) ---------------------------------
+
+    def _with_salary_account(self, bank_code="001", owner=None):
+        salary = make_bank_account(
+            id=uuid.uuid4(),
+            tax_number=ME_CPF if owner is None else PARTNER_CPF,
+            outgoing_transfers_are_income=True,
+            bank_code=bank_code,
+        )
+        self.accounts_of[owner or self.ana.id].append(salary)
+        return salary
+
+    def test_my_ted_from_the_bank_of_my_salary_account_is_income(self):
+        self._with_salary_account("001")
+        salary = _credit(
+            self.checking,
+            "5000.00",
+            payment_data=_ted_from_bank("001", _cpf(ME_CPF), _cpf(ME_CPF)),
+        )
+
+        marked = self._run([salary])
+
+        self.assertEqual(marked, 1)
+        self.assertEqual(
+            self._marked(), ({"NOT_INTERNAL_TRANSFER": [salary.id]}, {"AUTO"})
+        )
+
+    def test_the_income_ted_is_not_used_to_pair_another_transaction(self):
+        self._with_salary_account("001")
+        salary = _credit(
+            self.checking, payment_data=_ted_from_bank("001", _cpf(ME_CPF), _cpf(ME_CPF))
+        )
+        spent = _debit(self.savings)  # Same amount, no documents
+
+        self._run([salary, spent])
+
+        self.assertEqual(self._marked()[0], {"NOT_INTERNAL_TRANSFER": [salary.id]})
+
+    def test_a_pix_from_the_same_bank_stays_an_internal_transfer(self):
+        self._with_salary_account("001")
+        pix = _credit(
+            self.checking,
+            payment_data=_ted_from_bank("001", _cpf(ME_CPF), _cpf(ME_CPF), method="PIX"),
+        )
+
+        self._run([pix])
+
+        self.assertEqual(self._marked()[0], {"SAME_PERSON": [pix.id]})
+
+    def test_my_ted_from_another_bank_stays_an_internal_transfer(self):
+        self._with_salary_account("001")
+        ted = _credit(
+            self.checking, payment_data=_ted_from_bank("341", _cpf(ME_CPF), _cpf(ME_CPF))
+        )
+
+        self._run([ted])
+
+        self.assertEqual(self._marked()[0], {"SAME_PERSON": [ted.id]})
+
+    def test_a_salary_account_without_a_bank_code_changes_nothing(self):
+        self._with_salary_account(bank_code=None)
+        ted = _credit(
+            self.checking, payment_data=_ted_from_bank("001", _cpf(ME_CPF), _cpf(ME_CPF))
+        )
+
+        self._run([ted])
+
+        self.assertEqual(self._marked()[0], {"SAME_PERSON": [ted.id]})
+
+    def test_my_partners_ted_from_that_bank_stays_a_household_transfer(self):
+        self._with_salary_account("001")
+        from_partner = _credit(
+            self.checking,
+            payment_data=_ted_from_bank("001", _cpf(PARTNER_CPF), _cpf(ME_CPF)),
+        )
+
+        self._run([from_partner])
+
+        self.assertEqual(self._marked()[0], {"SAME_HOUSEHOLD": [from_partner.id]})
+
+    def test_only_the_owner_of_the_salary_account_gets_the_income(self):
+        # The salary account is Bia's: Ana's own TED from that bank is still a transfer
+        self._with_salary_account("001", owner=self.bia.id)
+        ted = _credit(
+            self.checking, payment_data=_ted_from_bank("001", _cpf(ME_CPF), _cpf(ME_CPF))
+        )
+
+        self._run([ted])
+
+        self.assertEqual(self._marked()[0], {"SAME_PERSON": [ted.id]})
+
+    def test_a_ted_that_lands_in_the_salary_account_itself_is_not_income(self):
+        salary_account = self._with_salary_account("001")
+        ted = _credit(
+            salary_account,
+            payment_data=_ted_from_bank("001", _cpf(ME_CPF), _cpf(ME_CPF)),
+        )
+
+        self._run([ted])
+
+        self.assertEqual(self._marked()[0], {"SAME_PERSON": [ted.id]})
+
+
+class ReclassifyInternalTransfersTests(unittest.TestCase):
+    def test_clears_the_auto_classification_and_then_classifies_again(self):
+        session = MagicMock()
+        calls = MagicMock()
+        with (
+            patch(f"{MODULE}.clear_auto_internal_transfers", calls.clear),
+            patch(f"{MODULE}.classificate_internal_transfers", calls.classify),
+        ):
+            calls.classify.return_value = 3
+
+            marked = reclassify_internal_transfers(session, HOUSEHOLD_ID)
+
+        self.assertEqual(marked, 3)
+        self.assertEqual(
+            [c[0] for c in calls.mock_calls], ["clear", "classify"]
+        )
+        calls.clear.assert_called_once_with(session, HOUSEHOLD_ID)
+        calls.classify.assert_called_once_with(session, HOUSEHOLD_ID)
+        session.commit.assert_not_called()
 
 
 class LaunchInternalTransfersClassificationTests(unittest.TestCase):

@@ -28,4 +28,15 @@ class AccountsRepositoryImpl implements AccountsRepository {
     required AccountKind kind,
     String? userId,
   }) => _remote.getTotalBalance(kind: kind, userId: userId);
+
+  @override
+  Future<Result<void>> updateSettings(
+    String accountId, {
+    bool? outgoingTransfersAreIncome,
+    String? bankCode,
+  }) => _remote.updateSettings(
+    accountId,
+    outgoingTransfersAreIncome: outgoingTransfersAreIncome,
+    bankCode: bankCode,
+  );
 }

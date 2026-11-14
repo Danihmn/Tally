@@ -2,7 +2,7 @@ import decimal
 import uuid
 from typing import Any
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
 from infra.database.models import BankAccounts, CreditDatas, PluggyItems
@@ -49,6 +49,32 @@ def upsert_bank_account(session: Session, values: dict[str, Any]) -> BankAccount
 
 def _with_owner(stmt):
     return stmt.join(PluggyItems, BankAccounts.pluggy_item_id == PluggyItems.id)
+
+
+@translate_db_errors("bank_accounts")
+def get_bank_account_with_owner(
+    session: Session, account_id: uuid.UUID, household_id: uuid.UUID
+) -> tuple[BankAccounts, uuid.UUID] | None:
+    """The account (with the owner's user id) when it is in the household, else None."""
+    stmt = (
+        _with_owner(select(BankAccounts, PluggyItems.user_id))
+        .where(BankAccounts.id == account_id)
+        .where(BankAccounts.household_id == household_id)
+    )
+    row = session.execute(stmt).one_or_none()
+    return None if row is None else (row[0], row[1])
+
+
+@translate_db_errors("bank_accounts")
+def update_bank_account(
+    session: Session, account_id: uuid.UUID, values: dict[str, Any]
+) -> None:
+    """Writes the given columns of one account (and its updated_at)."""
+    session.execute(
+        update(BankAccounts)
+        .where(BankAccounts.id == account_id)
+        .values(**values, updated_at=func.now())
+    )
 
 
 @translate_db_errors("bank_accounts")

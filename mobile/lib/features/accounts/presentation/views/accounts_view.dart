@@ -4,14 +4,18 @@ import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:mobile/app/router/app_routes.dart';
 import 'package:mobile/app/theme/app_spacing.dart';
+import 'package:mobile/core/error/failure.dart';
 import 'package:mobile/core/state/ui_state.dart';
 import 'package:mobile/core/widgets/async_state_view.dart';
 import 'package:mobile/core/widgets/error_state.dart';
+import 'package:mobile/core/widgets/failure_message.dart';
 import 'package:mobile/core/widgets/skeleton.dart';
 import 'package:mobile/features/accounts/domain/entities/account_balance.dart';
 import 'package:mobile/features/accounts/presentation/viewmodels/accounts_view_model.dart';
 import 'package:mobile/features/accounts/presentation/widgets/account_card.dart';
 import 'package:mobile/features/accounts/presentation/widgets/accounts_header.dart';
+import 'package:mobile/features/accounts/presentation/widgets/bank_code_dialog.dart';
+import 'package:mobile/features/accounts/presentation/widgets/salary_account_confirm_dialog.dart';
 import 'package:mobile/features/household/presentation/viewmodels/household_scope_controller.dart';
 import 'package:mobile/features/household/presentation/widgets/member_palette.dart';
 import 'package:mobile/features/household/presentation/widgets/scope_selector.dart';
@@ -63,6 +67,44 @@ class _AccountsViewState extends State<AccountsView> {
     } else {
       context.go(AppRoutes.transactions);
     }
+  }
+
+  /// Asks for confirmation (the server reclassifies every transfer of the
+  /// household), then saves "conta salário". Turning it on sends no bank
+  /// code: the server takes it from the account's transfer number. When it
+  /// cannot (a 422), the bank code is asked here.
+  Future<void> _changeSalaryAccount(
+    AccountBalance account,
+    bool enabled,
+  ) async {
+    final confirmed = await showSalaryAccountConfirmDialog(
+      context,
+      account: account,
+      enabling: enabled,
+    );
+    if (!confirmed || !mounted) return;
+    final failure = await _viewModel.setSalaryAccount(
+      account,
+      enabled: enabled,
+    );
+    if (!mounted) return;
+    if (enabled && failure is ValidationFailure) {
+      await _editBankCode(account);
+    } else if (failure != null) {
+      showFailureSnackBar(context, failure);
+    }
+  }
+
+  /// Asks the bank code (filled with the current one) and turns it on with it.
+  Future<void> _editBankCode(AccountBalance account) async {
+    final code = await showBankCodeDialog(context, initial: account.bankCode);
+    if (code == null || !mounted) return;
+    final failure = await _viewModel.setSalaryAccount(
+      account,
+      enabled: true,
+      bankCode: code,
+    );
+    if (failure != null && mounted) showFailureSnackBar(context, failure);
   }
 
   @override
@@ -197,6 +239,10 @@ class _AccountsViewState extends State<AccountsView> {
                   vm.memberIndexOf(account.ownerId),
                 ),
                 onTap: () => _openTransactions(account),
+                saving: vm.isSaving(account.id),
+                onSalaryAccountChanged: (enabled) =>
+                    unawaited(_changeSalaryAccount(account, enabled)),
+                onEditBankCode: () => unawaited(_editBankCode(account)),
               ),
             ),
         ];

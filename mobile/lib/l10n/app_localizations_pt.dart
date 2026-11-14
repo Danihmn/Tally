@@ -728,6 +728,59 @@ class AppLocalizationsPt extends AppLocalizations {
   String get accountSeeTransactions => 'Ver transações';
 
   @override
+  String get accountSalaryTitle => 'Conta salário';
+
+  @override
+  String get accountSalaryText =>
+      'TEDs que saem dela para suas contas contam como recebido';
+
+  @override
+  String accountSalaryBank(String code) {
+    return 'Banco $code';
+  }
+
+  @override
+  String get accountSalaryEditCode => 'Alterar código do banco';
+
+  @override
+  String get salaryConfirmOnTitle => 'Marcar como conta salário?';
+
+  @override
+  String salaryConfirmOnText(String account) {
+    return 'Os TEDs que saem de $account para as suas contas passam a contar como recebido. As transferências da casa serão reclassificadas, o que pode levar alguns instantes.';
+  }
+
+  @override
+  String get salaryConfirmOffTitle => 'Desmarcar conta salário?';
+
+  @override
+  String salaryConfirmOffText(String account) {
+    return 'Os TEDs que saem de $account para as suas contas voltam a ser transferências internas. As transferências da casa serão reclassificadas, o que pode levar alguns instantes.';
+  }
+
+  @override
+  String get salaryConfirmCancel => 'Cancelar';
+
+  @override
+  String get salaryConfirmOk => 'Confirmar';
+
+  @override
+  String get bankCodeDialogTitle => 'Código do banco';
+
+  @override
+  String get bankCodeDialogText =>
+      'O código de 3 dígitos do banco da conta salário (por exemplo, 001 para o Banco do Brasil). Os TEDs com o seu CPF vindos desse banco passam a contar como recebido.';
+
+  @override
+  String get bankCodeDialogLabel => 'Código do banco';
+
+  @override
+  String get bankCodeDialogCancel => 'Cancelar';
+
+  @override
+  String get bankCodeDialogConfirm => 'Salvar';
+
+  @override
   String accountsEmptyNoBankTitle(String who) {
     return '$who ainda não conectou nenhum banco';
   }

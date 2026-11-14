@@ -60,6 +60,8 @@ class AccountBalance extends Equatable {
     required this.number,
     required this.balance,
     required this.credit,
+    this.outgoingTransfersAreIncome = false,
+    this.bankCode,
   });
 
   final String id;
@@ -76,6 +78,13 @@ class AccountBalance extends Equatable {
 
   /// Only for cards, and only when the bank sent the credit data.
   final CreditInfo? credit;
+
+  /// "Conta salário": the bank does not show the salary coming in, so the
+  /// TEDs this account sends to the owner's other accounts count as received.
+  final bool outgoingTransfersAreIncome;
+
+  /// The COMPE code of the bank (3 digits), set by the person with the flag.
+  final String? bankCode;
 
   bool get isCreditCard => kind == AccountKind.credit;
 
@@ -102,5 +111,7 @@ class AccountBalance extends Equatable {
     number,
     balance,
     credit,
+    outgoingTransfersAreIncome,
+    bankCode,
   ];
 }

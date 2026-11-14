@@ -6,6 +6,7 @@ import 'package:mobile/features/accounts/data/repositories/accounts_repository_i
 import 'package:mobile/features/accounts/domain/entities/account_balance.dart';
 import 'package:mobile/features/accounts/domain/usecases/get_account_balances.dart';
 import 'package:mobile/features/accounts/domain/usecases/get_total_balance.dart';
+import 'package:mobile/features/accounts/domain/usecases/update_account_settings.dart';
 
 import '../../support/fake_dio.dart';
 import '../../support/fakes.dart';
@@ -128,6 +129,65 @@ void main() {
 
       expect(result.valueOrNull, Decimal.parse('12.30'));
       expect(adapter.requests.single.queryParameters['user_id'], 'm1');
+    });
+  });
+
+  group('salary account settings', () {
+    test('the_flag_and_the_bank_code_are_read_from_the_balances', () async {
+      final adapter = answering([
+        {
+          ...item('a', 'BANK'),
+          'outgoing_transfers_are_income': true,
+          'bank_code': '001',
+        },
+        item('b', 'BANK'),
+      ]);
+
+      final result = await AccountsRepositoryImpl(build(adapter)).getBalances();
+
+      final accounts = result.valueOrNull!;
+      expect(accounts.first.outgoingTransfersAreIncome, isTrue);
+      expect(accounts.first.bankCode, '001');
+      // An answer without the fields (older server) means "off"
+      expect(accounts.last.outgoingTransfersAreIncome, isFalse);
+      expect(accounts.last.bankCode, isNull);
+    });
+
+    test('update_sends_a_patch_with_only_the_given_fields', () async {
+      final adapter = answering(item('a', 'BANK'));
+
+      final result = await UpdateAccountSettings(
+        AccountsRepositoryImpl(build(adapter)),
+      )('a', outgoingTransfersAreIncome: true, bankCode: '001');
+
+      expect(result.isSuccess, isTrue);
+      final request = adapter.requests.single;
+      expect(request.method, 'PATCH');
+      expect(request.path, '/bank-accounts/a');
+      expect(request.data, {
+        'outgoing_transfers_are_income': true,
+        'bank_code': '001',
+      });
+    });
+
+    test('turning_off_sends_only_the_flag', () async {
+      final adapter = answering(item('a', 'BANK'));
+
+      await build(adapter)
+          .updateSettings('a', outgoingTransfersAreIncome: false);
+
+      expect(adapter.requests.single.data, {
+        'outgoing_transfers_are_income': false,
+      });
+    });
+
+    test('a_422_is_a_validation_failure', () async {
+      final adapter = answering({'detail': 'Invalid data'}, status: 422);
+
+      final result = await build(adapter)
+          .updateSettings('a', outgoingTransfersAreIncome: true);
+
+      expect(result.failureOrNull, isA<ValidationFailure>());
     });
   });
 }
