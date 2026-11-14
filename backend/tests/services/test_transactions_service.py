@@ -9,8 +9,8 @@ from services.transactions_service import (
     get_average_daily_expenses,
     get_balance,
     get_daily_expenses,
-    get_top_expenses_without_credit_card_paiment,
-    get_total_expenses_without_credit_card_paiment,
+    get_top_expenses,
+    get_total_expenses,
     get_total_revenues,
     list_unclassified_transactions,
     mark_internal_transfer,
@@ -208,9 +208,7 @@ class TotalsOfThePeriodTests(unittest.TestCase):
         return result, repository.sum_transactions_amount.call_args_list, filters
 
     def test_expenses_sum_only_the_debits(self):
-        total, calls, _ = self._run(
-            get_total_expenses_without_credit_card_paiment, [Decimal("150.75")]
-        )
+        total, calls, _ = self._run(get_total_expenses, [Decimal("150.75")])
 
         self.assertEqual(total, Decimal("150.75"))
         self.assertEqual(calls[0].args[1].type, "DEBIT")
@@ -222,9 +220,7 @@ class TotalsOfThePeriodTests(unittest.TestCase):
         self.assertEqual(calls[0].args[1].type, "CREDIT")
 
     def test_the_other_filters_are_kept_and_the_callers_filters_are_not_changed(self):
-        _, calls, filters = self._run(
-            get_total_expenses_without_credit_card_paiment, [Decimal("1")]
-        )
+        _, calls, filters = self._run(get_total_expenses, [Decimal("1")])
 
         self.assertEqual(calls[0].args[1].household_id, self.HOUSEHOLD)
         self.assertIsNone(filters.type)
@@ -258,9 +254,7 @@ class TopExpensesTests(unittest.TestCase):
         session, filters = MagicMock(), TransactionFilters()
         with patch(f"{MODULE}.transactions_repository") as repository:
             repository.list_top_transactions.return_value = rows
-            result = get_top_expenses_without_credit_card_paiment(
-                session, filters, limit
-            )
+            result = get_top_expenses(session, filters, limit)
         return result, repository.list_top_transactions.call_args, filters
 
     def test_asks_only_for_debits_and_passes_the_limit(self):

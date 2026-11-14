@@ -188,12 +188,13 @@ def summarize_transactions(
 
 
 @translate_repository_errors
-def get_total_expenses_without_credit_card_paiment(
+def get_total_expenses(
     session: Session, filters: TransactionFilters
 ) -> decimal.Decimal:
-    """Sum of the debits (money out) that match the filters. Absolute value. Excludes credit card payments."""
-    return transactions_repository.sum_transactions_amount_without_credit_card_paiment(
-        session, dataclasses.replace(filters, type="DEBIT")
+    """Sum of the debits (money out) that match the filters. Absolute value. Automatically excludes credit card payments."""
+    return transactions_repository.sum_transactions_amount(
+        session,
+        dataclasses.replace(filters, type="DEBIT"),
     )
 
 
@@ -201,8 +202,8 @@ def get_total_expenses_without_credit_card_paiment(
 def get_total_revenues(
     session: Session, filters: TransactionFilters
 ) -> decimal.Decimal:
-    """Sum of the credits (money in) that match the filters. Absolute value."""
-    return transactions_repository.sum_transactions_amount_without_credit_card_paiment(
+    """Sum of the credits (money in) that match the filters. Absolute value. Automatically excludes credit card payments."""
+    return transactions_repository.sum_transactions_amount(
         session,
         dataclasses.replace(filters, type="CREDIT"),
     )
@@ -210,18 +211,18 @@ def get_total_revenues(
 
 def get_balance(session: Session, filters: TransactionFilters) -> decimal.Decimal:
     """Revenues minus expenses of the period. Negative when the period spent more than it got."""
-    return get_total_revenues(
-        session, filters
-    ) - get_total_expenses_without_credit_card_paiment(session, filters)
+    return get_total_revenues(session, filters) - get_total_expenses(session, filters)
 
 
 @translate_repository_errors
-def get_top_expenses_without_credit_card_paiment(
+def get_top_expenses(
     session: Session, filters: TransactionFilters, limit: int
 ) -> list[TopExpense]:
-    """The `limit` biggest debits that match the filters, biggest first (no credit card payments)."""
-    rows = transactions_repository.list_top_transactions_without_credit_card_paiment(
-        session, dataclasses.replace(filters, type="DEBIT"), limit
+    """The `limit` biggest debits that match the filters, biggest first. Automatically excludes credit card payments."""
+    rows = transactions_repository.list_top_transactions(
+        session,
+        dataclasses.replace(filters, type="DEBIT"),
+        limit,
     )
     return [
         TopExpense(
@@ -240,12 +241,13 @@ def get_daily_expenses(
     """What was spent in each UTC day of the period, oldest day first.
 
     Days without spending are in the list with 0, so the list always has every day of the period.
-    The filters need both `date_from` and `date_to` (`date_to` is exclusive).
+    The filters need both `date_from` and `date_to` (`date_to` is exclusive). Automatically excludes credit card payments.
     """
     if filters.date_from is None or filters.date_to is None:
         raise ValueError("date_from and date_to are required")
     rows = transactions_repository.sum_transactions_by_day(
-        session, dataclasses.replace(filters, type="DEBIT")
+        session,
+        dataclasses.replace(filters, type="DEBIT"),
     )
     totals = dict(rows)
     start, end = filters.date_from.date(), filters.date_to.date()

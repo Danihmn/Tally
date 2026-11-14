@@ -278,7 +278,7 @@ def summarize_transactions(
 
 
 @translate_db_errors("transactions")
-def sum_transactions_amount_without_credit_card_paiment(
+def sum_transactions_amount(
     session: Session, filters: TransactionFilters
 ) -> decimal.Decimal:
     """Sum of abs(amount) of everything the filters match (0 when nothing matches, no credit card payments)."""
@@ -294,7 +294,7 @@ def sum_transactions_amount_without_credit_card_paiment(
 
 
 @translate_db_errors("transactions")
-def list_top_transactions_without_credit_card_paiment(
+def list_top_transactions(
     session: Session, filters: TransactionFilters, limit: int
 ) -> list[tuple[datetime.datetime, str | None, decimal.Decimal]]:
     """(date, description, abs(amount)) of the `limit` biggest transactions the filters match (no credit card payments)."""
