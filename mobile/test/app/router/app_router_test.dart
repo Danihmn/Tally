@@ -19,6 +19,7 @@ void main() {
       login: const SizedBox(),
       transactions: const SizedBox(),
       entries: const SizedBox(),
+      accounts: const Center(child: Text('ACCOUNTS-PAGE')),
       transactionDetail: (args) =>
           Text(args == null ? 'TX-DETAIL-NONE' : 'TX-DETAIL'),
       entryDetail: (args) =>
@@ -104,10 +105,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(
-        find.descendant(of: find.byType(AppBar), matching: find.text('Contas')),
-        findsOneWidget,
-      );
+      expect(find.text('ACCOUNTS-PAGE'), findsOneWidget);
     });
   });
 }

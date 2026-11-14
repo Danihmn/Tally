@@ -1258,6 +1258,120 @@ abstract class AppLocalizations {
   /// **'Não foi possível carregar o vínculo.'**
   String get linkedLoadError;
 
+  /// No description provided for @accountsTotalTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Saldo total em contas'**
+  String get accountsTotalTitle;
+
+  /// No description provided for @accountsBills.
+  ///
+  /// In pt, this message translates to:
+  /// **'Faturas abertas nos cartões: {amount}'**
+  String accountsBills(String amount);
+
+  /// No description provided for @accountsNoCards.
+  ///
+  /// In pt, this message translates to:
+  /// **'Sem cartões conectados'**
+  String get accountsNoCards;
+
+  /// No description provided for @accountsTabBanks.
+  ///
+  /// In pt, this message translates to:
+  /// **'Contas bancárias'**
+  String get accountsTabBanks;
+
+  /// No description provided for @accountsTabCards.
+  ///
+  /// In pt, this message translates to:
+  /// **'Cartões de crédito'**
+  String get accountsTabCards;
+
+  /// No description provided for @accountBalanceLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Saldo atual'**
+  String get accountBalanceLabel;
+
+  /// No description provided for @accountBillLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Fatura atual'**
+  String get accountBillLabel;
+
+  /// No description provided for @accountSubBank.
+  ///
+  /// In pt, this message translates to:
+  /// **'Conta •••• {number}'**
+  String accountSubBank(String number);
+
+  /// No description provided for @accountSubCard.
+  ///
+  /// In pt, this message translates to:
+  /// **'Cartão •••• {number}'**
+  String accountSubCard(String number);
+
+  /// No description provided for @accountCardUsed.
+  ///
+  /// In pt, this message translates to:
+  /// **'Usado {percent}%'**
+  String accountCardUsed(int percent);
+
+  /// No description provided for @accountCardLimit.
+  ///
+  /// In pt, this message translates to:
+  /// **'Limite {amount}'**
+  String accountCardLimit(String amount);
+
+  /// No description provided for @accountCardAvailable.
+  ///
+  /// In pt, this message translates to:
+  /// **'Disponível {amount}'**
+  String accountCardAvailable(String amount);
+
+  /// No description provided for @accountSeeTransactions.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ver transações'**
+  String get accountSeeTransactions;
+
+  /// No description provided for @accountsEmptyNoBankTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'{who} ainda não conectou nenhum banco'**
+  String accountsEmptyNoBankTitle(String who);
+
+  /// No description provided for @accountsEmptyNoBankText.
+  ///
+  /// In pt, this message translates to:
+  /// **'Conecte um banco pelo Meu Pluggy para ver contas e cartões aqui.'**
+  String get accountsEmptyNoBankText;
+
+  /// No description provided for @accountsEmptyBanks.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nenhuma conta bancária'**
+  String get accountsEmptyBanks;
+
+  /// No description provided for @accountsEmptyCards.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nenhum cartão de crédito'**
+  String get accountsEmptyCards;
+
+  /// No description provided for @accountsEmptyKindText.
+  ///
+  /// In pt, this message translates to:
+  /// **'Não há itens deste tipo conectados para esta seleção.'**
+  String get accountsEmptyKindText;
+
+  /// No description provided for @accountsTotalsError.
+  ///
+  /// In pt, this message translates to:
+  /// **'Não foi possível carregar os totais.'**
+  String get accountsTotalsError;
+
   /// No description provided for @configErrorTitle.
   ///
   /// In pt, this message translates to:

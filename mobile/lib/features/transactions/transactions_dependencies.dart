@@ -6,6 +6,7 @@ import 'package:mobile/features/household/presentation/viewmodels/household_scop
 import 'package:mobile/features/transactions/data/datasources/transactions_remote_data_source.dart';
 import 'package:mobile/features/transactions/data/repositories/transactions_repository_impl.dart';
 import 'package:mobile/features/transactions/domain/repositories/transactions_repository.dart';
+import 'package:mobile/features/transactions/domain/transactions_filter_request.dart';
 import 'package:mobile/features/transactions/domain/usecases/search_transactions.dart';
 import 'package:mobile/features/transactions/presentation/viewmodels/linked_entries_view_model.dart';
 import 'package:mobile/features/transactions/presentation/viewmodels/transactions_view_model.dart';
@@ -23,11 +24,16 @@ void registerTransactionsDependencies(GetIt container) {
     ..registerLazySingleton<SearchTransactions>(
       () => SearchTransactions(container<TransactionsRepository>()),
     )
+    ..registerLazySingleton<TransactionsFilterRequest>(
+      TransactionsFilterRequest.new,
+      dispose: (request) => request.dispose(),
+    )
     ..registerFactory<TransactionsViewModel>(
       () => TransactionsViewModel(
         scopeController: container<HouseholdScopeController>(),
         searchTransactions: container<SearchTransactions>(),
         getAccounts: container<GetBankAccounts>(),
+        filterRequest: container<TransactionsFilterRequest>(),
       ),
     )
     ..registerFactoryParam<LinkedEntriesViewModel, String, void>(

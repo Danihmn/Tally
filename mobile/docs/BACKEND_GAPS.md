@@ -30,6 +30,11 @@ behind a repository interface.
 | 21 | The list of entries is ordered by month of reference and then due date; the prototype orders by due date only | In "Todos" the order differs from the prototype | The app shows the order of the API |
 | 22 | The entry has no "who created it" and no reconciliation source or date in its response | The timeline says "Criado … por <titular>" and "Vinculado a uma transação do banco" | Uses the owner and `created_at`. Whether it was AUTO or MANUAL is not shown |
 | 23 | Read only: no endpoints to create (the app does not use the existing POST), edit, cancel, reopen, link or unlink entries | The FAB "Novo lançamento" and the buttons of the entry detail | Left out |
+| 24 | No last-sync date of an account (`updated_at` is when our row changed, not when Pluggy synced) | "Atualizado há X" of the Contas prototype | Left out |
+| 25 | No real-time refresh of the balance. The client `get_real_time_balance` exists but is not used and its schema is wrong (`blockedBalance` and `automaticallyInvestedBalance` are required `int`; Pluggy sends floats and omits them when the bank does not report; `closingBalance` is missing). It works only on Open Finance connectors and shares the rate limit with the sync | The balance can be up to ~24h old (Meu Pluggy refresh) | Shows the stored balance. A future "Atualizar" button needs the client fixed and an endpoint that saves the new balance |
+| 26 | On Open Finance the balance of a card is the **used limit**, not always the open bill | The prototype label "Fatura atual" and "Faturas abertas nos cartões" may not match | Shown as in the prototype |
+| 27 | The limits of a card (`credit_limit`, `available_credit_limit`) and the dates may be null | The usage bar | The bar is left out when there is no limit |
+| 28 | No endpoint for the bank connections (see gap 1) | "Conexões bancárias" and "Conectar banco" on Contas | Left out |
 
 Not in the original app brief but present in the API: `POST /recurrences/provision`
 (creates the month's PLANNED entries from recurrences) and `GET /users/{id}`.

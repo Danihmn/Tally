@@ -1,10 +1,14 @@
+import 'package:decimal/decimal.dart';
 import 'package:dio/dio.dart';
 import 'package:mobile/core/network/api_call.dart';
 import 'package:mobile/core/network/api_endpoints.dart';
 import 'package:mobile/core/result/result.dart';
+import 'package:mobile/core/utils/json_parsing.dart';
+import 'package:mobile/features/accounts/data/models/account_balance_dto.dart';
 import 'package:mobile/features/accounts/data/models/bank_account_dto.dart';
+import 'package:mobile/features/accounts/domain/entities/account_balance.dart';
 
-/// Calls the bank accounts endpoint.
+/// Calls the bank accounts endpoints.
 class AccountsRemoteDataSource {
   const AccountsRemoteDataSource(this._dio);
 
@@ -22,5 +26,32 @@ class AccountsRemoteDataSource {
       for (final item in response.data!)
         BankAccountDto.fromJson(item as Map<String, dynamic>),
     ];
+  });
+
+  /// The accounts and cards of connected banks with their balance. [userId]
+  /// limits it to one person (without it, the whole house).
+  Future<Result<List<AccountBalanceDto>>> getBalances({String? userId}) =>
+      apiCall(() async {
+        final response = await _dio.get<List<dynamic>>(
+          ApiEndpoints.accountBalances.path,
+          queryParameters: {'user_id': ?userId},
+        );
+        return [
+          for (final item in response.data!)
+            AccountBalanceDto.fromJson(item as Map<String, dynamic>),
+        ];
+      });
+
+  /// The sum of the balances of one kind: the balance of the accounts, or the
+  /// open bills of the cards.
+  Future<Result<Decimal>> getTotalBalance({
+    required AccountKind kind,
+    String? userId,
+  }) => apiCall(() async {
+    final response = await _dio.get<Map<String, dynamic>>(
+      ApiEndpoints.totalAccountBalance.path,
+      queryParameters: {'type': kind.apiValue, 'user_id': ?userId},
+    );
+    return parseDecimal(response.data!['total']);
   });
 }

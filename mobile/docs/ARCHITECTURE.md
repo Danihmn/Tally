@@ -85,6 +85,15 @@ Numbers are never calculated in the ViewModel with `double`. Money stays `Decima
 - The **link between a transaction and an entry** is read with two filters that look in the active reconciliations: `GET /financial-entries?transaction_id=` (block "Lançamento vinculado" in the transaction detail) and `GET /transactions?financial_entry_id=` (block "Transação do banco" in the entry detail, only for reconciled entries). Each block has its own small ViewModel (`LinkedEntriesViewModel`, `LinkedTransactionsViewModel`) and loads by itself, so a failure there does not break the rest of the screen.
 - The two detail screens open each other with `context.push`, so the back button goes back one step.
 
+## Contas (read only)
+
+`AccountsViewModel` loads three things at the same time, each with its own `UiState`, so one failing does not hide the others: the total of the accounts (`GET /bank-accounts/total-balance?type=BANK`), the total of the open bills of the cards (`type=CREDIT`) and the list (`GET /bank-accounts/balances`). The list comes in one call and is split in the two tabs (accounts and cards) in the app. The person is the shared scope (reloads when it changes).
+
+- The balances are the ones Pluggy gave in the last sync, stored by the backend. Nothing is calculated in the app: the totals come from the API, and "Disponível" of a card is `available_credit_limit`. Only the size of the usage bar is a `double` (`CreditInfo.usedShare`).
+- Only accounts of connected banks appear here. `GET /bank-accounts` (all accounts, including old ones) is still used to name the accounts in Transações.
+- **"Ver transações"** asks the Transações tab for one account through `TransactionsFilterRequest` (a singleton in `features/transactions`). If the tab was not opened yet, the list takes the request in `start()`; if it is alive, it listens and reloads. The request replaces the search and the filters and keeps the person. Then Contas goes to the tab with `context.go`.
+- There is no "Conexões bancárias" section and no "Conectar banco" button (no endpoint yet, gap 1).
+
 ## Dependency injection
 
 `get_it` in `app/di/injection.dart`. Services are lazy singletons, ViewModels are factories (one per screen). Tests build a fresh container with fakes (`registerCoreDependencies`).

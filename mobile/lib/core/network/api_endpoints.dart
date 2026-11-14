@@ -49,6 +49,20 @@ abstract final class ApiEndpoints {
     usedBy: 'Transações',
   );
 
+  // Accounts and cards with their balance
+
+  static const accountBalances = ApiEndpoint(
+    'GET',
+    '/bank-accounts/balances',
+    usedBy: 'Contas',
+  );
+
+  static const totalAccountBalance = ApiEndpoint(
+    'GET',
+    '/bank-accounts/total-balance',
+    usedBy: 'Contas',
+  );
+
   // Entries list (and the transactions they are matched with)
 
   static const financialEntries = ApiEndpoint(
@@ -132,6 +146,8 @@ abstract final class ApiEndpoints {
     users,
     transactions,
     bankAccounts,
+    accountBalances,
+    totalAccountBalance,
     financialEntries,
     totalExpenses,
     totalRevenues,

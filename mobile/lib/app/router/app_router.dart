@@ -3,14 +3,13 @@ import 'package:go_router/go_router.dart';
 import 'package:mobile/app/router/app_routes.dart';
 import 'package:mobile/app/router/app_shell.dart';
 import 'package:mobile/core/session/session_controller.dart';
-import 'package:mobile/features/accounts/presentation/views/accounts_view.dart';
 import 'package:mobile/features/chat/presentation/views/chat_view.dart';
 import 'package:mobile/features/entries/presentation/views/entry_detail_args.dart';
 import 'package:mobile/features/transactions/presentation/views/transaction_detail_args.dart';
 
 /// Builds the app router.
 ///
-/// [home], [login], [transactions] and [entries] are the screens that need
+/// [home], [login], [transactions], [entries] and [accounts] are the screens that need
 /// their own ViewModel, so the caller builds them (the app with its DI
 /// container, tests with fakes). The same for the two detail screens, which
 /// get what the list handed over (or `null` when they were opened without it).
@@ -23,6 +22,7 @@ GoRouter createAppRouter({
   required Widget login,
   required Widget transactions,
   required Widget entries,
+  required Widget accounts,
   required Widget Function(TransactionDetailArgs? args) transactionDetail,
   required Widget Function(EntryDetailArgs? args) entryDetail,
   String initialLocation = AppRoutes.home,
@@ -71,7 +71,7 @@ GoRouter createAppRouter({
               ),
             ],
           ),
-          _branch(AppRoutes.accounts, const AccountsView()),
+          _branch(AppRoutes.accounts, accounts),
           _branch(AppRoutes.chat, const ChatView()),
         ],
       ),
