@@ -7,6 +7,9 @@ abstract final class AppRoutes {
   /// The detail of one transaction. It covers the tabs.
   static const transactionDetail = '/transactions/detail';
   static const entries = '/entries';
+
+  /// The detail of one entry. It covers the tabs.
+  static const entryDetail = '/entries/detail';
   static const accounts = '/accounts';
   static const chat = '/chat';
 }

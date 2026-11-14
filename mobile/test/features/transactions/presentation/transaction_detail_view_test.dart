@@ -1,15 +1,32 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:material_ui/material_ui.dart';
+import 'package:mobile/core/error/failure.dart';
+import 'package:mobile/core/result/result.dart';
 import 'package:mobile/features/accounts/domain/entities/bank_account.dart';
+import 'package:mobile/features/entries/domain/entities/financial_entry.dart';
+import 'package:mobile/features/entries/presentation/views/entry_detail_args.dart';
 import 'package:mobile/features/transactions/presentation/views/transaction_detail_args.dart';
 import 'package:mobile/features/transactions/presentation/views/transaction_detail_view.dart';
+import 'package:mobile/features/transactions/presentation/widgets/linked_entry_section.dart';
 
+import '../../../support/entries_kit.dart';
+import '../../../support/entry_factory.dart';
 import '../../../support/pump_app.dart';
 import '../../../support/transaction_factory.dart';
 import '../../../support/transactions_kit.dart';
 
 void main() {
+  late EntriesKit kit;
+
   setUpAll(() => initializeDateFormatting('pt_BR'));
+
+  setUp(() async {
+    kit = EntriesKit();
+    await kit.scope.ensureLoaded();
+  });
+
+  tearDown(() => kit.dispose());
 
   const account = BankAccount(
     id: 'a1',
@@ -20,26 +37,44 @@ void main() {
     isCreditCard: false,
   );
 
+  Future<void> pumpDetail(
+    WidgetTester tester,
+    TransactionDetailArgs? args,
+  ) async {
+    tester.view.physicalSize = const Size(800, 3000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await pumpApp(
+      tester,
+      TransactionDetailView(
+        args: args,
+        createLinkedViewModel: kit.linkedEntries,
+      ),
+    );
+    await tester.pumpAndSettle();
+  }
+
+  TransactionDetailArgs argsOf(
+    String id, {
+    String? description = 'Netflix.com',
+  }) => TransactionDetailArgs(
+    transaction: makeTransaction(
+      id: id,
+      description: description,
+      amount: '-169.80',
+      date: DateTime.utc(2026, 11, 12),
+      category: 'Video streaming',
+      merchantName: 'Netflix',
+      balance: '912.00',
+    ),
+    account: account,
+    owner: ana,
+    ownerColorIndex: 0,
+  );
+
   group('TransactionDetailView', () {
     testWidgets('shows_every_known_field_of_the_transaction', (tester) async {
-      await pumpApp(
-        tester,
-        TransactionDetailView(
-          args: TransactionDetailArgs(
-            transaction: makeTransaction(
-              description: 'Netflix.com',
-              amount: '-169.80',
-              date: DateTime.utc(2026, 11, 12),
-              category: 'Video streaming',
-              merchantName: 'Netflix',
-              balance: '912.00',
-            ),
-            account: account,
-            owner: ana,
-            ownerColorIndex: 0,
-          ),
-        ),
-      );
+      await pumpDetail(tester, argsOf('t1'));
 
       expect(find.text('12/11/2026'), findsOneWidget);
       expect(find.text('Video streaming'), findsOneWidget);
@@ -54,15 +89,13 @@ void main() {
     testWidgets('leaves_out_what_the_transaction_does_not_have', (
       tester,
     ) async {
-      await pumpApp(
+      await pumpDetail(
         tester,
-        TransactionDetailView(
-          args: TransactionDetailArgs(
-            transaction: makeTransaction(description: null),
-            account: null,
-            owner: null,
-            ownerColorIndex: 0,
-          ),
+        TransactionDetailArgs(
+          transaction: makeTransaction(description: null),
+          account: null,
+          owner: null,
+          ownerColorIndex: 0,
         ),
       );
 
@@ -76,13 +109,98 @@ void main() {
     testWidgets('without_args_it_says_so_and_offers_to_go_back', (
       tester,
     ) async {
-      await pumpApp(tester, const TransactionDetailView(args: null));
+      await pumpDetail(tester, null);
 
       expect(
         find.text('Não foi possível abrir esta transação.'),
         findsOneWidget,
       );
       expect(find.text('Voltar para a lista'), findsOneWidget);
+      expect(find.byType(LinkedEntrySection), findsNothing);
+    });
+  });
+
+  group('TransactionDetailView linked entry', () {
+    testWidgets('shows_the_entry_matched_with_the_transaction', (tester) async {
+      kit.entries.byTransaction['t1'] = [
+        makeEntry(
+          id: 'e9',
+          description: 'Streaming',
+          amount: '169.80',
+          status: EntryStatus.reconciled,
+        ),
+      ];
+      await pumpDetail(tester, argsOf('t1'));
+
+      expect(find.text('Lançamento vinculado'), findsOneWidget);
+      expect(find.text('Streaming'), findsOneWidget);
+      expect(find.text('Venc. 20/11 · Ref. nov'), findsOneWidget);
+      expect(find.text('Conciliado'), findsOneWidget);
+      expect(kit.entries.calls.single.transactionId, 't1');
+    });
+
+    testWidgets('without_an_entry_it_only_says_so_and_has_no_buttons', (
+      tester,
+    ) async {
+      await pumpDetail(tester, argsOf('t1'));
+
+      expect(find.text('Sem lançamento'), findsOneWidget);
+      expect(find.byType(FilledButton), findsNothing);
+      expect(find.byType(OutlinedButton), findsNothing);
+      expect(find.text('Vincular a um lançamento'), findsNothing);
+      expect(find.text('Desfazer vínculo'), findsNothing);
+    });
+
+    testWidgets('a_failure_only_breaks_the_block_and_retry_works', (
+      tester,
+    ) async {
+      kit.entries.forced = const Result.failure(NetworkFailure());
+      await pumpDetail(tester, argsOf('t1'));
+      expect(find.text('Não foi possível carregar o vínculo.'), findsOneWidget);
+      expect(find.text('Netflix.com'), findsWidgets);
+
+      kit.entries.forced = null;
+      kit.entries.byTransaction['t1'] = [
+        makeEntry(description: 'Streaming', status: EntryStatus.reconciled),
+      ];
+      await tester.tap(find.text('Tentar novamente'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Streaming'), findsOneWidget);
+    });
+
+    testWidgets('tapping_the_entry_opens_it_with_account_and_owner', (
+      tester,
+    ) async {
+      kit.entries.byTransaction['t1'] = [
+        makeEntry(
+          id: 'e9',
+          description: 'Streaming',
+          accountId: 'a2',
+          ownerId: 'm2',
+          status: EntryStatus.reconciled,
+        ),
+      ];
+      EntryDetailArgs? opened;
+      tester.view.physicalSize = const Size(800, 3000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await pumpApp(
+        tester,
+        LinkedEntrySection(
+          transactionId: 't1',
+          createViewModel: kit.linkedEntries,
+          onOpenEntry: (args) => opened = args,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Streaming'));
+
+      expect(opened?.entry.id, 'e9');
+      expect(opened?.account?.marketingName, 'Itaú Card');
+      expect(opened?.owner?.firstName, 'Bia');
+      expect(opened?.ownerColorIndex, 1);
     });
   });
 }

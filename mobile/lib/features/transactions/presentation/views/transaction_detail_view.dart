@@ -7,14 +7,24 @@ import 'package:mobile/core/utils/date_formatter.dart';
 import 'package:mobile/core/utils/money_formatter.dart';
 import 'package:mobile/core/widgets/empty_state.dart';
 import 'package:mobile/features/household/presentation/widgets/member_palette.dart';
+import 'package:mobile/features/transactions/presentation/viewmodels/linked_entries_view_model.dart';
 import 'package:mobile/features/transactions/presentation/views/transaction_detail_args.dart';
+import 'package:mobile/features/transactions/presentation/widgets/linked_entry_section.dart';
 import 'package:mobile/features/transactions/presentation/widgets/transaction_icon.dart';
 import 'package:mobile/l10n/app_localizations.dart';
 
-/// The data of one transaction. The link with a planned entry is not here yet
-/// (there are no endpoints for it).
+/// The data of one transaction and, below it, the planned entry matched with
+/// it (read only: there is no way to link or unlink yet).
 class TransactionDetailView extends StatelessWidget {
-  const TransactionDetailView({super.key, required this.args});
+  const TransactionDetailView({
+    super.key,
+    required this.args,
+    required this.createLinkedViewModel,
+  });
+
+  /// Builds the ViewModel of the "Lançamento vinculado" block.
+  final LinkedEntriesViewModel Function(String transactionId)
+  createLinkedViewModel;
 
   /// `null` when the screen was opened without the transaction (for example
   /// after the app was restored). It then says so and goes back to the list.
@@ -35,15 +45,17 @@ class TransactionDetailView extends StatelessWidget {
                 child: Text(l10n.detailBack),
               ),
             )
-          : _Content(args: args),
+          : _Content(args: args, createLinkedViewModel: createLinkedViewModel),
     );
   }
 }
 
 class _Content extends StatelessWidget {
-  const _Content({required this.args});
+  const _Content({required this.args, required this.createLinkedViewModel});
 
   final TransactionDetailArgs args;
+  final LinkedEntriesViewModel Function(String transactionId)
+  createLinkedViewModel;
 
   @override
   Widget build(BuildContext context) {
@@ -183,6 +195,11 @@ class _Content extends StatelessWidget {
               ],
             ],
           ),
+        ),
+        const SizedBox(height: AppSpacing.lg),
+        LinkedEntrySection(
+          transactionId: transaction.id,
+          createViewModel: createLinkedViewModel,
         ),
       ],
     );

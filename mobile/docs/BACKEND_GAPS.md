@@ -26,6 +26,10 @@ behind a repository interface.
 | 17 | Transaction category: `category` is English text and may be null; `category_id` is hierarchical (only groups 01, 05 and 19 are known) | Category badge and icon in the list and the detail | Text shown as it comes; the icon follows the known groups, else the direction. No category filter |
 | 18 | No reconciliation endpoints for a transaction (see gap 4) | The "Lançamento vinculado" block of the transaction detail | Left out of the detail screen |
 | 19 | `GET /transactions` and `GET /bank-accounts` did not filter by household | Anyone logged in could list other houses | Fixed in the backend: the household comes from the JWT |
+| 20 | `GET /financial-entries` did not filter by household | Anyone logged in could list the entries of other houses | Fixed in the backend: the household comes from the JWT (`GET /financial-entries/{id}` still does not check it; the app does not use it) |
+| 21 | The list of entries is ordered by month of reference and then due date; the prototype orders by due date only | In "Todos" the order differs from the prototype | The app shows the order of the API |
+| 22 | The entry has no "who created it" and no reconciliation source or date in its response | The timeline says "Criado … por <titular>" and "Vinculado a uma transação do banco" | Uses the owner and `created_at`. Whether it was AUTO or MANUAL is not shown |
+| 23 | Read only: no endpoints to create (the app does not use the existing POST), edit, cancel, reopen, link or unlink entries | The FAB "Novo lançamento" and the buttons of the entry detail | Left out |
 
 Not in the original app brief but present in the API: `POST /recurrences/provision`
 (creates the month's PLANNED entries from recurrences) and `GET /users/{id}`.

@@ -266,6 +266,137 @@
   "detailBalanceAfter": "Saldo após",
   "detailMissing": "Não foi possível abrir esta transação.",
   "detailBack": "Voltar para a lista",
+  "entriesSearchHint": "Buscar lançamento",
+  "entriesTabPlanned": "Planejados",
+  "entriesTabReconciled": "Conciliados",
+  "entriesTabCancelled": "Cancelados",
+  "entriesMonthAll": "Todos",
+  "entriesShowing": "Mostrando {shown} de {total}",
+  "@entriesShowing": {
+    "placeholders": {
+      "shown": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "entriesLoadingMore": "Carregando mais lançamentos…",
+  "entriesEnd": "Fim da lista",
+  "entriesEmptyTitlePlanned": "Nenhum lançamento planejado",
+  "entriesEmptyTitleReconciled": "Nenhum lançamento conciliado",
+  "entriesEmptyTitleCancelled": "Nenhum lançamento cancelado",
+  "entriesEmptyInMonth": "{title} em {month}",
+  "@entriesEmptyInMonth": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "entriesEmptyPlain": "Quando houver lançamentos aqui, eles aparecem nesta lista.",
+  "entriesEmptyFiltered": "Tente outro termo de busca, outro mês ou remova alguns filtros.",
+  "entryStatusPlanned": "Planejado",
+  "entryStatusOverdue": "Vencido",
+  "entryStatusReconciled": "Conciliado",
+  "entryStatusCancelled": "Cancelado",
+  "entryTypeRevenue": "Receita",
+  "entryTypeExpense": "Despesa",
+  "entryPayDebit": "Débito",
+  "entryPayCredit": "Crédito",
+  "entryDue": "Venc. {date}",
+  "@entryDue": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "entryRef": "Ref. {month}",
+  "@entryRef": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "entriesFiltersTitle": "Filtrar lançamentos",
+  "entriesFilterPayment": "Pagamento",
+  "entriesFilterDue": "Vencimento",
+  "chipRevenues": "Receitas",
+  "chipExpenses": "Despesas",
+  "chipDueFrom": "Venc. de {date}",
+  "@chipDueFrom": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "chipDueTo": "Venc. até {date}",
+  "@chipDueTo": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "entryDetailTitle": "Lançamento",
+  "entryDetailReference": "Mês de referência",
+  "entryDetailDue": "Vencimento",
+  "entryDetailInstallment": "Parcela",
+  "entryDetailInstallmentOf": "{number} de {total}",
+  "@entryDetailInstallmentOf": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "entryDetailNotes": "Observações",
+  "entryDetailPayment": "Pagamento",
+  "entryDetailMissing": "Não foi possível abrir este lançamento.",
+  "entryTimelineCreated": "Criado",
+  "entryTimelineCreatedBy": "{date} · por {name}",
+  "@entryTimelineCreatedBy": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "entryTimelinePlanned": "Planejado",
+  "entryTimelineDueOn": "Vence em {date}",
+  "@entryTimelineDueOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "entryTimelineNoDue": "Sem data de vencimento",
+  "entryTimelineReconciled": "Conciliado",
+  "entryTimelineReconciledText": "Vinculado a uma transação do banco.",
+  "entryTimelineCancelled": "Cancelado",
+  "entryTimelineCancelledText": "Não será cobrado nem conciliado.",
+  "entryTimelineWaiting": "Aguardando conciliação",
+  "entryTimelineWaitingText": "Quando a transação aparecer no banco, ela será ligada a este lançamento.",
+  "linkedTransactionTitle": "Transação do banco",
+  "linkedEntryTitle": "Lançamento vinculado",
+  "linkedEntryNone": "Sem lançamento",
+  "linkedEntryNoneText": "Esta transação ainda não foi ligada a nada que vocês planejaram.",
+  "linkedTransactionNone": "Nenhuma transação ligada a este lançamento ainda.",
+  "linkedLoadError": "Não foi possível carregar o vínculo.",
   "configErrorTitle": "Configuração ausente",
   "configErrorMessage": "O app não foi iniciado com uma URL de API válida. Rode com --dart-define=API_BASE_URL=<url>."
 }

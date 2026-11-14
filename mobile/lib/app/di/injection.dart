@@ -10,6 +10,7 @@ import 'package:mobile/core/storage/secure_storage.dart';
 import 'package:mobile/core/storage/session_token_store.dart';
 import 'package:mobile/features/accounts/accounts_dependencies.dart';
 import 'package:mobile/features/auth/auth_dependencies.dart';
+import 'package:mobile/features/entries/entries_dependencies.dart';
 import 'package:mobile/features/home/home_dependencies.dart';
 import 'package:mobile/features/household/household_dependencies.dart';
 import 'package:mobile/features/transactions/transactions_dependencies.dart';
@@ -39,6 +40,7 @@ void registerFeatureDependencies(GetIt container) {
   registerHomeDependencies(container);
   registerAccountsDependencies(container);
   registerTransactionsDependencies(container);
+  registerEntriesDependencies(container);
 }
 
 /// Registration kept apart from [configureDependencies] so tests can pass
