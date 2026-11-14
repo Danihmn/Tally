@@ -10,12 +10,6 @@ from services.common.mappers import to_entities, to_entity, to_entity_or_none
 
 
 @translate_repository_errors
-def get_pluggy_item_by_id(session: Session, item_id: uuid.UUID) -> PluggyItem:
-    item = pluggy_items_repository.get_pluggy_item_by_id(session, item_id)
-    return to_entity(PluggyItem, item)
-
-
-@translate_repository_errors
 def get_pluggy_item_by_pluggy_item_id(
     session: Session, pluggy_item_id: uuid.UUID
 ) -> PluggyItem | None:

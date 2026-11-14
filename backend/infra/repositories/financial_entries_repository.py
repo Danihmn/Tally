@@ -19,16 +19,6 @@ _CHUNK_SIZE = 500
 
 
 @translate_db_errors("financial_entries")
-def get_financial_entry_by_id(
-    session: Session, entry_id: uuid.UUID
-) -> FinancialEntries:
-    entry = session.get(FinancialEntries, entry_id)
-    if entry is None:
-        raise RecordNotFoundError("financial_entries", "get_financial_entry_by_id")
-    return entry
-
-
-@translate_db_errors("financial_entries")
 def list_financial_entries_by_user(
     session: Session,
     user_id: uuid.UUID,
@@ -102,19 +92,6 @@ def create_financial_entry(
 
 
 @translate_db_errors("financial_entries")
-def update_financial_entry(
-    session: Session, entry_id: uuid.UUID, values: dict[str, Any]
-) -> FinancialEntries:
-    """Sets only the given columns. `values` uses FinancialEntries column names."""
-    entry = get_financial_entry_by_id(session, entry_id)
-    for key, value in values.items():
-        setattr(entry, key, value)
-    entry.updated_at = datetime.datetime.now(datetime.UTC)
-    session.flush()
-    return entry
-
-
-@translate_db_errors("financial_entries")
 def update_financial_entries_status(
     session: Session,
     ids: list[uuid.UUID],
@@ -129,18 +106,6 @@ def update_financial_entries_status(
         if only_from is not None:
             stmt = stmt.where(FinancialEntries.status == only_from)
         session.execute(stmt.values(status=status, updated_at=now))
-
-
-@translate_db_errors("financial_entries")
-def soft_delete_financial_entry(
-    session: Session, entry_id: uuid.UUID
-) -> FinancialEntries:
-    entry = get_financial_entry_by_id(session, entry_id)
-    now = datetime.datetime.now(datetime.UTC)
-    entry.deleted_at = now
-    entry.updated_at = now
-    session.flush()
-    return entry
 
 
 def _apply_search_filters(stmt: Select, filters: FinancialEntryFilters) -> Select:

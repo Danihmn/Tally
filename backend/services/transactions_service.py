@@ -16,7 +16,7 @@ from domain.read_models import (
 )
 from infra.repositories import transactions_repository
 from services.common.exceptions import translate_repository_errors
-from services.common.mappers import to_entities, to_entity, to_entity_or_none, to_values
+from services.common.mappers import to_entities, to_entity, to_values
 from utils.money import round_to_cents
 
 # Written only by the classification of the internal transfers, never by the Pluggy sync:
@@ -25,62 +25,6 @@ CLASSIFICATION_FIELDS = (
     "internal_transfer",
     "internal_transfer_classification_source",
 )
-
-
-@translate_repository_errors
-def get_transaction_by_id(session: Session, transaction_id: uuid.UUID) -> Transaction:
-    transaction = transactions_repository.get_transaction_by_id(session, transaction_id)
-    return to_entity(Transaction, transaction)
-
-
-@translate_repository_errors
-def get_transaction_by_pluggy_transaction_id(
-    session: Session, pluggy_transaction_id: uuid.UUID
-) -> Transaction | None:
-    transaction = transactions_repository.get_transaction_by_pluggy_transaction_id(
-        session, pluggy_transaction_id
-    )
-    return to_entity_or_none(Transaction, transaction)
-
-
-@translate_repository_errors
-def list_transactions_by_provider_id(
-    session: Session, bank_account_id: uuid.UUID, provider_id: str
-) -> list[Transaction]:
-    transactions = transactions_repository.list_transactions_by_provider_id(
-        session, bank_account_id, provider_id
-    )
-    return to_entities(Transaction, transactions)
-
-
-@translate_repository_errors
-def list_transactions_by_account(
-    session: Session,
-    bank_account_id: uuid.UUID,
-    date_from: datetime.datetime | None = None,
-    date_to: datetime.datetime | None = None,
-    limit: int = 50,
-    offset: int = 0,
-) -> list[Transaction]:
-    transactions = transactions_repository.list_transactions_by_account(
-        session, bank_account_id, date_from, date_to, limit, offset
-    )
-    return to_entities(Transaction, transactions)
-
-
-@translate_repository_errors
-def list_transactions_by_household(
-    session: Session,
-    household_id: uuid.UUID,
-    date_from: datetime.datetime | None = None,
-    date_to: datetime.datetime | None = None,
-    limit: int = 50,
-    offset: int = 0,
-) -> list[Transaction]:
-    transactions = transactions_repository.list_transactions_by_household(
-        session, household_id, date_from, date_to, limit, offset
-    )
-    return to_entities(Transaction, transactions)
 
 
 @translate_repository_errors

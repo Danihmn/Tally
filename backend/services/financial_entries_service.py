@@ -17,12 +17,6 @@ from services.common.mappers import to_entities, to_entity, to_values
 
 
 @translate_repository_errors
-def get_financial_entry_by_id(session: Session, entry_id: uuid.UUID) -> FinancialEntry:
-    entry = financial_entries_repository.get_financial_entry_by_id(session, entry_id)
-    return to_entity(FinancialEntry, entry)
-
-
-@translate_repository_errors
 def list_financial_entries_by_user(
     session: Session,
     user_id: uuid.UUID,
@@ -71,18 +65,6 @@ def create_financial_entry(session: Session, entry: FinancialEntry) -> Financial
 
 
 @translate_repository_errors
-def update_financial_entry(
-    session: Session, entry_id: uuid.UUID, entry: FinancialEntry
-) -> FinancialEntry:
-    """Overwrites every column with the entity's values (id and created_at are kept)."""
-    values = to_values(entry, exclude=("id", "created_at"))
-    updated = financial_entries_repository.update_financial_entry(
-        session, entry_id, values
-    )
-    return to_entity(FinancialEntry, updated)
-
-
-@translate_repository_errors
 def mark_financial_entries_status(
     session: Session,
     ids: list[uuid.UUID],
@@ -92,14 +74,6 @@ def mark_financial_entries_status(
     financial_entries_repository.update_financial_entries_status(
         session, ids, status, only_from
     )
-
-
-@translate_repository_errors
-def mark_financial_entry_deleted(
-    session: Session, entry_id: uuid.UUID
-) -> FinancialEntry:
-    entry = financial_entries_repository.soft_delete_financial_entry(session, entry_id)
-    return to_entity(FinancialEntry, entry)
 
 
 @translate_repository_errors
