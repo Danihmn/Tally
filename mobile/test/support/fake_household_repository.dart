@@ -2,6 +2,9 @@ import 'dart:async';
 
 import 'package:mobile/core/result/result.dart';
 import 'package:mobile/features/household/domain/entities/member.dart';
+import 'package:mobile/features/household/domain/entities/pluggy_credentials.dart';
+import 'package:mobile/features/household/domain/entities/user_changes.dart';
+import 'package:mobile/features/household/domain/entities/user_draft.dart';
 import 'package:mobile/features/household/domain/repositories/household_repository.dart';
 
 /// [HouseholdRepository] that answers with what the test sets and counts the
@@ -12,6 +15,9 @@ class FakeHouseholdRepository implements HouseholdRepository {
       Member(id: 'me', firstName: 'Ana', householdId: 'house'),
     ),
     this.users = const Result<List<Member>>.success([]),
+    this.createResult,
+    this.updateResult,
+    this.credentialsResult = const Result<void>.success(null),
   });
 
   Result<Member> me;
@@ -19,6 +25,15 @@ class FakeHouseholdRepository implements HouseholdRepository {
   Completer<Result<Member>>? meGate;
   int meCalls = 0;
   int usersCalls = 0;
+
+  /// What `createUser` and `updateUser` answer. When `null`, the person built
+  /// from what was sent.
+  Result<Member>? createResult;
+  Result<Member>? updateResult;
+  Result<void> credentialsResult;
+  final List<UserDraft> created = [];
+  final List<(String, UserChanges)> updated = [];
+  final List<(String, PluggyCredentials)> credentialsSent = [];
 
   @override
   Future<Result<Member>> getMe() {
@@ -32,5 +47,46 @@ class FakeHouseholdRepository implements HouseholdRepository {
   Future<Result<List<Member>>> getUsers() async {
     usersCalls++;
     return users;
+  }
+
+  @override
+  Future<Result<Member>> createUser(UserDraft draft) async {
+    created.add(draft);
+    return createResult ??
+        Result.success(
+          Member(
+            id: 'new',
+            firstName: draft.firstName,
+            lastName: draft.lastName,
+            surname: draft.surname,
+            email: draft.email,
+            householdId: 'house',
+          ),
+        );
+  }
+
+  @override
+  Future<Result<Member>> updateUser(String id, UserChanges changes) async {
+    updated.add((id, changes));
+    return updateResult ??
+        Result.success(
+          Member(
+            id: id,
+            firstName: changes.firstName,
+            lastName: changes.lastName,
+            surname: changes.surname,
+            email: changes.email,
+            householdId: 'house',
+          ),
+        );
+  }
+
+  @override
+  Future<Result<void>> updatePluggyCredentials(
+    String id,
+    PluggyCredentials credentials,
+  ) async {
+    credentialsSent.add((id, credentials));
+    return credentialsResult;
   }
 }

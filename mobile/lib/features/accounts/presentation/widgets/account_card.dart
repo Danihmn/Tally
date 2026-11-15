@@ -2,6 +2,7 @@ import 'package:decimal/decimal.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:mobile/app/theme/app_spacing.dart';
 import 'package:mobile/core/utils/money_formatter.dart';
+import 'package:mobile/core/widgets/ellipsis_text.dart';
 import 'package:mobile/features/accounts/domain/entities/account_balance.dart';
 import 'package:mobile/l10n/app_localizations.dart';
 
@@ -72,13 +73,11 @@ class AccountCard extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        EllipsisText(
                           account.displayName,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                           style: theme.textTheme.titleSmall,
                         ),
-                        Text(
+                        EllipsisText(
                           isCard
                               ? l10n.accountSubCard(account.shortNumber)
                               : l10n.accountSubBank(account.shortNumber),
@@ -102,7 +101,7 @@ class AccountCard extends StatelessWidget {
                 isCard ? l10n.accountBillLabel : l10n.accountBalanceLabel,
                 style: muted,
               ),
-              Text(
+              EllipsisText(
                 balance == null ? '—' : MoneyFormatter.format(balance),
                 style: theme.textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w600,
@@ -245,7 +244,7 @@ class _CardUsage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.xs),
-          Text(
+          EllipsisText(
             parts.join(' · '),
             style: theme.textTheme.bodySmall?.copyWith(
               color: scheme.onSurfaceVariant,

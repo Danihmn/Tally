@@ -7,6 +7,7 @@ import 'package:mobile/app/theme/app_spacing.dart';
 import 'package:mobile/app/theme/tally_colors.dart';
 import 'package:mobile/core/state/ui_state.dart';
 import 'package:mobile/core/utils/money_formatter.dart';
+import 'package:mobile/core/widgets/ellipsis_text.dart';
 import 'package:mobile/core/widgets/skeleton.dart';
 import 'package:mobile/features/entries/domain/entities/financial_entry.dart';
 import 'package:mobile/features/entries/presentation/views/entry_detail_args.dart';
@@ -175,20 +176,13 @@ class _LinkedEntryTile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  EllipsisText(
                     entry.description,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-                  Text(
-                    entryDatesLine(l10n, entry),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: muted,
-                  ),
+                  EllipsisText(entryDatesLine(l10n, entry), style: muted),
                 ],
               ),
             ),
@@ -196,7 +190,7 @@ class _LinkedEntryTile extends StatelessWidget {
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text(
+                EllipsisText(
                   MoneyFormatter.signed(
                     entry.amount,
                     isIncome: entry.isRevenue,

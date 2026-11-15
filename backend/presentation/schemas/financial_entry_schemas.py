@@ -3,9 +3,9 @@ from __future__ import annotations
 import datetime
 import decimal
 import uuid
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from domain.entities import FinancialEntry
 from domain.read_models import FinancialEntryFilters
@@ -190,3 +190,100 @@ class FinancialEntryResponse(BaseModel):
             created_at=e.created_at,
             updated_at=e.updated_at,
         )
+
+
+_Money = Annotated[decimal.Decimal, Field(gt=0, max_digits=16, decimal_places=2)]
+_Description = Annotated[str, Field(min_length=1, max_length=200)]
+_Category = Annotated[str, Field(min_length=1, max_length=100)]
+_Notes = Annotated[str, Field(min_length=1, max_length=1000)]
+_Installment = Annotated[int, Field(ge=1, le=999)]
+
+
+class FinancialEntryCreate(BaseModel):
+    """Body of POST /financial-entries. The household and the owner come from the logged user.
+
+    `reference_month` accepts any day of the month (it is moved to the 1st)."""
+
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    description: _Description
+    type: Literal["REVENUES", "EXPENSES"]
+    amount: _Money
+    reference_month: datetime.date
+    payment_type: Literal["DEBIT", "CREDIT"] | None = None
+    category: _Category | None = None
+    due_date: datetime.date | None = None
+    bank_account_id: uuid.UUID | None = None
+    installment_number: _Installment | None = None
+    installment_total: _Installment | None = None
+    notes: _Notes | None = None
+
+    @field_validator("reference_month")
+    @classmethod
+    def _first_day(cls, value: datetime.date) -> datetime.date:
+        return first_day_of_month(value)
+
+    @model_validator(mode="after")
+    def _check_installments(self) -> FinancialEntryCreate:
+        if (self.installment_number is None) != (self.installment_total is None):
+            raise ValueError("send both installment fields or none")
+        if (
+            self.installment_number is not None
+            and self.installment_total is not None
+            and self.installment_total < self.installment_number
+        ):
+            raise ValueError("installment_total must not be less than installment_number")
+        return self
+
+    def to_entity(self, user_id: uuid.UUID, household_id: uuid.UUID) -> FinancialEntry:
+        return FinancialEntry(
+            user_id=user_id,
+            household_id=household_id,
+            description=self.description,
+            type=self.type,
+            amount=self.amount,
+            reference_month=self.reference_month,
+            payment_type=self.payment_type,
+            category=self.category,
+            due_date=self.due_date,
+            bank_account_id=self.bank_account_id,
+            installment_number=self.installment_number,
+            installment_total=self.installment_total,
+            notes=self.notes,
+        )
+
+
+class FinancialEntryUpdate(BaseModel):
+    """Body of PATCH /financial-entries/{id}. Send only what changes.
+
+    `status` only moves between PLANNED and CANCELLED (RECONCILED comes from the reconciliation).
+    The optional columns accept null to be cleared."""
+
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    description: _Description | None = None
+    type: Literal["REVENUES", "EXPENSES"] | None = None
+    amount: _Money | None = None
+    reference_month: datetime.date | None = None
+    status: Literal["PLANNED", "CANCELLED"] | None = None
+    payment_type: Literal["DEBIT", "CREDIT"] | None = None
+    category: _Category | None = None
+    due_date: datetime.date | None = None
+    bank_account_id: uuid.UUID | None = None
+    installment_number: _Installment | None = None
+    installment_total: _Installment | None = None
+    notes: _Notes | None = None
+
+    @field_validator("reference_month")
+    @classmethod
+    def _first_day(cls, value: datetime.date | None) -> datetime.date | None:
+        return None if value is None else first_day_of_month(value)
+
+    @model_validator(mode="after")
+    def _check_fields(self) -> FinancialEntryUpdate:
+        if not self.model_fields_set:
+            raise ValueError("send at least one field")
+        for name in ("description", "type", "amount", "reference_month", "status"):
+            if name in self.model_fields_set and getattr(self, name) is None:
+                raise ValueError(f"{name} cannot be null")
+        return self

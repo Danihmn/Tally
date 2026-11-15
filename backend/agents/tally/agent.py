@@ -67,10 +67,10 @@ TALLY_AI_TOOLS_PROMPT = (
 
 
 def _people_prompt(context: TallyContext) -> str:
-    """Who is talking and who the partner is: the tools name each owner by first name."""
-    me = context.user.first_name
+    """Who is talking and who the partner is: the tools name each owner by nickname (first name if none)."""
+    me = context.user.display_name
     text = (
-        f"You are talking to {me}. In the tool results, the owner column uses first names: "
+        f"You are talking to {me}. In the tool results, the owner column uses these names: "
         f'"eu", "meu", "minha", "gastei" mean {me}.'
     )
     if not context.partner_names:

@@ -19,7 +19,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get navTransactions => 'Transações';
 
   @override
-  String get navEntries => 'Lançamentos';
+  String get navEntries => 'Planejamento';
 
   @override
   String get navAccounts => 'Contas';
@@ -912,4 +912,357 @@ class AppLocalizationsPt extends AppLocalizations {
   String conversationUsage(int percent) {
     return '$percent% do limite';
   }
+
+  @override
+  String get failureNoRecurrences =>
+      'Cadastre ao menos uma recorrência antes de provisionar o mês.';
+
+  @override
+  String get planningSectionEntries => 'Lançamentos';
+
+  @override
+  String get planningSectionRecurrences => 'Recorrências';
+
+  @override
+  String get commonCancel => 'Cancelar';
+
+  @override
+  String get commonSave => 'Salvar';
+
+  @override
+  String get formRequired => 'Preencha este campo.';
+
+  @override
+  String get formAmountInvalid => 'Digite um valor maior que zero.';
+
+  @override
+  String get formDueDayInvalid => 'Digite um dia de 1 a 31.';
+
+  @override
+  String get formInstallmentsInvalid =>
+      'Preencha as duas parcelas, com a atual menor ou igual ao total.';
+
+  @override
+  String get formOptional => 'Opcional';
+
+  @override
+  String get entryNew => 'Novo lançamento';
+
+  @override
+  String get entryEditTitle => 'Editar lançamento';
+
+  @override
+  String get entryFormSave => 'Salvar lançamento';
+
+  @override
+  String get entryFormDescription => 'Descrição';
+
+  @override
+  String get entryFormDescriptionHint => 'Ex.: Conta de luz';
+
+  @override
+  String get entryFormType => 'Tipo';
+
+  @override
+  String get entryFormPayment => 'Forma de pagamento';
+
+  @override
+  String get entryFormCategory => 'Categoria';
+
+  @override
+  String get entryFormCategoryHint => 'Ex.: Moradia';
+
+  @override
+  String get entryFormAmount => 'Valor';
+
+  @override
+  String get entryFormMonth => 'Mês de referência';
+
+  @override
+  String get entryFormDue => 'Vencimento';
+
+  @override
+  String get entryFormAccount => 'Conta ou cartão';
+
+  @override
+  String get entryFormNoAccount => 'Nenhuma';
+
+  @override
+  String get entryFormInstallments => 'Parcelas';
+
+  @override
+  String get entryFormInstallmentCurrent => 'Parcela atual';
+
+  @override
+  String get entryFormInstallmentTotal => 'Total de parcelas';
+
+  @override
+  String get entryFormInstallmentsHint =>
+      'Preencha as duas, ou deixe as duas em branco.';
+
+  @override
+  String get entryFormNotes => 'Observações';
+
+  @override
+  String get entryFormNotesHint => 'Algo que ajude a lembrar';
+
+  @override
+  String get entryActionEdit => 'Editar';
+
+  @override
+  String get entryActionCancel => 'Cancelar lançamento';
+
+  @override
+  String get entryActionReopen => 'Reativar lançamento';
+
+  @override
+  String get entryActionDelete => 'Excluir lançamento';
+
+  @override
+  String get entryReconciledLocked =>
+      'Lançamento conciliado não pode ser editado nem excluído. Desfaça a conciliação antes.';
+
+  @override
+  String get entryDeleteTitle => 'Excluir lançamento?';
+
+  @override
+  String entryDeleteText(String name) {
+    return '\"$name\" sai da lista. Essa ação não pode ser desfeita.';
+  }
+
+  @override
+  String get entryDeleteConfirm => 'Excluir';
+
+  @override
+  String get entrySaved => 'Lançamento salvo.';
+
+  @override
+  String get entryCancelledDone => 'Lançamento cancelado.';
+
+  @override
+  String get entryReopenedDone => 'Lançamento reativado.';
+
+  @override
+  String get entryDeletedDone => 'Lançamento excluído.';
+
+  @override
+  String get recurrencesIntro =>
+      'Itens que se repetem todo mês. O Tally cria o lançamento no mês certo para vocês.';
+
+  @override
+  String get recurrencesEmptyTitle => 'Nenhuma recorrência ainda';
+
+  @override
+  String get recurrencesEmptyText =>
+      'Cadastre aluguel, assinaturas e salários para não digitar todo mês.';
+
+  @override
+  String get recurrenceNew => 'Nova recorrência';
+
+  @override
+  String get recurrenceEditTitle => 'Editar recorrência';
+
+  @override
+  String get recurrenceFormSave => 'Salvar recorrência';
+
+  @override
+  String get recurrenceFormDay => 'Dia do mês';
+
+  @override
+  String get recurrenceFormDayHint =>
+      'Todo mês neste dia. Em meses mais curtos vale o último dia.';
+
+  @override
+  String recurrenceDay(int day) {
+    return 'Todo dia $day';
+  }
+
+  @override
+  String get recurrenceNoDay => 'Sem dia fixo';
+
+  @override
+  String get recurrenceDeleteAction => 'Excluir recorrência';
+
+  @override
+  String get recurrenceDeleteTitle => 'Excluir recorrência?';
+
+  @override
+  String recurrenceDeleteText(String name) {
+    return '\"$name\" deixa de gerar lançamentos. Os que já foram criados continuam.';
+  }
+
+  @override
+  String get recurrenceSaved => 'Recorrência salva.';
+
+  @override
+  String get recurrenceDeletedDone => 'Recorrência excluída.';
+
+  @override
+  String provisionButton(String month) {
+    return 'Provisionar $month';
+  }
+
+  @override
+  String get provisionTitle => 'Provisionar o próximo mês?';
+
+  @override
+  String provisionText(String month) {
+    return 'O Tally vai criar os lançamentos de $month a partir das recorrências cadastradas. Quem já tem lançamento nesse mês não é duplicado.';
+  }
+
+  @override
+  String get provisionConfirm => 'Provisionar';
+
+  @override
+  String provisionCreated(int created, String month) {
+    String _temp0 = intl.Intl.pluralLogic(
+      created,
+      locale: localeName,
+      other: '$created lançamentos criados em $month.',
+      one: '1 lançamento criado em $month.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String provisionNothingNew(String month) {
+    return 'Tudo já estava provisionado em $month.';
+  }
+
+  @override
+  String get recurrenceFormDescriptionHint => 'Ex.: Aluguel';
+
+  @override
+  String get recurrenceFormDayExample => '5';
+
+  @override
+  String get homeSettings => 'Configurações';
+
+  @override
+  String get failureEmailExists => 'Já existe um usuário com esse e-mail.';
+
+  @override
+  String get settingsTitle => 'Configurações';
+
+  @override
+  String get settingsAppearance => 'Aparência';
+
+  @override
+  String get settingsThemeLight => 'Claro';
+
+  @override
+  String get settingsThemeDark => 'Escuro';
+
+  @override
+  String get settingsThemeSystem => 'Sistema';
+
+  @override
+  String get settingsHousehold => 'Casa';
+
+  @override
+  String get settingsUsers => 'Usuários';
+
+  @override
+  String get settingsUsersHint => 'Quem usa o Tally nesta casa';
+
+  @override
+  String get usersTitle => 'Usuários';
+
+  @override
+  String get usersNew => 'Novo usuário';
+
+  @override
+  String get usersAddedNotice => 'Usuário criado.';
+
+  @override
+  String get userDetailTitle => 'Usuário';
+
+  @override
+  String get userEditAction => 'Editar dados';
+
+  @override
+  String get userEditTitle => 'Editar usuário';
+
+  @override
+  String get userNewTitle => 'Novo usuário';
+
+  @override
+  String get userFieldFirstName => 'Nome';
+
+  @override
+  String get userFieldLastName => 'Sobrenome';
+
+  @override
+  String get userFieldSurname => 'Apelido';
+
+  @override
+  String get userFieldSurnameHelp =>
+      'É o nome que aparece nos filtros e nas telas.';
+
+  @override
+  String get userFieldEmail => 'E-mail';
+
+  @override
+  String get userFieldPassword => 'Senha';
+
+  @override
+  String get userFieldPasswordHelp => 'Mínimo de 8 caracteres.';
+
+  @override
+  String get userNotInformed => 'Não informado';
+
+  @override
+  String get userSave => 'Salvar';
+
+  @override
+  String get userCreate => 'Criar usuário';
+
+  @override
+  String get userSavedNotice => 'Dados salvos.';
+
+  @override
+  String get userEmailInvalid => 'Digite um e-mail válido.';
+
+  @override
+  String get userPasswordShort => 'Use ao menos 8 caracteres.';
+
+  @override
+  String get userPluggySection => 'Credenciais da Pluggy';
+
+  @override
+  String get userPluggyAction => 'Credenciais da Pluggy';
+
+  @override
+  String get userPluggyIntro =>
+      'Cada pessoa usa a própria aplicação da Pluggy. Consulte o Client ID e o Client Secret dela no portal da Pluggy.';
+
+  @override
+  String get userPluggyHidden =>
+      'Por segurança, as credenciais atuais não são exibidas.';
+
+  @override
+  String get pluggyClientId => 'Client ID';
+
+  @override
+  String get pluggyClientSecret => 'Client Secret';
+
+  @override
+  String get pluggyClientIdInvalid =>
+      'Digite um Client ID válido (formato UUID).';
+
+  @override
+  String get pluggySave => 'Salvar credenciais';
+
+  @override
+  String get pluggyConfirmTitle => 'Alterar as credenciais?';
+
+  @override
+  String get pluggyConfirmMessage =>
+      'Se as credenciais estiverem erradas, o Tally deixa de importar os dados bancários desta pessoa e o sistema passa a funcionar mal. Confira no portal da Pluggy antes de continuar.';
+
+  @override
+  String get pluggyConfirmOk => 'Alterar credenciais';
+
+  @override
+  String get pluggySavedNotice => 'Credenciais atualizadas.';
 }

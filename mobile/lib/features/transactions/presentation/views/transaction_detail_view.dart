@@ -5,6 +5,7 @@ import 'package:mobile/app/theme/app_spacing.dart';
 import 'package:mobile/app/theme/tally_colors.dart';
 import 'package:mobile/core/utils/date_formatter.dart';
 import 'package:mobile/core/utils/money_formatter.dart';
+import 'package:mobile/core/widgets/ellipsis_text.dart';
 import 'package:mobile/core/widgets/empty_state.dart';
 import 'package:mobile/features/household/presentation/widgets/member_palette.dart';
 import 'package:mobile/features/transactions/presentation/viewmodels/linked_entries_view_model.dart';
@@ -73,27 +74,38 @@ class _Content extends StatelessWidget {
       _DetailRow(l10n.detailDate, Text(DateFormatter.date(transaction.day))),
       _DetailRow(
         l10n.detailDescription,
-        Text(
+        EllipsisText(
           description == null || description.isEmpty ? '—' : description,
           textAlign: TextAlign.end,
+          tapToShow: true,
+          maxLines: 2,
         ),
       ),
       if (transaction.category != null && transaction.category!.isNotEmpty)
         _DetailRow(
           l10n.detailCategory,
-          Text(transaction.category!, textAlign: TextAlign.end),
+          EllipsisText(
+            transaction.category!,
+            textAlign: TextAlign.end,
+            tapToShow: true,
+          ),
         ),
       if (transaction.merchantName != null)
         _DetailRow(
           l10n.detailMerchant,
-          Text(transaction.merchantName!, textAlign: TextAlign.end),
+          EllipsisText(
+            transaction.merchantName!,
+            textAlign: TextAlign.end,
+            tapToShow: true,
+          ),
         ),
       if (account != null)
         _DetailRow(
           l10n.detailAccount,
-          Text(
+          EllipsisText(
             '${account.displayName} ••${account.shortNumber}',
             textAlign: TextAlign.end,
+            tapToShow: true,
           ),
         ),
       if (owner != null)
@@ -120,7 +132,7 @@ class _Content extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: AppSpacing.xs),
-              Text(owner.firstName),
+              EllipsisText(owner.displayName, tapToShow: true),
             ],
           ),
         ),
@@ -134,7 +146,7 @@ class _Content extends StatelessWidget {
       ),
       _DetailRow(
         l10n.detailBalanceAfter,
-        Text(
+        EllipsisText(
           transaction.balance == null
               ? '—'
               : MoneyFormatter.format(transaction.balance!),
@@ -149,7 +161,7 @@ class _Content extends StatelessWidget {
           children: [
             TransactionIcon(transaction: transaction, size: 56),
             const SizedBox(height: AppSpacing.sm),
-            Text(
+            EllipsisText(
               MoneyFormatter.signed(
                 transaction.absoluteAmount,
                 isIncome: transaction.isIncome,
@@ -160,12 +172,14 @@ class _Content extends StatelessWidget {
               ),
             ),
             const SizedBox(height: AppSpacing.xxs),
-            Text(
+            EllipsisText(
               description == null || description.isEmpty
                   ? l10n.transactionsNoDescription
                   : description,
               style: theme.textTheme.titleMedium,
               textAlign: TextAlign.center,
+              tapToShow: true,
+              maxLines: 3,
             ),
             const SizedBox(height: AppSpacing.xs),
             Container(

@@ -3,11 +3,13 @@ import 'package:mobile/core/network/api_call.dart';
 import 'package:mobile/core/network/api_endpoints.dart';
 import 'package:mobile/core/result/result.dart';
 import 'package:mobile/core/utils/date_formatter.dart';
+import 'package:mobile/features/entries/data/mappers/entry_draft_mapper.dart';
 import 'package:mobile/features/entries/data/models/financial_entry_dto.dart';
+import 'package:mobile/features/entries/domain/entities/entry_draft.dart';
 import 'package:mobile/features/entries/domain/entities/entry_filters.dart';
 import 'package:mobile/features/entries/domain/entities/financial_entry.dart';
 
-/// Calls the entries list endpoint.
+/// Calls the entries endpoints: the list and the changes.
 class EntriesRemoteDataSource {
   const EntriesRemoteDataSource(this._dio);
 
@@ -59,4 +61,38 @@ class EntriesRemoteDataSource {
   static String? _monthParam(DateTime? month) => month == null
       ? null
       : DateFormatter.toApiDate(DateTime(month.year, month.month));
+
+  Future<Result<FinancialEntryDto>> create(EntryDraft draft) =>
+      apiCall(() async {
+        final response = await _dio.post<Map<String, dynamic>>(
+          ApiEndpoints.createFinancialEntry.path,
+          data: draft.toJson(),
+        );
+        return FinancialEntryDto.fromJson(response.data!);
+      });
+
+  /// Replaces the editable data of the entry with [draft].
+  Future<Result<FinancialEntryDto>> update(String id, EntryDraft draft) =>
+      _patch(id, draft.toJson());
+
+  /// Cancels or reopens the entry (`PLANNED` or `CANCELLED`).
+  Future<Result<FinancialEntryDto>> setStatus(String id, EntryStatus status) =>
+      _patch(id, {'status': status.apiValue});
+
+  Future<Result<void>> delete(String id) => apiCall(() async {
+    await _dio.delete<void>(
+      ApiEndpoints.deleteFinancialEntry.path.replaceFirst('{id}', id),
+    );
+  });
+
+  Future<Result<FinancialEntryDto>> _patch(
+    String id,
+    Map<String, dynamic> body,
+  ) => apiCall(() async {
+    final response = await _dio.patch<Map<String, dynamic>>(
+      ApiEndpoints.updateFinancialEntry.path.replaceFirst('{id}', id),
+      data: body,
+    );
+    return FinancialEntryDto.fromJson(response.data!);
+  });
 }

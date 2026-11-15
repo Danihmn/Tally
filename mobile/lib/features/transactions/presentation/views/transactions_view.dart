@@ -252,7 +252,7 @@ class _TransactionsViewState extends State<TransactionsView> {
     final vm = _viewModel;
     if (vm.hasConnectedBank == false) {
       final scope = vm.scope;
-      final who = scope?.member?.firstName ?? l10n.transactionsTheHouse;
+      final who = scope?.member?.displayName ?? l10n.transactionsTheHouse;
       return [NoBankCard(who: who, onSeeAccounts: _openAccounts)];
     }
     switch (vm.state) {

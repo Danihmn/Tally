@@ -1,12 +1,16 @@
+import 'dart:async';
+
 import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:flutter_localizations/flutter_localizations.dart'
     show GlobalWidgetsLocalizations;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:mobile/app/router/app_navigation_bar.dart';
 import 'package:mobile/app/router/app_router.dart';
 import 'package:mobile/app/router/app_routes.dart';
 import 'package:mobile/app/theme/app_theme.dart';
+import 'package:mobile/features/household/domain/entities/member.dart';
 import 'package:mobile/l10n/app_localizations.dart';
 
 void main() {
@@ -26,6 +30,10 @@ void main() {
           Text(args == null ? 'TX-DETAIL-NONE' : 'TX-DETAIL'),
       entryDetail: (args) =>
           Text(args == null ? 'ENTRY-DETAIL-NONE' : 'ENTRY-DETAIL'),
+      users: const Text('USERS-PAGE'),
+      userDetail: (member) => Text(
+        member == null ? 'USER-DETAIL-NONE' : 'USER-${member.firstName}',
+      ),
       redirect: redirect == null
           ? null
           : (context, state) => redirect(context, state),
@@ -53,11 +61,11 @@ void main() {
       await pumpRouter(tester);
       await tester.pumpAndSettle();
 
-      final bar = find.byType(NavigationBar);
+      final bar = find.byType(AppNavigationBar);
       for (final label in [
         'Início',
         'Transações',
-        'Lançamentos',
+        'Planejamento',
         'Contas',
         'Tally IA',
       ]) {
@@ -74,13 +82,13 @@ void main() {
       (tester) async {
         await pumpRouter(tester);
         await tester.pumpAndSettle();
-        final context = tester.element(find.byType(NavigationBar));
+        final context = tester.element(find.byType(AppNavigationBar));
 
         final result = GoRouter.of(context)
             .push<String>(AppRoutes.chatConversations);
         await tester.pumpAndSettle();
         expect(find.text('CONVERSATIONS-PAGE'), findsOneWidget);
-        expect(find.byType(NavigationBar), findsNothing);
+        expect(find.byType(AppNavigationBar), findsNothing);
 
         GoRouter.of(tester.element(find.text('CONVERSATIONS-PAGE'))).pop('c1');
         await tester.pumpAndSettle();
@@ -95,7 +103,7 @@ void main() {
 
       await tester.tap(
         find.descendant(
-          of: find.byType(NavigationBar),
+          of: find.byType(AppNavigationBar),
           matching: find.text('Tally IA'),
         ),
       );
@@ -110,24 +118,65 @@ void main() {
       await pumpRouter(tester);
       await tester.pumpAndSettle();
 
-      GoRouter.of(tester.element(find.byType(NavigationBar)))
+      GoRouter.of(tester.element(find.byType(AppNavigationBar)))
           .go(AppRoutes.transactionDetail);
       await tester.pumpAndSettle();
 
       expect(find.text('TX-DETAIL-NONE'), findsOneWidget);
-      expect(find.byType(NavigationBar), findsNothing);
+      expect(find.byType(AppNavigationBar), findsNothing);
     });
 
     testWidgets('the_entry_detail_without_args_gets_null', (tester) async {
       await pumpRouter(tester);
       await tester.pumpAndSettle();
 
-      GoRouter.of(tester.element(find.byType(NavigationBar)))
+      GoRouter.of(tester.element(find.byType(AppNavigationBar)))
           .go(AppRoutes.entryDetail);
       await tester.pumpAndSettle();
 
       expect(find.text('ENTRY-DETAIL-NONE'), findsOneWidget);
-      expect(find.byType(NavigationBar), findsNothing);
+      expect(find.byType(AppNavigationBar), findsNothing);
+    });
+
+    testWidgets('the_users_screen_opens_over_the_tabs', (tester) async {
+      await pumpRouter(tester);
+      await tester.pumpAndSettle();
+
+      GoRouter.of(tester.element(find.byType(AppNavigationBar)))
+          .go(AppRoutes.users);
+      await tester.pumpAndSettle();
+
+      expect(find.text('USERS-PAGE'), findsOneWidget);
+      expect(find.byType(AppNavigationBar), findsNothing);
+    });
+
+    testWidgets('the_user_detail_gets_the_person_it_was_opened_with', (
+      tester,
+    ) async {
+      await pumpRouter(tester);
+      await tester.pumpAndSettle();
+      final router = GoRouter.of(tester.element(find.byType(AppNavigationBar)));
+
+      unawaited(
+        router.push(
+          AppRoutes.userDetail,
+          extra: const Member(id: 'm1', firstName: 'Ana', householdId: 'h'),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('USER-Ana'), findsOneWidget);
+    });
+
+    testWidgets('the_user_detail_without_a_person_gets_null', (tester) async {
+      await pumpRouter(tester);
+      await tester.pumpAndSettle();
+
+      GoRouter.of(tester.element(find.byType(AppNavigationBar)))
+          .go(AppRoutes.userDetail);
+      await tester.pumpAndSettle();
+
+      expect(find.text('USER-DETAIL-NONE'), findsOneWidget);
     });
 
     testWidgets('tapping_a_tab_shows_its_screen', (tester) async {
@@ -136,7 +185,7 @@ void main() {
 
       await tester.tap(
         find.descendant(
-          of: find.byType(NavigationBar),
+          of: find.byType(AppNavigationBar),
           matching: find.text('Contas'),
         ),
       );

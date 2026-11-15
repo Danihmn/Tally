@@ -22,8 +22,16 @@ class AlreadyExistsError(ServiceError):
     """The record violates a uniqueness rule."""
 
 
+class EmailAlreadyExistsError(AlreadyExistsError):
+    """Another user already has this e-mail."""
+
+
 class InvalidDataError(ServiceError):
     """The data breaks a relation or a column rule (FK, CHECK, NOT NULL)."""
+
+
+class NoRecurrencesError(InvalidDataError):
+    """There is no active recurrence to provision a month from."""
 
 
 class ServiceUnavailableError(ServiceError):

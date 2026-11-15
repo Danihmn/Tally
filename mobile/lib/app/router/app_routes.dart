@@ -15,4 +15,10 @@ abstract final class AppRoutes {
 
   /// The conversation history. It covers the tabs and pops with the id.
   static const chatConversations = '/chat/conversations';
+
+  /// The people of the house, opened from the settings. It covers the tabs.
+  static const users = '/settings/users';
+
+  /// The details of one person. It covers the tabs.
+  static const userDetail = '/settings/users/detail';
 }

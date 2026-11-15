@@ -151,6 +151,17 @@ class ChatEndpointTests(_RouterTestCase):
         self.assertEqual(kwargs["context"], TallyContext(user=self.user, partner_names=("Partner",)))
         self.assertEqual(kwargs["stream_mode"], "messages")
 
+    def test_the_partner_is_named_by_the_nickname_when_there_is_one(self):
+        self.list_users.return_value = [
+            self.user,
+            make_user(id=uuid.uuid4(), first_name="Beatriz", surname="Bia"),
+        ]
+
+        self._chat("Quanto ela gastou?")
+
+        _, kwargs = self.agent.stream_calls[0]
+        self.assertEqual(kwargs["context"].partner_names, ("Bia",))
+
     def test_only_the_final_answer_is_streamed_not_the_tool_calls_or_their_results(self):
         call_piece = AIMessageChunk(content="", tool_call_chunks=[{"name": "t", "args": "{}", "id": "c1", "index": 0}])
         self.agent.pieces = [

@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:mobile/app/theme/app_spacing.dart';
 import 'package:mobile/app/theme/tally_colors.dart';
 import 'package:mobile/core/utils/money_formatter.dart';
+import 'package:mobile/core/widgets/ellipsis_text.dart';
 import 'package:mobile/features/transactions/domain/entities/transaction.dart';
 import 'package:mobile/features/transactions/presentation/widgets/transaction_icon.dart';
 import 'package:mobile/l10n/app_localizations.dart';
@@ -54,23 +55,15 @@ class TransactionRow extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    EllipsisText(
                       description == null || description.isEmpty
                           ? l10n.transactionsNoDescription
                           : description,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    if (sub.isNotEmpty)
-                      Text(
-                        sub,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: muted,
-                      ),
+                    if (sub.isNotEmpty) EllipsisText(sub, style: muted),
                     const SizedBox(height: 4),
                     Wrap(
                       spacing: AppSpacing.xs,
@@ -102,7 +95,7 @@ class TransactionRow extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text(
+                  EllipsisText(
                     MoneyFormatter.signed(
                       transaction.absoluteAmount,
                       isIncome: transaction.isIncome,
@@ -150,7 +143,7 @@ class _Tag extends StatelessWidget {
         color: background,
         borderRadius: BorderRadius.circular(999),
       ),
-      child: Text(
+      child: EllipsisText(
         text,
         style: Theme.of(context).textTheme.labelSmall
             ?.copyWith(color: foreground),

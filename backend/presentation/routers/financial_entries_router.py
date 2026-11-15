@@ -1,7 +1,8 @@
 import datetime
+import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Response, status
 from sqlalchemy.orm import Session
 
 from domain.entities import User
@@ -12,8 +13,10 @@ from presentation.schemas.common_schemas import Page
 from presentation.schemas.financial_entry_schemas import (
     EntryPeriodQuery,
     EntryTotalResponse,
+    FinancialEntryCreate,
     FinancialEntryQuery,
     FinancialEntryResponse,
+    FinancialEntryUpdate,
     ReconciliationCountsResponse,
     UpcomingEntriesQuery,
     UpcomingEntriesResponse,
@@ -22,12 +25,17 @@ from presentation.schemas.financial_entry_schemas import (
 from services.financial_entries_service import (
     count_not_reconciled_entries,
     count_reconciled_entries,
+    create_financial_entry,
+    delete_financial_entry,
+    get_financial_entry,
     get_total_planned,
     get_total_reconciled,
     list_upcoming_entries,
     search_financial_entries,
+    update_financial_entry,
 )
 from utils.dates import first_day_of_month, today_local
+from utils.ids import require_id
 
 # Both people of the household see every entry (the app is private, for two people).
 router = APIRouter(
@@ -44,7 +52,10 @@ def list_financial_entries_endpoint(
     current_user: Annotated[User, Depends(get_current_user)],
 ) -> Page[FinancialEntryResponse]:
     items, total = search_financial_entries(
-        session, query.to_filters(current_user.household_id), limit=query.limit, offset=query.offset
+        session,
+        query.to_filters(current_user.household_id),
+        limit=query.limit,
+        offset=query.offset,
     )
     return Page[FinancialEntryResponse](
         items=[FinancialEntryResponse.from_entity(e) for e in items],
@@ -153,3 +164,67 @@ def upcoming_entries_endpoint(
             )
         )
     return UpcomingEntriesResponse(date_from=date_from, date_to=date_to, items=items)
+
+
+@router.post(
+    "", response_model=FinancialEntryResponse, status_code=status.HTTP_201_CREATED
+)
+def create_financial_entry_endpoint(
+    body: FinancialEntryCreate,
+    session: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
+) -> FinancialEntryResponse:
+    """Creates a PLANNED entry owned by the logged user, in the user's household.
+
+    422 for an invalid value or a bank account outside the household."""
+    entry = create_financial_entry(
+        session,
+        body.to_entity(require_id(current_user, "User"), current_user.household_id),
+    )
+    session.commit()
+    return FinancialEntryResponse.from_entity(entry)
+
+
+@router.get("/{entry_id}", response_model=FinancialEntryResponse)
+def get_financial_entry_endpoint(
+    entry_id: uuid.UUID,
+    session: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
+) -> FinancialEntryResponse:
+    """404 when the entry does not exist or is in another household."""
+    return FinancialEntryResponse.from_entity(
+        get_financial_entry(session, current_user.household_id, entry_id)
+    )
+
+
+@router.patch("/{entry_id}", response_model=FinancialEntryResponse)
+def update_financial_entry_endpoint(
+    entry_id: uuid.UUID,
+    body: FinancialEntryUpdate,
+    session: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
+) -> FinancialEntryResponse:
+    """Changes only the fields sent. Cancel or reopen with `status`.
+
+    404 outside the household, 422 when a reconciled entry changes its amount, type, month or
+    status, or for an invalid value."""
+    entry = update_financial_entry(
+        session,
+        current_user.household_id,
+        entry_id,
+        body.model_dump(exclude_unset=True),
+    )
+    session.commit()
+    return FinancialEntryResponse.from_entity(entry)
+
+
+@router.delete("/{entry_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_financial_entry_endpoint(
+    entry_id: uuid.UUID,
+    session: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
+) -> Response:
+    """Soft delete. 404 outside the household, 422 for a reconciled entry."""
+    delete_financial_entry(session, current_user.household_id, entry_id)
+    session.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

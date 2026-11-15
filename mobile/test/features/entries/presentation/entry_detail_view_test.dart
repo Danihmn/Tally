@@ -53,6 +53,7 @@ void main() {
           ownerColorIndex: 0,
         ),
         createLinkedViewModel: kit.linkedTransactions,
+        createActionsViewModel: kit.actions,
         now: () => DateTime(2026, 11, 13),
       ),
     );
@@ -126,13 +127,13 @@ void main() {
       expect(find.text('01/11/2026 · por Ana'), findsOneWidget);
     });
 
-    testWidgets('has_no_buttons_to_change_the_entry', (tester) async {
+    testWidgets('has_no_button_to_reconcile_or_undo_a_reconciliation', (
+      tester,
+    ) async {
       await pumpDetail(tester, makeEntry());
 
       expect(find.text('Conciliar com uma transação'), findsNothing);
-      expect(find.text('Cancelar lançamento'), findsNothing);
       expect(find.text('Desfazer conciliação'), findsNothing);
-      expect(find.text('Reativar lançamento'), findsNothing);
     });
 
     testWidgets('without_args_it_says_so_and_offers_to_go_back', (
@@ -143,6 +144,7 @@ void main() {
         EntryDetailView(
           args: null,
           createLinkedViewModel: kit.linkedTransactions,
+          createActionsViewModel: kit.actions,
         ),
       );
 

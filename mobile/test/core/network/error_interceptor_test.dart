@@ -67,6 +67,40 @@ void main() {
       );
     });
 
+    test('a_422_with_the_no_recurrences_code_is_its_own_failure', () {
+      final failure = ErrorInterceptor.failureFrom(
+        _bad(422, {
+          'detail': 'No recurrences to provision',
+          'code': 'NO_RECURRENCES',
+        }),
+      );
+      expect(failure, const NoRecurrencesFailure());
+    });
+
+    test('a_409_with_the_email_code_is_an_email_already_exists_failure', () {
+      final failure = ErrorInterceptor.failureFrom(
+        _bad(409, {
+          'detail': 'Record already exists',
+          'code': 'EMAIL_ALREADY_EXISTS',
+        }),
+      );
+      expect(failure, const EmailAlreadyExistsFailure());
+    });
+
+    test('a_409_with_another_code_stays_a_conflict', () {
+      final failure = ErrorInterceptor.failureFrom(
+        _bad(409, {'detail': 'Record already exists', 'code': 'OTHER'}),
+      );
+      expect(failure, const ConflictFailure());
+    });
+
+    test('a_422_with_another_code_stays_a_validation_failure', () {
+      final failure = ErrorInterceptor.failureFrom(
+        _bad(422, {'detail': 'Invalid data', 'code': 'OTHER'}),
+      );
+      expect(failure, const ValidationFailure());
+    });
+
     test('a_422_with_a_string_detail_has_no_fields', () {
       final failure = ErrorInterceptor.failureFrom(
         _bad(422, {'detail': 'Invalid data'}),

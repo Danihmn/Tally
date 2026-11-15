@@ -240,6 +240,88 @@ void main() {
     });
   });
 
+  group('refreshMembers', () {
+    test('a_new_person_shows_up_without_going_back_to_loading', () async {
+      await controller.ensureLoaded();
+      final states = <UiState<HouseholdProfile>>[];
+      controller.addListener(() => states.add(controller.profile));
+      repository.users = const Result.success([ana, bia, caio]);
+
+      await controller.refreshMembers();
+
+      expect(controller.profileData?.members, [ana, bia, caio]);
+      expect(states.every((s) => s is UiSuccess<HouseholdProfile>), isTrue);
+    });
+
+    test('the_chosen_person_is_kept_with_their_new_data', () async {
+      await controller.ensureLoaded();
+      controller.select(ScopeOption.person(bia));
+      const renamed = Member(
+        id: 'm2',
+        firstName: 'Bia',
+        surname: 'Bibi',
+        householdId: 'h1',
+      );
+      repository.users = const Result.success([ana, renamed]);
+
+      await controller.refreshMembers();
+
+      expect(controller.scope, ScopeOption.person(renamed));
+      expect(controller.scope?.member?.displayName, 'Bibi');
+    });
+
+    test('the_house_choice_stays_the_house', () async {
+      await controller.ensureLoaded();
+      controller.select(const ScopeOption.house());
+
+      await controller.refreshMembers();
+
+      expect(controller.scope, const ScopeOption.house());
+    });
+
+    test('a_person_that_left_the_list_sends_the_choice_back_to_me', () async {
+      await controller.ensureLoaded();
+      controller.select(ScopeOption.person(bia));
+      repository.users = const Result.success([ana]);
+
+      await controller.refreshMembers();
+
+      expect(controller.scope, ScopeOption.me(ana));
+    });
+
+    test('my_own_edit_updates_me', () async {
+      await controller.ensureLoaded();
+      const edited = Member(
+        id: 'm1',
+        firstName: 'Ana',
+        surname: 'Aninha',
+        householdId: 'h1',
+      );
+      repository.me = const Result.success(edited);
+      repository.users = const Result.success([edited, bia]);
+
+      await controller.refreshMembers();
+
+      expect(controller.profileData?.me.displayName, 'Aninha');
+      expect(controller.scope, ScopeOption.me(edited));
+    });
+
+    test('a_failure_keeps_what_was_there', () async {
+      await controller.ensureLoaded();
+      repository.users = const Result.failure(NetworkFailure());
+
+      await controller.refreshMembers();
+
+      expect(controller.profileData?.members, [ana, bia]);
+    });
+
+    test('without_a_loaded_profile_it_loads_it', () async {
+      await controller.refreshMembers();
+
+      expect(controller.profileData?.me, ana);
+    });
+  });
+
   test('it_can_be_disposed_while_the_load_runs', () async {
     repository.meGate = Completer();
     final loading = controller.ensureLoaded();

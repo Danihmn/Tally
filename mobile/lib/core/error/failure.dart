@@ -36,6 +36,18 @@ final class ValidationFailure extends Failure {
   List<Object?> get props => [fields];
 }
 
+/// 422 on "provision next month": the house has no recurrence to use. The API
+/// marks it with the code `NO_RECURRENCES`.
+final class NoRecurrencesFailure extends Failure {
+  const NoRecurrencesFailure();
+}
+
+/// 409 on creating or editing a user: another user already has that e-mail.
+/// The API marks it with the code `EMAIL_ALREADY_EXISTS`.
+final class EmailAlreadyExistsFailure extends Failure {
+  const EmailAlreadyExistsFailure();
+}
+
 /// 409 on a chat message: the conversation reached its token limit and only
 /// a new conversation can go on.
 final class ConversationFullFailure extends Failure {

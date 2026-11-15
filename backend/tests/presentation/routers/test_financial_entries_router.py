@@ -423,3 +423,225 @@ class ListFinancialEntriesEndpointTests(unittest.TestCase):
         app.dependency_overrides.pop(get_current_user)
 
         self.assertEqual(self.client.get("/financial-entries").status_code, 401)
+
+
+class WriteEndpointsTestCase(unittest.TestCase):
+    """Shared setup of the write endpoints: logged user, fake session and a patched service."""
+
+    SERVICE: str
+
+    def setUp(self):
+        self.session = MagicMock()
+        self.current_user = make_user()
+
+        def _get_db():
+            yield self.session
+
+        app.dependency_overrides[get_db] = _get_db
+        app.dependency_overrides[get_current_user] = lambda: self.current_user
+        self.addCleanup(app.dependency_overrides.clear)
+        self.client = TestClient(app)
+        patcher = patch(f"{MODULE}.{self.SERVICE}")
+        self.service = patcher.start()
+        self.addCleanup(patcher.stop)
+
+
+ENTRY_BODY = {
+    "description": "Rent",
+    "type": "EXPENSES",
+    "amount": "1500.00",
+    "reference_month": "2026-12-15",
+    "due_date": "2026-12-05",
+}
+
+
+class CreateFinancialEntryEndpointTests(WriteEndpointsTestCase):
+    SERVICE = "create_financial_entry"
+
+    def setUp(self):
+        super().setUp()
+        self.service.side_effect = lambda session, entry: make_entry(
+            description=entry.description,
+            amount=entry.amount,
+            reference_month=entry.reference_month,
+            created_at=utc(2026, 11, 13),
+        )
+
+    def test_creates_the_entry_and_commits(self):
+        response = self.client.post("/financial-entries", json=ENTRY_BODY)
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.json()["description"], "Rent")
+        self.session.commit.assert_called_once()
+
+    def test_owner_and_household_come_from_the_logged_user(self):
+        self.client.post("/financial-entries", json=ENTRY_BODY)
+
+        entry = self.service.call_args.args[1]
+        self.assertEqual(entry.user_id, self.current_user.id)
+        self.assertEqual(entry.household_id, HOUSEHOLD_ID)
+        self.assertEqual(entry.status, "PLANNED")
+
+    def test_any_day_of_the_month_is_moved_to_the_first(self):
+        self.client.post("/financial-entries", json=ENTRY_BODY)
+
+        self.assertEqual(
+            self.service.call_args.args[1].reference_month, datetime.date(2026, 12, 1)
+        )
+
+    def test_household_or_user_in_the_body_is_rejected(self):
+        for field in ("household_id", "user_id"):
+            response = self.client.post(
+                "/financial-entries", json={**ENTRY_BODY, field: str(uuid.uuid4())}
+            )
+            self.assertEqual(response.status_code, 422)
+        self.service.assert_not_called()
+
+    def test_invalid_bodies_are_rejected_without_calling_the_service(self):
+        for change in (
+            {"amount": "0"},
+            {"amount": "-5"},
+            {"amount": "10.123"},
+            {"type": "OTHER"},
+            {"description": "   "},
+            {"installment_number": 2},
+            {"installment_number": 3, "installment_total": 2},
+        ):
+            response = self.client.post("/financial-entries", json={**ENTRY_BODY, **change})
+            self.assertEqual(response.status_code, 422, change)
+        self.service.assert_not_called()
+        self.session.commit.assert_not_called()
+
+    def test_invalid_data_from_the_service_is_422_and_does_not_commit(self):
+        from services.common.exceptions import InvalidDataError
+
+        self.service.side_effect = InvalidDataError("x")
+
+        response = self.client.post("/financial-entries", json=ENTRY_BODY)
+
+        self.assertEqual(response.status_code, 422)
+        self.session.commit.assert_not_called()
+
+    def test_without_a_token_it_is_unauthorized(self):
+        app.dependency_overrides.pop(get_current_user)
+
+        self.assertEqual(self.client.post("/financial-entries", json=ENTRY_BODY).status_code, 401)
+
+
+class GetFinancialEntryEndpointTests(WriteEndpointsTestCase):
+    SERVICE = "get_financial_entry"
+
+    def test_answers_with_the_entry_of_the_household(self):
+        entry = make_entry(created_at=utc(2026, 11, 13))
+        self.service.return_value = entry
+
+        response = self.client.get(f"/financial-entries/{entry.id}")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["id"], str(entry.id))
+        self.assertEqual(self.service.call_args.args[1:], (HOUSEHOLD_ID, entry.id))
+
+    def test_unknown_entry_is_404(self):
+        from services.common.exceptions import NotFoundError
+
+        self.service.side_effect = NotFoundError("x")
+
+        self.assertEqual(self.client.get(f"/financial-entries/{uuid.uuid4()}").status_code, 404)
+
+    def test_the_fixed_paths_are_not_taken_as_an_entry_id(self):
+        response = self.client.get("/financial-entries/upcoming")
+
+        self.assertNotEqual(response.status_code, 422)
+        self.service.assert_not_called()
+
+
+class UpdateFinancialEntryEndpointTests(WriteEndpointsTestCase):
+    SERVICE = "update_financial_entry"
+
+    def setUp(self):
+        super().setUp()
+        self.entry_id = uuid.uuid4()
+        self.service.return_value = make_entry(
+            id=self.entry_id, status="CANCELLED", created_at=utc(2026, 11, 13)
+        )
+
+    def test_sends_only_the_fields_of_the_body_and_commits(self):
+        response = self.client.patch(
+            f"/financial-entries/{self.entry_id}", json={"status": "CANCELLED"}
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["status"], "CANCELLED")
+        self.assertEqual(
+            self.service.call_args.args[1:],
+            (HOUSEHOLD_ID, self.entry_id, {"status": "CANCELLED"}),
+        )
+        self.session.commit.assert_called_once()
+
+    def test_an_optional_field_can_be_cleared_with_null(self):
+        self.client.patch(f"/financial-entries/{self.entry_id}", json={"due_date": None})
+
+        self.assertEqual(self.service.call_args.args[3], {"due_date": None})
+
+    def test_a_month_day_is_moved_to_the_first(self):
+        self.client.patch(
+            f"/financial-entries/{self.entry_id}", json={"reference_month": "2027-01-20"}
+        )
+
+        self.assertEqual(
+            self.service.call_args.args[3], {"reference_month": datetime.date(2027, 1, 1)}
+        )
+
+    def test_bad_bodies_are_422_without_calling_the_service(self):
+        for body in (
+            {},
+            {"amount": None},
+            {"status": None},
+            {"status": "RECONCILED"},
+            {"household_id": str(uuid.uuid4())},
+        ):
+            response = self.client.patch(f"/financial-entries/{self.entry_id}", json=body)
+            self.assertEqual(response.status_code, 422, body)
+        self.service.assert_not_called()
+
+    def test_not_found_is_404_and_does_not_commit(self):
+        from services.common.exceptions import NotFoundError
+
+        self.service.side_effect = NotFoundError("x")
+
+        response = self.client.patch(
+            f"/financial-entries/{self.entry_id}", json={"notes": "x"}
+        )
+
+        self.assertEqual(response.status_code, 404)
+        self.session.commit.assert_not_called()
+
+
+class DeleteFinancialEntryEndpointTests(WriteEndpointsTestCase):
+    SERVICE = "delete_financial_entry"
+
+    def test_deletes_commits_and_answers_with_no_content(self):
+        entry_id = uuid.uuid4()
+
+        response = self.client.delete(f"/financial-entries/{entry_id}")
+
+        self.assertEqual(response.status_code, 204)
+        self.assertEqual(self.service.call_args.args[1:], (HOUSEHOLD_ID, entry_id))
+        self.session.commit.assert_called_once()
+
+    def test_a_reconciled_entry_is_422_and_does_not_commit(self):
+        from services.common.exceptions import InvalidDataError
+
+        self.service.side_effect = InvalidDataError("x")
+
+        response = self.client.delete(f"/financial-entries/{uuid.uuid4()}")
+
+        self.assertEqual(response.status_code, 422)
+        self.session.commit.assert_not_called()
+
+    def test_unknown_entry_is_404(self):
+        from services.common.exceptions import NotFoundError
+
+        self.service.side_effect = NotFoundError("x")
+
+        self.assertEqual(self.client.delete(f"/financial-entries/{uuid.uuid4()}").status_code, 404)

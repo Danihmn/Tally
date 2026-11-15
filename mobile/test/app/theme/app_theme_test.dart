@@ -21,6 +21,8 @@ void main() {
       final text = AppTheme.light(useGoogleFonts: false).textTheme;
       expect(text.headlineSmall!.fontSize, 24);
       expect(text.displaySmall!.fontSize, 36);
+      expect(text.titleLarge!.fontSize, 20);
+      expect(text.titleLarge!.fontWeight, FontWeight.w600);
       expect(text.bodyMedium!.fontSize, 14);
       expect(text.labelSmall!.fontSize, 11);
     });

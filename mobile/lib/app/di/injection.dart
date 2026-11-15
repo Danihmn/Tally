@@ -14,6 +14,7 @@ import 'package:mobile/features/chat/chat_dependencies.dart';
 import 'package:mobile/features/entries/entries_dependencies.dart';
 import 'package:mobile/features/home/home_dependencies.dart';
 import 'package:mobile/features/household/household_dependencies.dart';
+import 'package:mobile/features/recurrences/recurrences_dependencies.dart';
 import 'package:mobile/features/transactions/transactions_dependencies.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -42,6 +43,7 @@ void registerFeatureDependencies(GetIt container) {
   registerAccountsDependencies(container);
   registerTransactionsDependencies(container);
   registerEntriesDependencies(container);
+  registerRecurrencesDependencies(container);
   registerChatDependencies(container);
 }
 

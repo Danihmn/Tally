@@ -4,6 +4,9 @@ import 'package:mobile/features/household/data/datasources/household_remote_data
 import 'package:mobile/features/household/data/models/member_dto.dart';
 import 'package:mobile/features/household/data/repositories/household_repository_impl.dart';
 import 'package:mobile/features/household/domain/entities/member.dart';
+import 'package:mobile/features/household/domain/entities/pluggy_credentials.dart';
+import 'package:mobile/features/household/domain/entities/user_changes.dart';
+import 'package:mobile/features/household/domain/entities/user_draft.dart';
 
 import '../../../support/fake_dio.dart';
 import '../../../support/fakes.dart';
@@ -25,6 +28,25 @@ void main() {
       final dto = MemberDto.fromJson(_ana);
 
       expect((dto.id, dto.firstName, dto.householdId), ('m1', 'Ana', 'h1'));
+    });
+
+    test('reads_the_last_name_the_nickname_and_the_email', () {
+      final dto = MemberDto.fromJson({
+        ..._ana,
+        'last_name': 'Souza',
+        'surname': 'Aninha',
+      });
+
+      expect(
+        (dto.lastName, dto.surname, dto.email),
+        ('Souza', 'Aninha', 'ana@casa.com'),
+      );
+    });
+
+    test('a_user_without_last_name_and_nickname_is_still_valid', () {
+      final dto = MemberDto.fromJson({..._ana, 'last_name': null});
+
+      expect((dto.lastName, dto.surname), (null, null));
     });
 
     test('a_missing_field_is_a_format_error', () {
@@ -93,8 +115,110 @@ void main() {
 
       expect(
         result.valueOrNull,
-        const Member(id: 'm1', firstName: 'Ana', householdId: 'h1'),
+        const Member(
+          id: 'm1',
+          firstName: 'Ana',
+          householdId: 'h1',
+          email: 'ana@casa.com',
+        ),
       );
+    });
+  });
+
+  group('HouseholdRemoteDataSource writes', () {
+    const draft = UserDraft(
+      firstName: ' Carla ',
+      surname: 'Cacá',
+      email: ' carla@casa.com ',
+      password: 'segredo123',
+      pluggyClientId: '11111111-2222-3333-4444-555555555555',
+      pluggyClientSecret: ' s3cr3t ',
+    );
+
+    test('creating_a_user_posts_the_form_without_a_household', () async {
+      final adapter = FakeHttpAdapter(
+        (_) => const FakeReply(201, {..._ana, 'surname': 'Cacá'}),
+      );
+
+      final result = await build(adapter).createUser(draft);
+
+      final request = adapter.requests.single;
+      expect((request.method, request.path), ('POST', '/users'));
+      expect(request.data, {
+        'first_name': 'Carla',
+        'last_name': null,
+        'surname': 'Cacá',
+        'email': 'carla@casa.com',
+        'password': 'segredo123',
+        'pluggy_client_id': '11111111-2222-3333-4444-555555555555',
+        'pluggy_client_secret': 's3cr3t',
+      });
+      expect((request.data as Map).containsKey('household_id'), isFalse);
+      expect(result.valueOrNull?.surname, 'Cacá');
+    });
+
+    test('an_email_that_is_taken_is_its_own_failure', () async {
+      final adapter = FakeHttpAdapter(
+        (_) => const FakeReply(409, {
+          'detail': 'Record already exists',
+          'code': 'EMAIL_ALREADY_EXISTS',
+        }),
+      );
+
+      final result = await build(adapter).createUser(draft);
+
+      expect(result.failureOrNull, const EmailAlreadyExistsFailure());
+    });
+
+    test('any_other_conflict_stays_a_conflict', () async {
+      final adapter = FakeHttpAdapter(
+        (_) => const FakeReply(409, {'detail': 'Record already exists'}),
+      );
+
+      final result = await build(adapter).createUser(draft);
+
+      expect(result.failureOrNull, const ConflictFailure());
+    });
+
+    test(
+      'editing_a_user_patches_the_four_fields_and_clears_the_blanks',
+      () async {
+        final adapter = FakeHttpAdapter((_) => const FakeReply(200, _ana));
+
+        await build(adapter).updateUser(
+          'm1',
+          const UserChanges(firstName: 'Ana', email: 'ana@casa.com'),
+        );
+
+        final request = adapter.requests.single;
+        expect((request.method, request.path), ('PATCH', '/users/m1'));
+        expect(request.data, {
+          'first_name': 'Ana',
+          'last_name': null,
+          'surname': null,
+          'email': 'ana@casa.com',
+        });
+      },
+    );
+
+    test('changing_the_credentials_puts_both_values', () async {
+      final adapter = FakeHttpAdapter((_) => const FakeReply(204));
+
+      final result = await build(adapter).updatePluggyCredentials(
+        'm1',
+        const PluggyCredentials(clientId: ' id ', clientSecret: ' secret '),
+      );
+
+      final request = adapter.requests.single;
+      expect(
+        (request.method, request.path),
+        ('PUT', '/users/m1/pluggy-credentials'),
+      );
+      expect(request.data, {
+        'pluggy_client_id': 'id',
+        'pluggy_client_secret': 'secret',
+      });
+      expect(result.isSuccess, isTrue);
     });
   });
 }

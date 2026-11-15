@@ -47,6 +47,8 @@ void main() {
       accounts: const Text('ACCOUNTS-PAGE'),
       transactionDetail: (args) => const Text('TX-DETAIL'),
       entryDetail: (args) => const Text('ENTRY-DETAIL'),
+      users: const Text('USERS-PAGE'),
+      userDetail: (member) => const Text('USER-DETAIL'),
       initialLocation: initialLocation,
       redirect: sessionRedirect(session),
       refreshListenable: session,

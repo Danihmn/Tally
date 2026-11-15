@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/error/failure.dart';
 import 'package:mobile/core/result/result.dart';
 import 'package:mobile/core/state/ui_state.dart';
+import 'package:mobile/features/entries/domain/entities/entry_draft.dart';
 import 'package:mobile/features/entries/domain/entities/entry_filters.dart';
 import 'package:mobile/features/entries/domain/entities/financial_entry.dart';
 import 'package:mobile/features/household/presentation/viewmodels/household_scope_controller.dart';
@@ -322,6 +323,58 @@ void main() {
 
       expect(kit.accounts.calls, 2);
       expect(kit.entries.calls, hasLength(4));
+    });
+  });
+
+  group('create', () {
+    EntryDraft draft() => EntryDraft(
+      description: 'Conta nova',
+      type: EntryType.expenses,
+      amount: Decimal.parse('42.50'),
+      referenceMonth: DateTime(2026, 11),
+    );
+
+    test('creates_the_entry_and_reads_the_list_again', () async {
+      await started();
+      kit.entries.calls.clear();
+
+      final failure = await kit.viewModel.create(draft());
+      await pumpEventQueue();
+
+      expect(failure, isNull);
+      expect(kit.entries.created, [draft()]);
+      expect(kit.entries.calls, isNotEmpty);
+      expect(
+        kit.viewModel.items.map((e) => e.description),
+        contains('Conta nova'),
+      );
+    });
+
+    test('a_failure_is_returned_and_the_list_is_not_read_again', () async {
+      await started();
+      kit.entries.calls.clear();
+      kit.entries.writeFailure = const ServerUnavailableFailure();
+
+      final failure = await kit.viewModel.create(draft());
+
+      expect(failure, const ServerUnavailableFailure());
+      expect(kit.entries.calls, isEmpty);
+    });
+  });
+
+  group('presetMonth', () {
+    test('opens_the_first_load_on_that_month', () async {
+      kit = EntriesKit();
+      kit.viewModel.presetMonth(DateTime(2026, 12, 20));
+
+      await kit.viewModel.start();
+      await pumpEventQueue();
+
+      expect(kit.viewModel.month, DateTime(2026, 12));
+      expect(
+        kit.entries.calls.every((c) => c.referenceMonth == DateTime(2026, 12)),
+        isTrue,
+      );
     });
   });
 

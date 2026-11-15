@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:mobile/app/theme/app_spacing.dart';
 import 'package:mobile/core/utils/money_formatter.dart';
+import 'package:mobile/core/widgets/ellipsis_text.dart';
 import 'package:mobile/features/home/domain/entities/spending_by_member.dart';
 import 'package:mobile/features/household/domain/entities/member.dart';
 import 'package:mobile/features/household/presentation/widgets/member_palette.dart';
@@ -101,16 +102,14 @@ class MembersCard extends StatelessWidget {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Flexible(
-                                child: Text(
+                                child: EllipsisText(
                                   item.member.id == meId
-                                      ? l10n.membersYou(item.member.firstName)
-                                      : item.member.firstName,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
+                                      ? l10n.membersYou(item.member.displayName)
+                                      : item.member.displayName,
                                   style: theme.textTheme.bodyMedium,
                                 ),
                               ),
-                              Text(
+                              EllipsisText(
                                 MoneyFormatter.format(item.amount),
                                 style: theme.textTheme.bodyMedium?.copyWith(
                                   fontWeight: FontWeight.w600,

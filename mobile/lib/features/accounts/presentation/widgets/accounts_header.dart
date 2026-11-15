@@ -3,6 +3,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:mobile/app/theme/app_spacing.dart';
 import 'package:mobile/core/state/ui_state.dart';
 import 'package:mobile/core/utils/money_formatter.dart';
+import 'package:mobile/core/widgets/ellipsis_text.dart';
 import 'package:mobile/l10n/app_localizations.dart';
 
 /// "Saldo total em contas" and, under it, the open bills of the cards. Each
@@ -85,7 +86,7 @@ class AccountsHeader extends StatelessWidget {
 
   Widget _amount(UiState<Decimal> state, TextStyle? style, Color color) =>
       switch (state) {
-        UiSuccess<Decimal>(:final data) => Text(
+        UiSuccess<Decimal>(:final data) => EllipsisText(
           MoneyFormatter.format(data),
           style: style,
         ),
@@ -99,7 +100,7 @@ class AccountsHeader extends StatelessWidget {
     );
     if (!hasCards) return Text(l10n.accountsNoCards, style: style);
     return switch (cardTotal) {
-      UiSuccess<Decimal>(:final data) => Text(
+      UiSuccess<Decimal>(:final data) => EllipsisText(
         l10n.accountsBills(MoneyFormatter.format(data)),
         style: style,
       ),

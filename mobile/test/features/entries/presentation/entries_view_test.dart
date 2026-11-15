@@ -6,6 +6,7 @@ import 'package:mobile/core/result/result.dart';
 import 'package:mobile/features/entries/domain/entities/financial_entry.dart';
 import 'package:mobile/features/entries/presentation/views/entries_view.dart';
 import 'package:mobile/features/entries/presentation/views/entry_detail_args.dart';
+import 'package:mobile/features/entries/presentation/widgets/entry_form_sheet.dart';
 import 'package:mobile/features/entries/presentation/widgets/entry_row.dart';
 
 import '../../../support/entries_kit.dart';
@@ -23,6 +24,7 @@ void main() {
   Future<void> pumpView(
     WidgetTester tester, {
     ValueChanged<EntryDetailArgs>? onOpenDetail,
+    DateTime? initialMonth,
     double height = 4000,
   }) async {
     tester.view.physicalSize = Size(800, height);
@@ -33,6 +35,7 @@ void main() {
       EntriesView(
         createViewModel: () => kit.viewModel,
         onOpenDetail: onOpenDetail,
+        initialMonth: initialMonth,
       ),
     );
     await tester.pumpAndSettle();
@@ -123,11 +126,80 @@ void main() {
       expect(find.text('Aluguel'), findsOneWidget);
     });
 
-    testWidgets('there_is_no_button_to_create_an_entry', (tester) async {
-      await pumpView(tester);
+    testWidgets('the_list_can_open_on_another_month', (tester) async {
+      await pumpView(tester, initialMonth: DateTime(2026, 10, 15));
 
-      expect(find.byType(FloatingActionButton), findsNothing);
-      expect(find.text('Novo lançamento'), findsNothing);
+      expect(kit.entries.calls.first.referenceMonth, DateTime(2026, 10));
+      final oct = tester.widget<ChoiceChip>(
+        find.widgetWithText(ChoiceChip, 'Out'),
+      );
+      expect(oct.selected, isTrue);
+    });
+  });
+
+  group('EntriesView new entry', () {
+    /// The n-th text field of the form (the first one is the description).
+    Finder sheetField(int index) => find
+        .descendant(
+          of: find.byType(EntryFormSheet),
+          matching: find.byType(TextField),
+        )
+        .at(index);
+
+    Future<void> openForm(WidgetTester tester) async {
+      await tester.tap(find.byType(FloatingActionButton));
+      await tester.pumpAndSettle();
+      expect(find.text('Novo lançamento'), findsOneWidget);
+    }
+
+    testWidgets('the_plus_button_creates_an_entry_and_the_list_shows_it', (
+      tester,
+    ) async {
+      await pumpView(tester);
+      await openForm(tester);
+
+      await tester.enterText(sheetField(0), 'Conta nova');
+      await tester.enterText(find.widgetWithText(TextField, 'Valor'), '42,50');
+      await tester.tap(find.text('Salvar lançamento'));
+      await tester.pumpAndSettle();
+
+      final draft = kit.entries.created.single;
+      expect(draft.description, 'Conta nova');
+      expect(draft.amount.toString(), '42.5');
+      expect(draft.type, EntryType.expenses);
+      expect(draft.referenceMonth, DateTime(2026, 11));
+      expect(find.text('Lançamento salvo.'), findsOneWidget);
+      expect(find.text('Conta nova'), findsOneWidget);
+    });
+
+    testWidgets('an_empty_form_says_what_is_missing_and_creates_nothing', (
+      tester,
+    ) async {
+      await pumpView(tester);
+      await openForm(tester);
+
+      await tester.tap(find.text('Salvar lançamento'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Preencha este campo.'), findsNWidgets(2));
+      expect(kit.entries.created, isEmpty);
+    });
+
+    testWidgets('a_failure_keeps_the_form_open_and_says_why', (tester) async {
+      kit.entries.writeFailure = const ServerUnavailableFailure();
+      await pumpView(tester);
+      await openForm(tester);
+
+      await tester.enterText(find.widgetWithText(TextField, 'Valor'), '10');
+      await tester.enterText(sheetField(0), 'Algo');
+      await tester.tap(find.text('Salvar lançamento'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Serviço indisponível. Tente novamente em instantes.'),
+        findsOneWidget,
+      );
+      expect(find.text('Novo lançamento'), findsOneWidget);
     });
   });
 

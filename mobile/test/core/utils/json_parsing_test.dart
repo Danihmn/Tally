@@ -45,6 +45,18 @@ void main() {
     });
   });
 
+  group('optionalString', () {
+    test('returns_a_text_and_treats_null_and_blank_as_missing', () {
+      expect(optionalString('Ana'), 'Ana');
+      expect(optionalString(null), isNull);
+      expect(optionalString('  '), isNull);
+    });
+
+    test('throws_a_format_exception_for_other_types', () {
+      expect(() => optionalString(5), throwsFormatException);
+    });
+  });
+
   group('parseApiDate', () {
     test('reads_a_date_as_local_midnight_of_the_same_day', () {
       final date = parseApiDate('2026-11-12');

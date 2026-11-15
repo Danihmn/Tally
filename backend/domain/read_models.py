@@ -123,6 +123,24 @@ class FinancialEntryFilters:
 
 
 @dataclass(slots=True)
+class RecurrenceFilters:
+    """Every field is optional: None means "do not filter by it"."""
+
+    household_id: uuid.UUID | None = None
+    type: str | None = None  # REVENUES | EXPENSES
+    search: str | None = None  # case-insensitive, inside the description
+
+
+@dataclass(slots=True)
+class ProvisionResult:
+    """What provisioning a month from the recurrences did."""
+
+    reference_month: datetime.date  # First day of the provisioned month
+    created: int = 0  # Entries created now
+    skipped: int = 0  # Recurrences that already had their entry in that month
+
+
+@dataclass(slots=True)
 class FinancialEntryTotals:
     """Totals and counts of the entries of one type (REVENUES or EXPENSES), per status."""
 

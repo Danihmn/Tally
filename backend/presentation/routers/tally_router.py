@@ -200,7 +200,7 @@ def chat_endpoint(
             )
     # Loaded once here, not in the prompt: the prompt runs on every model call of the loop
     partner_names = tuple(
-        u.first_name
+        u.display_name
         for u in list_users_by_household(session, current_user.household_id)
         if u.id != current_user.id
     )

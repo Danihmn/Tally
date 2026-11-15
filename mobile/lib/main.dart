@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:go_router/go_router.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:mobile/app/app.dart';
@@ -17,11 +20,19 @@ import 'package:mobile/features/chat/presentation/viewmodels/conversations_view_
 import 'package:mobile/features/chat/presentation/views/chat_view.dart';
 import 'package:mobile/features/chat/presentation/views/conversations_view.dart';
 import 'package:mobile/features/entries/presentation/viewmodels/entries_view_model.dart';
+import 'package:mobile/features/entries/presentation/viewmodels/entry_actions_view_model.dart';
 import 'package:mobile/features/entries/presentation/viewmodels/linked_transactions_view_model.dart';
 import 'package:mobile/features/entries/presentation/views/entries_view.dart';
 import 'package:mobile/features/entries/presentation/views/entry_detail_view.dart';
+import 'package:mobile/features/entries/presentation/views/planning_view.dart';
 import 'package:mobile/features/home/presentation/viewmodels/home_view_model.dart';
 import 'package:mobile/features/home/presentation/views/home_view.dart';
+import 'package:mobile/features/household/presentation/viewmodels/users_view_model.dart';
+import 'package:mobile/features/household/presentation/views/user_detail_view.dart';
+import 'package:mobile/features/household/presentation/views/users_view.dart';
+import 'package:mobile/features/recurrences/presentation/viewmodels/recurrences_view_model.dart';
+import 'package:mobile/features/recurrences/presentation/views/recurrences_view.dart';
+import 'package:mobile/features/settings/presentation/widgets/settings_sheet.dart';
 import 'package:mobile/features/transactions/domain/transactions_filter_request.dart';
 import 'package:mobile/features/transactions/presentation/viewmodels/linked_entries_view_model.dart';
 import 'package:mobile/features/transactions/presentation/viewmodels/transactions_view_model.dart';
@@ -50,7 +61,17 @@ Future<void> main() async {
   runApp(
     TallyApp(
       router: createAppRouter(
-        home: HomeView(createViewModel: () => getIt<HomeViewModel>()),
+        home: HomeView(
+          createViewModel: () => getIt<HomeViewModel>(),
+          onOpenSettings: (context, {required onLogout}) => unawaited(
+            SettingsSheet.show(
+              context,
+              themeController: getIt<ThemeController>(),
+              onOpenUsers: () => unawaited(context.push(AppRoutes.users)),
+              onLogout: onLogout,
+            ),
+          ),
+        ),
         login: LoginView(
           createViewModel: () => getIt<LoginViewModel>(),
           session: session,
@@ -58,7 +79,16 @@ Future<void> main() async {
         transactions: TransactionsView(
           createViewModel: () => getIt<TransactionsViewModel>(),
         ),
-        entries: EntriesView(createViewModel: () => getIt<EntriesViewModel>()),
+        entries: PlanningView(
+          entriesBuilder: (initialMonth) => EntriesView(
+            createViewModel: () => getIt<EntriesViewModel>(),
+            initialMonth: initialMonth,
+          ),
+          recurrencesBuilder: (onProvisioned) => RecurrencesView(
+            createViewModel: () => getIt<RecurrencesViewModel>(),
+            onProvisioned: onProvisioned,
+          ),
+        ),
         accounts: AccountsView(
           createViewModel: () => getIt<AccountsViewModel>(),
           filterRequest: getIt<TransactionsFilterRequest>(),
@@ -66,6 +96,11 @@ Future<void> main() async {
         chat: ChatView(createViewModel: () => getIt<ChatViewModel>()),
         conversations: ConversationsView(
           createViewModel: () => getIt<ConversationsViewModel>(),
+        ),
+        users: UsersView(createViewModel: () => getIt<UsersViewModel>()),
+        userDetail: (member) => UserDetailView(
+          createViewModel: () => getIt<UsersViewModel>(),
+          member: member,
         ),
         transactionDetail: (args) => TransactionDetailView(
           args: args,
@@ -76,6 +111,7 @@ Future<void> main() async {
           args: args,
           createLinkedViewModel: (id) =>
               getIt<LinkedTransactionsViewModel>(param1: id),
+          createActionsViewModel: () => getIt<EntryActionsViewModel>(),
         ),
         initialLocation: session.isLoggedIn ? AppRoutes.home : AppRoutes.login,
         redirect: sessionRedirect(session),

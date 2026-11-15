@@ -3,6 +3,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:mobile/app/theme/app_spacing.dart';
 import 'package:mobile/core/utils/date_formatter.dart';
 import 'package:mobile/core/utils/money_formatter.dart';
+import 'package:mobile/core/widgets/app_bottom_sheet.dart';
 import 'package:mobile/core/widgets/filter_fields.dart';
 import 'package:mobile/features/accounts/domain/entities/bank_account.dart';
 import 'package:mobile/features/household/presentation/viewmodels/household_scope_controller.dart';
@@ -49,12 +50,8 @@ class TransactionFilterSheet extends StatefulWidget {
     required List<BankAccount> accounts,
     required List<ScopeOption> scopeOptions,
     required ScopeOption scope,
-  }) => showModalBottomSheet<TransactionFilterSheetResult>(
-    context: context,
-    // Over the tabs, like in the prototype.
-    useRootNavigator: true,
-    isScrollControlled: true,
-    showDragHandle: true,
+  }) => showAppBottomSheet<TransactionFilterSheetResult>(
+    context,
     builder: (context) => TransactionFilterSheet(
       filters: filters,
       accounts: accounts,
@@ -175,7 +172,7 @@ class _TransactionFilterSheetState extends State<TransactionFilterSheet> {
       switch (option.kind) {
         ScopeKind.me => l10n.scopeMe,
         ScopeKind.house => l10n.scopeHouse,
-        ScopeKind.member => option.member!.firstName,
+        ScopeKind.member => option.member!.displayName,
       };
 
   @override

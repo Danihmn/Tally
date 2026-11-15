@@ -3,6 +3,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:mobile/app/theme/app_spacing.dart';
 import 'package:mobile/core/utils/date_formatter.dart';
 import 'package:mobile/core/utils/money_formatter.dart';
+import 'package:mobile/core/widgets/app_bottom_sheet.dart';
 import 'package:mobile/core/widgets/filter_fields.dart';
 import 'package:mobile/features/accounts/domain/entities/bank_account.dart';
 import 'package:mobile/features/entries/domain/entities/entry_filters.dart';
@@ -42,12 +43,8 @@ class EntryFilterSheet extends StatefulWidget {
     required List<BankAccount> accounts,
     required List<ScopeOption> scopeOptions,
     required ScopeOption scope,
-  }) => showModalBottomSheet<EntryFilterSheetResult>(
-    context: context,
-    // Over the tabs, like in the prototype.
-    useRootNavigator: true,
-    isScrollControlled: true,
-    showDragHandle: true,
+  }) => showAppBottomSheet<EntryFilterSheetResult>(
+    context,
     builder: (context) => EntryFilterSheet(
       filters: filters,
       accounts: accounts,
@@ -150,7 +147,7 @@ class _EntryFilterSheetState extends State<EntryFilterSheet> {
       switch (option.kind) {
         ScopeKind.me => l10n.scopeMe,
         ScopeKind.house => l10n.scopeHouse,
-        ScopeKind.member => option.member!.firstName,
+        ScopeKind.member => option.member!.displayName,
       };
 
   @override

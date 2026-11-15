@@ -4,14 +4,15 @@ import 'package:mobile/app/router/app_routes.dart';
 import 'package:mobile/app/router/app_shell.dart';
 import 'package:mobile/core/session/session_controller.dart';
 import 'package:mobile/features/entries/presentation/views/entry_detail_args.dart';
+import 'package:mobile/features/household/domain/entities/member.dart';
 import 'package:mobile/features/transactions/presentation/views/transaction_detail_args.dart';
 
 /// Builds the app router.
 ///
 /// [home], [login], [transactions], [entries], [accounts], [chat] and
-/// [conversations] are the screens that need
+/// [conversations] and [users] are the screens that need
 /// their own ViewModel, so the caller builds them (the app with its DI
-/// container, tests with fakes). The same for the two detail screens, which
+/// container, tests with fakes). The same for the three detail screens, which
 /// get what the list handed over (or `null` when they were opened without it).
 ///
 /// [redirect] and [refreshListenable] are the hook for the auth redirect, see
@@ -25,8 +26,10 @@ GoRouter createAppRouter({
   required Widget accounts,
   required Widget chat,
   required Widget conversations,
+  required Widget users,
   required Widget Function(TransactionDetailArgs? args) transactionDetail,
   required Widget Function(EntryDetailArgs? args) entryDetail,
+  required Widget Function(Member? member) userDetail,
   String initialLocation = AppRoutes.home,
   GoRouterRedirect? redirect,
   Listenable? refreshListenable,
@@ -40,6 +43,20 @@ GoRouter createAppRouter({
     refreshListenable: refreshListenable,
     routes: [
       GoRoute(path: AppRoutes.login, builder: (context, state) => login),
+      // The settings screens open over the tabs, from the profile menu.
+      GoRoute(
+        path: AppRoutes.users,
+        builder: (context, state) => users,
+        routes: [
+          GoRoute(
+            path: 'detail',
+            builder: (context, state) => userDetail(switch (state.extra) {
+              final Member member => member,
+              _ => null,
+            }),
+          ),
+        ],
+      ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) => AppShell(navigationShell: shell),
         branches: [

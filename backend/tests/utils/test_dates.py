@@ -5,7 +5,9 @@ from unittest.mock import patch
 from utils.dates import (
     default_analysis_period,
     end_of_day_utc,
+    clamp_day_to_month,
     first_day_of_month,
+    next_month_start,
     start_of_day_utc,
     today_local,
     to_local_date,
@@ -106,3 +108,34 @@ class TestToLocalDate(unittest.TestCase):
         moment = datetime.datetime(2026, 11, 10, 15, 0, tzinfo=datetime.UTC)
 
         self.assertEqual(to_local_date(moment), datetime.date(2026, 11, 10))
+
+
+class TestNextMonthStart(unittest.TestCase):
+    def test_is_day_1_of_the_following_month(self):
+        self.assertEqual(next_month_start(datetime.date(2026, 11, 15)), datetime.date(2026, 12, 1))
+
+    def test_december_goes_to_january_of_the_next_year(self):
+        self.assertEqual(next_month_start(datetime.date(2026, 12, 31)), datetime.date(2027, 1, 1))
+
+    def test_the_last_day_of_a_month_still_gives_the_following_one(self):
+        self.assertEqual(next_month_start(datetime.date(2026, 1, 31)), datetime.date(2026, 2, 1))
+
+
+class TestClampDayToMonth(unittest.TestCase):
+    def test_a_day_inside_the_month_is_kept(self):
+        self.assertEqual(
+            clamp_day_to_month(datetime.date(2026, 12, 1), 5), datetime.date(2026, 12, 5)
+        )
+
+    def test_day_31_in_a_30_day_month_becomes_the_30th(self):
+        self.assertEqual(
+            clamp_day_to_month(datetime.date(2026, 11, 1), 31), datetime.date(2026, 11, 30)
+        )
+
+    def test_day_30_in_february_becomes_the_last_day(self):
+        self.assertEqual(
+            clamp_day_to_month(datetime.date(2026, 2, 1), 30), datetime.date(2026, 2, 28)
+        )
+        self.assertEqual(
+            clamp_day_to_month(datetime.date(2028, 2, 1), 30), datetime.date(2028, 2, 29)
+        )

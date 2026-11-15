@@ -240,6 +240,8 @@ void main() {
         ),
         transactionDetail: (_) => const SizedBox(),
         entryDetail: (_) => const SizedBox(),
+        users: const SizedBox(),
+        userDetail: (_) => const SizedBox(),
         initialLocation: AppRoutes.accounts,
       );
       await tester.pumpWidget(

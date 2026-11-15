@@ -4,6 +4,7 @@ import 'package:mobile/app/theme/app_spacing.dart';
 import 'package:mobile/app/theme/tally_colors.dart';
 import 'package:mobile/core/utils/date_formatter.dart';
 import 'package:mobile/core/utils/money_formatter.dart';
+import 'package:mobile/core/widgets/ellipsis_text.dart';
 import 'package:mobile/features/home/domain/entities/spending_summary.dart';
 import 'package:mobile/l10n/app_localizations.dart';
 
@@ -52,12 +53,12 @@ class SummarySection extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
+              EllipsisText(
                 l10n.homeSpentIn(DateFormatter.monthName(month)),
                 style: theme.textTheme.bodyMedium?.copyWith(color: onPrimary),
               ),
               const SizedBox(height: AppSpacing.xxs),
-              Text(
+              EllipsisText(
                 MoneyFormatter.format(summary.spent),
                 style: theme.textTheme.displaySmall?.copyWith(
                   color: onPrimary,
@@ -65,7 +66,7 @@ class SummarySection extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: AppSpacing.xxs),
-              Text(
+              EllipsisText(
                 sub,
                 style: theme.textTheme.bodySmall?.copyWith(color: onPrimary),
               ),
@@ -143,7 +144,7 @@ class _MiniCard extends StatelessWidget {
                 ),
                 const SizedBox(width: AppSpacing.xs),
                 Expanded(
-                  child: Text(
+                  child: EllipsisText(
                     label,
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
@@ -153,7 +154,7 @@ class _MiniCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: AppSpacing.xs),
-            Text(
+            EllipsisText(
               value,
               style: theme.textTheme.titleLarge?.copyWith(
                 color: color,

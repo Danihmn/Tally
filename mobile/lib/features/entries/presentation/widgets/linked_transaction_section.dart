@@ -8,6 +8,7 @@ import 'package:mobile/app/theme/tally_colors.dart';
 import 'package:mobile/core/state/ui_state.dart';
 import 'package:mobile/core/utils/date_formatter.dart';
 import 'package:mobile/core/utils/money_formatter.dart';
+import 'package:mobile/core/widgets/ellipsis_text.dart';
 import 'package:mobile/core/widgets/skeleton.dart';
 import 'package:mobile/features/entries/presentation/viewmodels/linked_transactions_view_model.dart';
 import 'package:mobile/features/transactions/domain/entities/transaction.dart';
@@ -186,20 +187,16 @@ class _LinkedTransactionTile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  EllipsisText(
                     description == null || description.isEmpty
                         ? l10n.transactionsNoDescription
                         : description,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-                  Text(
+                  EllipsisText(
                     meta,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
@@ -208,7 +205,7 @@ class _LinkedTransactionTile extends StatelessWidget {
               ),
             ),
             const SizedBox(width: AppSpacing.xs),
-            Text(
+            EllipsisText(
               MoneyFormatter.signed(
                 transaction.absoluteAmount,
                 isIncome: transaction.isIncome,

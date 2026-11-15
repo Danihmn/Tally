@@ -16,26 +16,31 @@ import 'package:mobile/features/entries/presentation/views/entry_detail_args.dar
 import 'package:mobile/features/entries/presentation/widgets/entries_states.dart';
 import 'package:mobile/features/entries/presentation/widgets/entry_filter_chips.dart';
 import 'package:mobile/features/entries/presentation/widgets/entry_filter_sheet.dart';
+import 'package:mobile/features/entries/presentation/widgets/entry_form_sheet.dart';
 import 'package:mobile/features/entries/presentation/widgets/entry_row.dart';
 import 'package:mobile/features/household/presentation/viewmodels/household_scope_controller.dart';
 import 'package:mobile/features/household/presentation/widgets/scope_selector.dart';
 import 'package:mobile/features/transactions/presentation/widgets/transactions_states.dart';
 import 'package:mobile/l10n/app_localizations.dart';
 
-/// The entries tab: the tabs (planned, reconciled, cancelled), search, who
-/// appears, the month, filters and the list. It is read only for now.
+/// The entries section of the planning screen: the tabs (planned, reconciled,
+/// cancelled), search, who appears, the month, filters and the list, with a
+/// button to create an entry.
 ///
 /// It creates its own ViewModel and loads it. [onOpenDetail] defaults to
-/// navigating with the router.
+/// navigating with the router. [initialMonth] is the month the list opens on
+/// (the current one when `null`).
 class EntriesView extends StatefulWidget {
   const EntriesView({
     super.key,
     required this.createViewModel,
     this.onOpenDetail,
+    this.initialMonth,
   });
 
   final EntriesViewModel Function() createViewModel;
   final ValueChanged<EntryDetailArgs>? onOpenDetail;
+  final DateTime? initialMonth;
 
   @override
   State<EntriesView> createState() => _EntriesViewState();
@@ -53,6 +58,8 @@ class _EntriesViewState extends State<EntriesView> {
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    final month = widget.initialMonth;
+    if (month != null) _viewModel.presetMonth(month);
     unawaited(_viewModel.start());
   }
 
@@ -99,25 +106,52 @@ class _EntriesViewState extends State<EntriesView> {
     await vm.applyFilters(result.filters, scope: result.scope);
   }
 
-  void _openDetail(FinancialEntry entry) {
+  Future<void> _openDetail(FinancialEntry entry) async {
     final vm = _viewModel;
     final args = EntryDetailArgs(
       entry: entry,
       account: vm.accountOf(entry.accountId),
       owner: vm.memberOf(entry.ownerId),
       ownerColorIndex: vm.memberIndexOf(entry.ownerId),
+      accounts: vm.accountList,
     );
     final open = widget.onOpenDetail;
     if (open != null) {
       open(args);
-    } else {
-      unawaited(context.push(AppRoutes.entryDetail, extra: args));
+      return;
     }
+    // The detail answers `true` when it changed or deleted the entry.
+    final changed = await context.push<bool>(
+      AppRoutes.entryDetail,
+      extra: args,
+    );
+    if (changed == true && mounted) unawaited(vm.reload());
+  }
+
+  Future<void> _newEntry() async {
+    final l10n = AppLocalizations.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final saved = await EntryFormSheet.show(
+      context,
+      accounts: _viewModel.accountList,
+      onSubmit: _viewModel.create,
+      now: _viewModel.today,
+    );
+    if (saved != true) return;
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(l10n.entrySaved)));
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
+      floatingActionButton: FloatingActionButton(
+        tooltip: l10n.entryNew,
+        onPressed: _newEntry,
+        child: const Icon(Icons.add_rounded),
+      ),
       body: SafeArea(
         child: ListenableBuilder(
           listenable: _viewModel,
@@ -137,10 +171,31 @@ class _EntriesViewState extends State<EntriesView> {
     final theme = Theme.of(context);
     final vm = _viewModel;
     final children = <Widget>[
+      ScopeSelector(
+        options: vm.scopeOptions,
+        selected: vm.scope!,
+        onSelected: (option) => unawaited(vm.selectScope(option)),
+      ),
+      _tabs(l10n),
       Row(
         children: [
           Expanded(
-            child: Text(l10n.navEntries, style: theme.textTheme.titleLarge),
+            child: TextField(
+              controller: _searchController,
+              onChanged: vm.setSearch,
+              textInputAction: TextInputAction.search,
+              decoration: InputDecoration(
+                hintText: l10n.entriesSearchHint,
+                prefixIcon: const Icon(Icons.search_rounded),
+                suffixIcon: vm.search.isEmpty
+                    ? null
+                    : IconButton(
+                        tooltip: l10n.transactionsClearSearch,
+                        onPressed: _clearSearch,
+                        icon: const Icon(Icons.close_rounded),
+                      ),
+              ),
+            ),
           ),
           IconButton(
             tooltip: l10n.transactionsFilterButton,
@@ -152,28 +207,6 @@ class _EntriesViewState extends State<EntriesView> {
             ),
           ),
         ],
-      ),
-      ScopeSelector(
-        options: vm.scopeOptions,
-        selected: vm.scope!,
-        onSelected: (option) => unawaited(vm.selectScope(option)),
-      ),
-      _tabs(l10n),
-      TextField(
-        controller: _searchController,
-        onChanged: vm.setSearch,
-        textInputAction: TextInputAction.search,
-        decoration: InputDecoration(
-          hintText: l10n.entriesSearchHint,
-          prefixIcon: const Icon(Icons.search_rounded),
-          suffixIcon: vm.search.isEmpty
-              ? null
-              : IconButton(
-                  tooltip: l10n.transactionsClearSearch,
-                  onPressed: _clearSearch,
-                  icon: const Icon(Icons.close_rounded),
-                ),
-        ),
       ),
       _monthChips(l10n),
       if (!vm.filters.isEmpty)
@@ -195,7 +228,12 @@ class _EntriesViewState extends State<EntriesView> {
             child: ListView.separated(
               controller: _scrollController,
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.all(AppSpacing.screenGutter),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.screenGutter,
+                AppSpacing.xs,
+                AppSpacing.screenGutter,
+                96,
+              ),
               itemCount: children.length,
               separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
               itemBuilder: (_, index) => children[index],

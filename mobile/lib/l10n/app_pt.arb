@@ -3,7 +3,7 @@
   "appName": "Tally",
   "navHome": "Início",
   "navTransactions": "Transações",
-  "navEntries": "Lançamentos",
+  "navEntries": "Planejamento",
   "navAccounts": "Contas",
   "navChat": "Tally IA",
   "retry": "Tentar novamente",
@@ -549,5 +549,164 @@
         "type": "int"
       }
     }
-  }
+  },
+  "failureNoRecurrences": "Cadastre ao menos uma recorrência antes de provisionar o mês.",
+  "planningSectionEntries": "Lançamentos",
+  "planningSectionRecurrences": "Recorrências",
+  "commonCancel": "Cancelar",
+  "commonSave": "Salvar",
+  "formRequired": "Preencha este campo.",
+  "formAmountInvalid": "Digite um valor maior que zero.",
+  "formDueDayInvalid": "Digite um dia de 1 a 31.",
+  "formInstallmentsInvalid": "Preencha as duas parcelas, com a atual menor ou igual ao total.",
+  "formOptional": "Opcional",
+  "entryNew": "Novo lançamento",
+  "entryEditTitle": "Editar lançamento",
+  "entryFormSave": "Salvar lançamento",
+  "entryFormDescription": "Descrição",
+  "entryFormDescriptionHint": "Ex.: Conta de luz",
+  "entryFormType": "Tipo",
+  "entryFormPayment": "Forma de pagamento",
+  "entryFormCategory": "Categoria",
+  "entryFormCategoryHint": "Ex.: Moradia",
+  "entryFormAmount": "Valor",
+  "entryFormMonth": "Mês de referência",
+  "entryFormDue": "Vencimento",
+  "entryFormAccount": "Conta ou cartão",
+  "entryFormNoAccount": "Nenhuma",
+  "entryFormInstallments": "Parcelas",
+  "entryFormInstallmentCurrent": "Parcela atual",
+  "entryFormInstallmentTotal": "Total de parcelas",
+  "entryFormInstallmentsHint": "Preencha as duas, ou deixe as duas em branco.",
+  "entryFormNotes": "Observações",
+  "entryFormNotesHint": "Algo que ajude a lembrar",
+  "entryActionEdit": "Editar",
+  "entryActionCancel": "Cancelar lançamento",
+  "entryActionReopen": "Reativar lançamento",
+  "entryActionDelete": "Excluir lançamento",
+  "entryReconciledLocked": "Lançamento conciliado não pode ser editado nem excluído. Desfaça a conciliação antes.",
+  "entryDeleteTitle": "Excluir lançamento?",
+  "entryDeleteText": "\"{name}\" sai da lista. Essa ação não pode ser desfeita.",
+  "@entryDeleteText": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "entryDeleteConfirm": "Excluir",
+  "entrySaved": "Lançamento salvo.",
+  "entryCancelledDone": "Lançamento cancelado.",
+  "entryReopenedDone": "Lançamento reativado.",
+  "entryDeletedDone": "Lançamento excluído.",
+  "recurrencesIntro": "Itens que se repetem todo mês. O Tally cria o lançamento no mês certo para vocês.",
+  "recurrencesEmptyTitle": "Nenhuma recorrência ainda",
+  "recurrencesEmptyText": "Cadastre aluguel, assinaturas e salários para não digitar todo mês.",
+  "recurrenceNew": "Nova recorrência",
+  "recurrenceEditTitle": "Editar recorrência",
+  "recurrenceFormSave": "Salvar recorrência",
+  "recurrenceFormDay": "Dia do mês",
+  "recurrenceFormDayHint": "Todo mês neste dia. Em meses mais curtos vale o último dia.",
+  "recurrenceDay": "Todo dia {day}",
+  "@recurrenceDay": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "recurrenceNoDay": "Sem dia fixo",
+  "recurrenceDeleteAction": "Excluir recorrência",
+  "recurrenceDeleteTitle": "Excluir recorrência?",
+  "recurrenceDeleteText": "\"{name}\" deixa de gerar lançamentos. Os que já foram criados continuam.",
+  "@recurrenceDeleteText": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "recurrenceSaved": "Recorrência salva.",
+  "recurrenceDeletedDone": "Recorrência excluída.",
+  "provisionButton": "Provisionar {month}",
+  "@provisionButton": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "provisionTitle": "Provisionar o próximo mês?",
+  "provisionText": "O Tally vai criar os lançamentos de {month} a partir das recorrências cadastradas. Quem já tem lançamento nesse mês não é duplicado.",
+  "@provisionText": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "provisionConfirm": "Provisionar",
+  "provisionCreated": "{created, plural, =1{1 lançamento criado em {month}.} other{{created} lançamentos criados em {month}.}}",
+  "@provisionCreated": {
+    "placeholders": {
+      "created": {
+        "type": "int"
+      },
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "provisionNothingNew": "Tudo já estava provisionado em {month}.",
+  "@provisionNothingNew": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "recurrenceFormDescriptionHint": "Ex.: Aluguel",
+  "recurrenceFormDayExample": "5",
+  "homeSettings": "Configurações",
+  "failureEmailExists": "Já existe um usuário com esse e-mail.",
+  "settingsTitle": "Configurações",
+  "settingsAppearance": "Aparência",
+  "settingsThemeLight": "Claro",
+  "settingsThemeDark": "Escuro",
+  "settingsThemeSystem": "Sistema",
+  "settingsHousehold": "Casa",
+  "settingsUsers": "Usuários",
+  "settingsUsersHint": "Quem usa o Tally nesta casa",
+  "usersTitle": "Usuários",
+  "usersNew": "Novo usuário",
+  "usersAddedNotice": "Usuário criado.",
+  "userDetailTitle": "Usuário",
+  "userEditAction": "Editar dados",
+  "userEditTitle": "Editar usuário",
+  "userNewTitle": "Novo usuário",
+  "userFieldFirstName": "Nome",
+  "userFieldLastName": "Sobrenome",
+  "userFieldSurname": "Apelido",
+  "userFieldSurnameHelp": "É o nome que aparece nos filtros e nas telas.",
+  "userFieldEmail": "E-mail",
+  "userFieldPassword": "Senha",
+  "userFieldPasswordHelp": "Mínimo de 8 caracteres.",
+  "userNotInformed": "Não informado",
+  "userSave": "Salvar",
+  "userCreate": "Criar usuário",
+  "userSavedNotice": "Dados salvos.",
+  "userEmailInvalid": "Digite um e-mail válido.",
+  "userPasswordShort": "Use ao menos 8 caracteres.",
+  "userPluggySection": "Credenciais da Pluggy",
+  "userPluggyAction": "Credenciais da Pluggy",
+  "userPluggyIntro": "Cada pessoa usa a própria aplicação da Pluggy. Consulte o Client ID e o Client Secret dela no portal da Pluggy.",
+  "userPluggyHidden": "Por segurança, as credenciais atuais não são exibidas.",
+  "pluggyClientId": "Client ID",
+  "pluggyClientSecret": "Client Secret",
+  "pluggyClientIdInvalid": "Digite um Client ID válido (formato UUID).",
+  "pluggySave": "Salvar credenciais",
+  "pluggyConfirmTitle": "Alterar as credenciais?",
+  "pluggyConfirmMessage": "Se as credenciais estiverem erradas, o Tally deixa de importar os dados bancários desta pessoa e o sistema passa a funcionar mal. Confira no portal da Pluggy antes de continuar.",
+  "pluggyConfirmOk": "Alterar credenciais",
+  "pluggySavedNotice": "Credenciais atualizadas."
 }

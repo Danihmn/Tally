@@ -3,6 +3,7 @@ import 'package:mobile/app/theme/app_spacing.dart';
 import 'package:mobile/app/theme/tally_colors.dart';
 import 'package:mobile/core/utils/date_formatter.dart';
 import 'package:mobile/core/utils/money_formatter.dart';
+import 'package:mobile/core/widgets/ellipsis_text.dart';
 import 'package:mobile/features/home/domain/entities/planning_progress.dart';
 import 'package:mobile/l10n/app_localizations.dart';
 
@@ -81,7 +82,7 @@ class PlanningCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: AppSpacing.xs),
-            Text(
+            EllipsisText(
               l10n.planningCount(progress.reconciledCount, progress.totalCount),
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
@@ -107,13 +108,13 @@ class _Amount extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
+        EllipsisText(
           label,
           style: theme.textTheme.bodySmall?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
           ),
         ),
-        Text(
+        EllipsisText(
           value,
           style: theme.textTheme.titleMedium?.copyWith(
             color: color,

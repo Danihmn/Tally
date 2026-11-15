@@ -1,5 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:mobile/app/theme/tally_colors.dart';
+import 'package:mobile/core/widgets/ellipsis_text.dart';
 import 'package:mobile/features/entries/domain/entities/financial_entry.dart';
 import 'package:mobile/l10n/app_localizations.dart';
 
@@ -54,7 +55,7 @@ class EntryStatusBadge extends StatelessWidget {
         color: background,
         borderRadius: BorderRadius.circular(999),
       ),
-      child: Text(
+      child: EllipsisText(
         text,
         style: Theme.of(context).textTheme.labelSmall
             ?.copyWith(color: foreground),

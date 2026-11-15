@@ -41,7 +41,7 @@ def _account_name(account: BankAccount) -> str:
 def _load(
     user: User, only_mine: bool, account_type: str, load_data
 ) -> tuple[list[tuple[BankAccountWithOwner, object]], dict]:
-    """Accounts of one type (with their bank/credit data) and the owners' first names."""
+    """Accounts of one type (with their bank/credit data) and the owners' names (nickname, else first name)."""
     household_id = user.household_id
     with get_session() as session:
         items = search_bank_accounts(

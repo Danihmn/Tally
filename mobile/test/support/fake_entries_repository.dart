@@ -1,7 +1,9 @@
 import 'dart:async';
 
+import 'package:mobile/core/error/failure.dart';
 import 'package:mobile/core/pagination/page_result.dart';
 import 'package:mobile/core/result/result.dart';
+import 'package:mobile/features/entries/domain/entities/entry_draft.dart';
 import 'package:mobile/features/entries/domain/entities/entry_filters.dart';
 import 'package:mobile/features/entries/domain/entities/financial_entry.dart';
 import 'package:mobile/features/entries/domain/repositories/entries_repository.dart';
@@ -146,5 +148,107 @@ class FakeEntriesRepository implements EntriesRepository {
         ),
       ),
     );
+  }
+
+  /// Set it to make every write (create, update, status, delete) fail.
+  Failure? writeFailure;
+
+  final List<EntryDraft> created = [];
+  final List<(String, EntryDraft)> updated = [];
+  final List<(String, EntryStatus)> statusChanges = [];
+  final List<String> deleted = [];
+
+  FinancialEntry _from(
+    String id,
+    EntryDraft draft, {
+    String ownerId = 'm1',
+    EntryStatus status = EntryStatus.planned,
+  }) => FinancialEntry(
+    id: id,
+    ownerId: ownerId,
+    accountId: draft.accountId,
+    description: draft.description,
+    category: draft.category,
+    type: draft.type,
+    paymentType: draft.paymentType,
+    amount: draft.amount,
+    referenceMonth: draft.referenceMonth,
+    dueDate: draft.dueDate,
+    status: status,
+    installmentNumber: draft.installmentNumber,
+    installmentTotal: draft.installmentTotal,
+    notes: draft.notes,
+    createdAt: DateTime.utc(2026, 11, 13),
+  );
+
+  @override
+  Future<Result<FinancialEntry>> create(EntryDraft draft) async {
+    final failure = writeFailure;
+    if (failure != null) return Result.failure(failure);
+    created.add(draft);
+    final entry = _from('new${created.length}', draft);
+    all = [...all, entry];
+    return Result.success(entry);
+  }
+
+  @override
+  Future<Result<FinancialEntry>> update(String id, EntryDraft draft) async {
+    final failure = writeFailure;
+    if (failure != null) return Result.failure(failure);
+    final index = all.indexWhere((entry) => entry.id == id);
+    if (index < 0) return const Result.failure(NotFoundFailure());
+    updated.add((id, draft));
+    final entry = _from(
+      id,
+      draft,
+      ownerId: all[index].ownerId,
+      status: all[index].status,
+    );
+    all = [...all]..[index] = entry;
+    return Result.success(entry);
+  }
+
+  @override
+  Future<Result<FinancialEntry>> setStatus(
+    String id,
+    EntryStatus status,
+  ) async {
+    final failure = writeFailure;
+    if (failure != null) return Result.failure(failure);
+    final index = all.indexWhere((entry) => entry.id == id);
+    if (index < 0) return const Result.failure(NotFoundFailure());
+    statusChanges.add((id, status));
+    final old = all[index];
+    final entry = FinancialEntry(
+      id: old.id,
+      ownerId: old.ownerId,
+      accountId: old.accountId,
+      description: old.description,
+      category: old.category,
+      type: old.type,
+      paymentType: old.paymentType,
+      amount: old.amount,
+      referenceMonth: old.referenceMonth,
+      dueDate: old.dueDate,
+      status: status,
+      installmentNumber: old.installmentNumber,
+      installmentTotal: old.installmentTotal,
+      notes: old.notes,
+      createdAt: old.createdAt,
+    );
+    all = [...all]..[index] = entry;
+    return Result.success(entry);
+  }
+
+  @override
+  Future<Result<void>> delete(String id) async {
+    final failure = writeFailure;
+    if (failure != null) return Result.failure(failure);
+    deleted.add(id);
+    all = [
+      for (final entry in all)
+        if (entry.id != id) entry,
+    ];
+    return const Result.success(null);
   }
 }

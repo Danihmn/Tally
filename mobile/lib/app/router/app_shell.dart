@@ -1,5 +1,6 @@
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:mobile/app/router/app_navigation_bar.dart';
 import 'package:mobile/l10n/app_localizations.dart';
 
 /// Frame with the bottom navigation. Each tab keeps its own navigation stack.
@@ -13,36 +14,36 @@ class AppShell extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     return Scaffold(
       body: navigationShell,
-      bottomNavigationBar: NavigationBar(
+      bottomNavigationBar: AppNavigationBar(
         selectedIndex: navigationShell.currentIndex,
         // Tapping the open tab goes back to its first screen.
-        onDestinationSelected: (index) => navigationShell.goBranch(
+        onSelected: (index) => navigationShell.goBranch(
           index,
           initialLocation: index == navigationShell.currentIndex,
         ),
-        destinations: [
-          NavigationDestination(
-            icon: const Icon(Icons.home_outlined),
-            selectedIcon: const Icon(Icons.home),
+        items: [
+          AppNavigationItem(
+            icon: Icons.home_outlined,
+            selectedIcon: Icons.home,
             label: l10n.navHome,
           ),
-          NavigationDestination(
-            icon: const Icon(Icons.format_list_bulleted),
+          AppNavigationItem(
+            icon: Icons.format_list_bulleted,
             label: l10n.navTransactions,
           ),
-          NavigationDestination(
-            icon: const Icon(Icons.receipt_long_outlined),
-            selectedIcon: const Icon(Icons.receipt_long),
+          AppNavigationItem(
+            icon: Icons.event_note_outlined,
+            selectedIcon: Icons.event_note,
             label: l10n.navEntries,
           ),
-          NavigationDestination(
-            icon: const Icon(Icons.account_balance_outlined),
-            selectedIcon: const Icon(Icons.account_balance),
+          AppNavigationItem(
+            icon: Icons.account_balance_outlined,
+            selectedIcon: Icons.account_balance,
             label: l10n.navAccounts,
           ),
-          NavigationDestination(
-            icon: const Icon(Icons.auto_awesome_outlined),
-            selectedIcon: const Icon(Icons.auto_awesome),
+          AppNavigationItem(
+            icon: Icons.auto_awesome_outlined,
+            selectedIcon: Icons.auto_awesome,
             label: l10n.navChat,
           ),
         ],

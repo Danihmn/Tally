@@ -1,14 +1,17 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:mobile/core/error/failure.dart';
 import 'package:mobile/core/pagination/paginated_view_model.dart';
 import 'package:mobile/core/result/result.dart';
 import 'package:mobile/core/state/ui_state.dart';
 import 'package:mobile/core/utils/debouncer.dart';
 import 'package:mobile/features/accounts/domain/entities/bank_account.dart';
 import 'package:mobile/features/accounts/domain/usecases/get_bank_accounts.dart';
+import 'package:mobile/features/entries/domain/entities/entry_draft.dart';
 import 'package:mobile/features/entries/domain/entities/entry_filters.dart';
 import 'package:mobile/features/entries/domain/entities/financial_entry.dart';
+import 'package:mobile/features/entries/domain/usecases/create_entry.dart';
 import 'package:mobile/features/entries/domain/usecases/search_entries.dart';
 import 'package:mobile/features/household/domain/entities/member.dart';
 import 'package:mobile/features/household/presentation/viewmodels/household_scope_controller.dart';
@@ -27,6 +30,7 @@ class EntriesViewModel extends ChangeNotifier
     required this._scopeController,
     required this._searchEntries,
     required this._getAccounts,
+    required this._createEntry,
     Debouncer? debouncer,
     this._now = DateTime.now,
   }) : _debouncer = debouncer ?? Debouncer() {
@@ -40,6 +44,7 @@ class EntriesViewModel extends ChangeNotifier
   final HouseholdScopeController _scopeController;
   final SearchEntries _searchEntries;
   final GetBankAccounts _getAccounts;
+  final CreateEntry _createEntry;
   final Debouncer _debouncer;
   final DateTime Function() _now;
 
@@ -156,6 +161,21 @@ class EntriesViewModel extends ChangeNotifier
     unawaited(_loadAccounts());
     unawaited(_loadCounts());
     await refresh();
+  }
+
+  /// Chooses the month the list opens on, before the first load (for example
+  /// right after the next month was provisioned). `null` is "Todos".
+  void presetMonth(DateTime? month) {
+    _month = month == null ? null : DateTime(month.year, month.month);
+  }
+
+  /// Creates an entry for the logged person and reads the list again. Returns
+  /// `null` when it worked, otherwise why it did not.
+  Future<Failure?> create(EntryDraft draft) async {
+    final failure = (await _createEntry(draft)).failureOrNull;
+    if (failure != null) return failure;
+    if (!_disposed) await reload();
+    return null;
   }
 
   /// A tab was chosen. The counts do not change.

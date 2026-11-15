@@ -3,6 +3,7 @@ import 'package:mobile/app/theme/app_spacing.dart';
 import 'package:mobile/app/theme/tally_colors.dart';
 import 'package:mobile/core/utils/date_formatter.dart';
 import 'package:mobile/core/utils/money_formatter.dart';
+import 'package:mobile/core/widgets/ellipsis_text.dart';
 import 'package:mobile/features/home/domain/entities/upcoming_entry.dart';
 import 'package:mobile/features/home/presentation/widgets/category_style.dart';
 import 'package:mobile/l10n/app_localizations.dart';
@@ -123,16 +124,12 @@ class _UpcomingRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                EllipsisText(
                   entry.description,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.bodyMedium,
                 ),
-                Text(
+                EllipsisText(
                   detail,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: scheme.onSurfaceVariant,
                   ),
@@ -144,7 +141,7 @@ class _UpcomingRow extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(
+              EllipsisText(
                 MoneyFormatter.signed(entry.amount, isIncome: entry.isIncome),
                 style: theme.textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w600,
@@ -160,7 +157,7 @@ class _UpcomingRow extends StatelessWidget {
                       : scheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(999),
                 ),
-                child: Text(
+                child: EllipsisText(
                   when,
                   style: theme.textTheme.labelSmall?.copyWith(
                     color: soon ? colors.warning : scheme.onSurfaceVariant,

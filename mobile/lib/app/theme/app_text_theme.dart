@@ -30,6 +30,9 @@ abstract final class AppTextTheme {
       displaySmall: display(36, 40).copyWith(fontFeatures: _tabular),
       // "Título de tela": Space Grotesk 600 24/29.
       headlineSmall: display(24, 29),
+      // Title of a modal sheet, a screen header and a medium amount: Space
+      // Grotesk 600 20/26, tabular so amounts line up.
+      titleLarge: display(20, 26).copyWith(fontFeatures: _tabular),
       // "Título de seção": Inter 600 16/22.
       titleMedium: body(16, 22, FontWeight.w600),
       titleSmall: body(14, 20, FontWeight.w600),

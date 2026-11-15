@@ -110,6 +110,43 @@ class HouseholdScopeController extends ChangeNotifier {
   /// Loads the profile again, for example to see a person that was just added.
   Future<void> reload() => _loading = _load();
 
+  /// Reads the logged person and the people again without going back to the
+  /// loading state, so the screens that show them do not flicker. Used after a
+  /// person is added or edited. The choice of "who appears" is kept (with the
+  /// new data of that person). If the profile is not loaded yet, it loads it.
+  /// A failure keeps what was there.
+  Future<void> refreshMembers() async {
+    final current = profileData;
+    if (current == null) return reload();
+    final generation = _generation;
+    final me = (await _getMe()).valueOrNull ?? current.me;
+    final members = (await _getMembers(me)).valueOrNull;
+    if (generation != _generation || members == null) return;
+    _profile = UiSuccess(HouseholdProfile(me: me, members: members));
+    _selected = _refreshedChoice(_selected, me, members);
+    _notify();
+  }
+
+  /// The same choice, with the up-to-date data of the person it names.
+  ScopeOption? _refreshedChoice(
+    ScopeOption? choice,
+    Member me,
+    List<Member> members,
+  ) {
+    if (choice == null) return null;
+    switch (choice.kind) {
+      case ScopeKind.house:
+        return choice;
+      case ScopeKind.me:
+        return ScopeOption.me(me);
+      case ScopeKind.member:
+        for (final member in members) {
+          if (member.id == choice.member!.id) return ScopeOption.person(member);
+        }
+        return ScopeOption.me(me);
+    }
+  }
+
   void select(ScopeOption option) {
     if (profileData == null || option == scope) return;
     _selected = option;

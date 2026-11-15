@@ -25,19 +25,29 @@ import 'package:mobile/features/home/presentation/widgets/upcoming_card.dart';
 import 'package:mobile/features/household/presentation/viewmodels/household_scope_controller.dart';
 import 'package:mobile/features/household/presentation/widgets/scope_selector.dart';
 
+/// Opens the settings sheet from [context]. [onLogout] ends the session; the
+/// sheet calls it after it closes.
+typedef OpenSettings = void Function(
+  BuildContext context, {
+  required VoidCallback onLogout,
+});
+
 /// The home: the numbers of the month for one person or for the whole house.
 ///
 /// It creates its own ViewModel and loads it. [onOpenChat] and [onOpenEntries]
-/// default to going to those tabs.
+/// default to going to those tabs. [onOpenSettings] opens the settings from the
+/// avatar menu.
 class HomeView extends StatefulWidget {
   const HomeView({
     super.key,
     required this.createViewModel,
+    required this.onOpenSettings,
     this.onOpenChat,
     this.onOpenEntries,
   });
 
   final HomeViewModel Function() createViewModel;
+  final OpenSettings onOpenSettings;
   final VoidCallback? onOpenChat;
   final VoidCallback? onOpenEntries;
 
@@ -101,10 +111,13 @@ class _HomeViewState extends State<HomeView> {
 
     final children = <Widget>[
       HomeHeader(
-        name: profile.me.firstName,
+        name: profile.me.displayName,
         initial: profile.me.initial,
         onRefresh: () => unawaited(vm.refresh()),
-        onLogout: () => unawaited(vm.logout()),
+        onOpenSettings: () => widget.onOpenSettings(
+          context,
+          onLogout: () => unawaited(vm.logout()),
+        ),
       ),
       ScopeSelector(
         options: vm.scopeOptions,

@@ -1,22 +1,23 @@
 import 'package:material_ui/material_ui.dart';
+import 'package:mobile/core/widgets/ellipsis_text.dart';
 import 'package:mobile/l10n/app_localizations.dart';
 
-enum _ProfileAction { logout }
+enum _ProfileAction { settings }
 
-/// Greeting, the refresh button and the avatar with the menu.
+/// Greeting, the refresh button and the avatar with the menu (settings).
 class HomeHeader extends StatelessWidget {
   const HomeHeader({
     super.key,
     required this.name,
     required this.initial,
     required this.onRefresh,
-    required this.onLogout,
+    required this.onOpenSettings,
   });
 
   final String name;
   final String initial;
   final VoidCallback onRefresh;
-  final VoidCallback onLogout;
+  final VoidCallback onOpenSettings;
 
   @override
   Widget build(BuildContext context) {
@@ -34,11 +35,9 @@ class HomeHeader extends StatelessWidget {
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
-              Text(
+              EllipsisText(
                 l10n.homeGreeting(name),
                 style: theme.textTheme.titleLarge,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),
@@ -50,11 +49,17 @@ class HomeHeader extends StatelessWidget {
         ),
         PopupMenuButton<_ProfileAction>(
           tooltip: l10n.homeProfileMenu,
-          onSelected: (_) => onLogout(),
+          onSelected: (_) => onOpenSettings(),
           itemBuilder: (context) => [
             PopupMenuItem<_ProfileAction>(
-              value: _ProfileAction.logout,
-              child: Text(l10n.homeLogout),
+              value: _ProfileAction.settings,
+              child: Row(
+                children: [
+                  const Icon(Icons.settings_outlined),
+                  const SizedBox(width: 12),
+                  Text(l10n.homeSettings),
+                ],
+              ),
             ),
           ],
           child: CircleAvatar(radius: 22, child: Text(initial)),

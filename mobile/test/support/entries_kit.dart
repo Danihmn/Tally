@@ -4,8 +4,13 @@ import 'package:mobile/core/session/session_controller.dart';
 import 'package:mobile/core/storage/session_token_store.dart';
 import 'package:mobile/core/utils/debouncer.dart';
 import 'package:mobile/features/accounts/domain/usecases/get_bank_accounts.dart';
+import 'package:mobile/features/entries/domain/usecases/create_entry.dart';
+import 'package:mobile/features/entries/domain/usecases/delete_entry.dart';
 import 'package:mobile/features/entries/domain/usecases/search_entries.dart';
+import 'package:mobile/features/entries/domain/usecases/set_entry_status.dart';
+import 'package:mobile/features/entries/domain/usecases/update_entry.dart';
 import 'package:mobile/features/entries/presentation/viewmodels/entries_view_model.dart';
+import 'package:mobile/features/entries/presentation/viewmodels/entry_actions_view_model.dart';
 import 'package:mobile/features/entries/presentation/viewmodels/linked_transactions_view_model.dart';
 import 'package:mobile/features/household/domain/entities/member.dart';
 import 'package:mobile/features/household/domain/usecases/get_household_members.dart';
@@ -45,6 +50,7 @@ class EntriesKit {
       scopeController: scope,
       searchEntries: SearchEntries(entries),
       getAccounts: GetBankAccounts(accounts),
+      createEntry: CreateEntry(entries),
       debouncer: Debouncer(),
       now: () => DateTime(2026, 11, 13, 9),
     );
@@ -76,6 +82,13 @@ class EntriesKit {
         getAccounts: GetBankAccounts(accounts),
         scopeController: scope,
       );
+
+  /// The ViewModel of the edit, cancel, reopen and delete buttons.
+  EntryActionsViewModel actions() => EntryActionsViewModel(
+    updateEntry: UpdateEntry(entries),
+    setEntryStatus: SetEntryStatus(entries),
+    deleteEntry: DeleteEntry(entries),
+  );
 
   Future<void> dispose() async {
     viewModel.dispose();

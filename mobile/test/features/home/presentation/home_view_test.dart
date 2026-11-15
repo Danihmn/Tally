@@ -21,6 +21,15 @@ void main() {
     addTearDown(tester.view.reset);
   }
 
+  /// What the settings button handed over, so a test can see it and use it.
+  var settingsOpened = 0;
+  VoidCallback? settingsLogout;
+
+  void openSettings(BuildContext context, {required VoidCallback onLogout}) {
+    settingsOpened++;
+    settingsLogout = onLogout;
+  }
+
   Future<void> pumpHome(
     WidgetTester tester, {
     VoidCallback? onOpenChat,
@@ -31,6 +40,7 @@ void main() {
       tester,
       HomeView(
         createViewModel: () => kit.viewModel,
+        onOpenSettings: openSettings,
         onOpenChat: onOpenChat,
         onOpenEntries: onOpenEntries,
       ),
@@ -38,13 +48,23 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  setUp(() => kit = HomeKit());
+  setUp(() {
+    kit = HomeKit();
+    settingsOpened = 0;
+    settingsLogout = null;
+  });
   tearDown(() => kit.session.dispose());
 
   group('HomeView loading', () {
     testWidgets('shows_skeletons_before_the_profile_arrives', (tester) async {
       useTallScreen(tester);
-      await pumpApp(tester, HomeView(createViewModel: () => kit.viewModel));
+      await pumpApp(
+        tester,
+        HomeView(
+          createViewModel: () => kit.viewModel,
+          onOpenSettings: openSettings,
+        ),
+      );
 
       expect(find.byType(Skeleton), findsWidgets);
       expect(find.text('Olá, Ana'), findsNothing);
@@ -315,13 +335,44 @@ void main() {
       expect(kit.home.calls, isNotEmpty);
     });
 
-    testWidgets('logout_in_the_avatar_menu_closes_the_session', (tester) async {
+    testWidgets('the_avatar_menu_offers_settings_with_a_gear_and_no_logout', (
+      tester,
+    ) async {
       await pumpHome(tester);
-      kit.session.onLoggedIn();
 
       await tester.tap(find.byTooltip('Abrir perfil e configurações'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Sair'));
+
+      expect(find.text('Configurações'), findsOneWidget);
+      expect(find.byIcon(Icons.settings_outlined), findsOneWidget);
+      expect(find.text('Sair'), findsNothing);
+    });
+
+    testWidgets('choosing_settings_hands_over_the_screen_and_the_logout', (
+      tester,
+    ) async {
+      await pumpHome(tester);
+
+      await tester.tap(find.byTooltip('Abrir perfil e configurações'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Configurações'));
+      await tester.pumpAndSettle();
+
+      expect(settingsOpened, 1);
+      expect(kit.auth.logouts, 0);
+    });
+
+    testWidgets('the_logout_from_the_settings_closes_the_session', (
+      tester,
+    ) async {
+      await pumpHome(tester);
+      kit.session.onLoggedIn();
+      await tester.tap(find.byTooltip('Abrir perfil e configurações'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Configurações'));
+      await tester.pumpAndSettle();
+
+      settingsLogout!();
       await tester.pump();
       await tester.pump();
 

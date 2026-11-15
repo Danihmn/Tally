@@ -2,6 +2,7 @@ import 'package:decimal/decimal.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:mobile/app/theme/app_spacing.dart';
 import 'package:mobile/core/utils/money_formatter.dart';
+import 'package:mobile/core/widgets/ellipsis_text.dart';
 import 'package:mobile/features/home/domain/entities/daily_amount.dart';
 import 'package:mobile/features/home/domain/entities/month_period.dart';
 import 'package:mobile/l10n/app_localizations.dart';
@@ -82,7 +83,7 @@ class DailySpendingCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(l10n.dailyTitle, style: theme.textTheme.titleMedium),
-                Text(
+                EllipsisText(
                   l10n.dailyAverage(MoneyFormatter.format(average)),
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: scheme.onSurfaceVariant,

@@ -3,6 +3,7 @@ import 'package:mobile/app/theme/app_spacing.dart';
 import 'package:mobile/app/theme/tally_colors.dart';
 import 'package:mobile/core/utils/date_formatter.dart';
 import 'package:mobile/core/utils/money_formatter.dart';
+import 'package:mobile/core/widgets/ellipsis_text.dart';
 import 'package:mobile/features/entries/domain/entities/financial_entry.dart';
 import 'package:mobile/features/entries/presentation/widgets/entry_icon.dart';
 import 'package:mobile/features/entries/presentation/widgets/entry_status.dart';
@@ -69,27 +70,18 @@ class EntryRow extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    EllipsisText(
                       entry.description,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    Text(
-                      entrySubtitle(l10n, entry),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: muted,
-                    ),
+                    EllipsisText(entrySubtitle(l10n, entry), style: muted),
                     Row(
                       children: [
                         Flexible(
-                          child: Text(
+                          child: EllipsisText(
                             entryDatesLine(l10n, entry),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
                             style: muted,
                           ),
                         ),
@@ -104,7 +96,7 @@ class EntryRow extends StatelessWidget {
                               color: scheme.surfaceContainerHighest,
                               borderRadius: BorderRadius.circular(999),
                             ),
-                            child: Text(
+                            child: EllipsisText(
                               installment,
                               style: theme.textTheme.labelSmall?.copyWith(
                                 color: scheme.onSurfaceVariant,
@@ -121,7 +113,7 @@ class EntryRow extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text(
+                  EllipsisText(
                     MoneyFormatter.signed(
                       entry.amount,
                       isIncome: entry.isRevenue,

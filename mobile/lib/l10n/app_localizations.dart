@@ -115,7 +115,7 @@ abstract class AppLocalizations {
   /// No description provided for @navEntries.
   ///
   /// In pt, this message translates to:
-  /// **'Lançamentos'**
+  /// **'Planejamento'**
   String get navEntries;
 
   /// No description provided for @navAccounts.
@@ -1653,6 +1653,648 @@ abstract class AppLocalizations {
   /// In pt, this message translates to:
   /// **'{percent}% do limite'**
   String conversationUsage(int percent);
+
+  /// No description provided for @failureNoRecurrences.
+  ///
+  /// In pt, this message translates to:
+  /// **'Cadastre ao menos uma recorrência antes de provisionar o mês.'**
+  String get failureNoRecurrences;
+
+  /// No description provided for @planningSectionEntries.
+  ///
+  /// In pt, this message translates to:
+  /// **'Lançamentos'**
+  String get planningSectionEntries;
+
+  /// No description provided for @planningSectionRecurrences.
+  ///
+  /// In pt, this message translates to:
+  /// **'Recorrências'**
+  String get planningSectionRecurrences;
+
+  /// No description provided for @commonCancel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Cancelar'**
+  String get commonCancel;
+
+  /// No description provided for @commonSave.
+  ///
+  /// In pt, this message translates to:
+  /// **'Salvar'**
+  String get commonSave;
+
+  /// No description provided for @formRequired.
+  ///
+  /// In pt, this message translates to:
+  /// **'Preencha este campo.'**
+  String get formRequired;
+
+  /// No description provided for @formAmountInvalid.
+  ///
+  /// In pt, this message translates to:
+  /// **'Digite um valor maior que zero.'**
+  String get formAmountInvalid;
+
+  /// No description provided for @formDueDayInvalid.
+  ///
+  /// In pt, this message translates to:
+  /// **'Digite um dia de 1 a 31.'**
+  String get formDueDayInvalid;
+
+  /// No description provided for @formInstallmentsInvalid.
+  ///
+  /// In pt, this message translates to:
+  /// **'Preencha as duas parcelas, com a atual menor ou igual ao total.'**
+  String get formInstallmentsInvalid;
+
+  /// No description provided for @formOptional.
+  ///
+  /// In pt, this message translates to:
+  /// **'Opcional'**
+  String get formOptional;
+
+  /// No description provided for @entryNew.
+  ///
+  /// In pt, this message translates to:
+  /// **'Novo lançamento'**
+  String get entryNew;
+
+  /// No description provided for @entryEditTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Editar lançamento'**
+  String get entryEditTitle;
+
+  /// No description provided for @entryFormSave.
+  ///
+  /// In pt, this message translates to:
+  /// **'Salvar lançamento'**
+  String get entryFormSave;
+
+  /// No description provided for @entryFormDescription.
+  ///
+  /// In pt, this message translates to:
+  /// **'Descrição'**
+  String get entryFormDescription;
+
+  /// No description provided for @entryFormDescriptionHint.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ex.: Conta de luz'**
+  String get entryFormDescriptionHint;
+
+  /// No description provided for @entryFormType.
+  ///
+  /// In pt, this message translates to:
+  /// **'Tipo'**
+  String get entryFormType;
+
+  /// No description provided for @entryFormPayment.
+  ///
+  /// In pt, this message translates to:
+  /// **'Forma de pagamento'**
+  String get entryFormPayment;
+
+  /// No description provided for @entryFormCategory.
+  ///
+  /// In pt, this message translates to:
+  /// **'Categoria'**
+  String get entryFormCategory;
+
+  /// No description provided for @entryFormCategoryHint.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ex.: Moradia'**
+  String get entryFormCategoryHint;
+
+  /// No description provided for @entryFormAmount.
+  ///
+  /// In pt, this message translates to:
+  /// **'Valor'**
+  String get entryFormAmount;
+
+  /// No description provided for @entryFormMonth.
+  ///
+  /// In pt, this message translates to:
+  /// **'Mês de referência'**
+  String get entryFormMonth;
+
+  /// No description provided for @entryFormDue.
+  ///
+  /// In pt, this message translates to:
+  /// **'Vencimento'**
+  String get entryFormDue;
+
+  /// No description provided for @entryFormAccount.
+  ///
+  /// In pt, this message translates to:
+  /// **'Conta ou cartão'**
+  String get entryFormAccount;
+
+  /// No description provided for @entryFormNoAccount.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nenhuma'**
+  String get entryFormNoAccount;
+
+  /// No description provided for @entryFormInstallments.
+  ///
+  /// In pt, this message translates to:
+  /// **'Parcelas'**
+  String get entryFormInstallments;
+
+  /// No description provided for @entryFormInstallmentCurrent.
+  ///
+  /// In pt, this message translates to:
+  /// **'Parcela atual'**
+  String get entryFormInstallmentCurrent;
+
+  /// No description provided for @entryFormInstallmentTotal.
+  ///
+  /// In pt, this message translates to:
+  /// **'Total de parcelas'**
+  String get entryFormInstallmentTotal;
+
+  /// No description provided for @entryFormInstallmentsHint.
+  ///
+  /// In pt, this message translates to:
+  /// **'Preencha as duas, ou deixe as duas em branco.'**
+  String get entryFormInstallmentsHint;
+
+  /// No description provided for @entryFormNotes.
+  ///
+  /// In pt, this message translates to:
+  /// **'Observações'**
+  String get entryFormNotes;
+
+  /// No description provided for @entryFormNotesHint.
+  ///
+  /// In pt, this message translates to:
+  /// **'Algo que ajude a lembrar'**
+  String get entryFormNotesHint;
+
+  /// No description provided for @entryActionEdit.
+  ///
+  /// In pt, this message translates to:
+  /// **'Editar'**
+  String get entryActionEdit;
+
+  /// No description provided for @entryActionCancel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Cancelar lançamento'**
+  String get entryActionCancel;
+
+  /// No description provided for @entryActionReopen.
+  ///
+  /// In pt, this message translates to:
+  /// **'Reativar lançamento'**
+  String get entryActionReopen;
+
+  /// No description provided for @entryActionDelete.
+  ///
+  /// In pt, this message translates to:
+  /// **'Excluir lançamento'**
+  String get entryActionDelete;
+
+  /// No description provided for @entryReconciledLocked.
+  ///
+  /// In pt, this message translates to:
+  /// **'Lançamento conciliado não pode ser editado nem excluído. Desfaça a conciliação antes.'**
+  String get entryReconciledLocked;
+
+  /// No description provided for @entryDeleteTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Excluir lançamento?'**
+  String get entryDeleteTitle;
+
+  /// No description provided for @entryDeleteText.
+  ///
+  /// In pt, this message translates to:
+  /// **'\"{name}\" sai da lista. Essa ação não pode ser desfeita.'**
+  String entryDeleteText(String name);
+
+  /// No description provided for @entryDeleteConfirm.
+  ///
+  /// In pt, this message translates to:
+  /// **'Excluir'**
+  String get entryDeleteConfirm;
+
+  /// No description provided for @entrySaved.
+  ///
+  /// In pt, this message translates to:
+  /// **'Lançamento salvo.'**
+  String get entrySaved;
+
+  /// No description provided for @entryCancelledDone.
+  ///
+  /// In pt, this message translates to:
+  /// **'Lançamento cancelado.'**
+  String get entryCancelledDone;
+
+  /// No description provided for @entryReopenedDone.
+  ///
+  /// In pt, this message translates to:
+  /// **'Lançamento reativado.'**
+  String get entryReopenedDone;
+
+  /// No description provided for @entryDeletedDone.
+  ///
+  /// In pt, this message translates to:
+  /// **'Lançamento excluído.'**
+  String get entryDeletedDone;
+
+  /// No description provided for @recurrencesIntro.
+  ///
+  /// In pt, this message translates to:
+  /// **'Itens que se repetem todo mês. O Tally cria o lançamento no mês certo para vocês.'**
+  String get recurrencesIntro;
+
+  /// No description provided for @recurrencesEmptyTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nenhuma recorrência ainda'**
+  String get recurrencesEmptyTitle;
+
+  /// No description provided for @recurrencesEmptyText.
+  ///
+  /// In pt, this message translates to:
+  /// **'Cadastre aluguel, assinaturas e salários para não digitar todo mês.'**
+  String get recurrencesEmptyText;
+
+  /// No description provided for @recurrenceNew.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nova recorrência'**
+  String get recurrenceNew;
+
+  /// No description provided for @recurrenceEditTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Editar recorrência'**
+  String get recurrenceEditTitle;
+
+  /// No description provided for @recurrenceFormSave.
+  ///
+  /// In pt, this message translates to:
+  /// **'Salvar recorrência'**
+  String get recurrenceFormSave;
+
+  /// No description provided for @recurrenceFormDay.
+  ///
+  /// In pt, this message translates to:
+  /// **'Dia do mês'**
+  String get recurrenceFormDay;
+
+  /// No description provided for @recurrenceFormDayHint.
+  ///
+  /// In pt, this message translates to:
+  /// **'Todo mês neste dia. Em meses mais curtos vale o último dia.'**
+  String get recurrenceFormDayHint;
+
+  /// No description provided for @recurrenceDay.
+  ///
+  /// In pt, this message translates to:
+  /// **'Todo dia {day}'**
+  String recurrenceDay(int day);
+
+  /// No description provided for @recurrenceNoDay.
+  ///
+  /// In pt, this message translates to:
+  /// **'Sem dia fixo'**
+  String get recurrenceNoDay;
+
+  /// No description provided for @recurrenceDeleteAction.
+  ///
+  /// In pt, this message translates to:
+  /// **'Excluir recorrência'**
+  String get recurrenceDeleteAction;
+
+  /// No description provided for @recurrenceDeleteTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Excluir recorrência?'**
+  String get recurrenceDeleteTitle;
+
+  /// No description provided for @recurrenceDeleteText.
+  ///
+  /// In pt, this message translates to:
+  /// **'\"{name}\" deixa de gerar lançamentos. Os que já foram criados continuam.'**
+  String recurrenceDeleteText(String name);
+
+  /// No description provided for @recurrenceSaved.
+  ///
+  /// In pt, this message translates to:
+  /// **'Recorrência salva.'**
+  String get recurrenceSaved;
+
+  /// No description provided for @recurrenceDeletedDone.
+  ///
+  /// In pt, this message translates to:
+  /// **'Recorrência excluída.'**
+  String get recurrenceDeletedDone;
+
+  /// No description provided for @provisionButton.
+  ///
+  /// In pt, this message translates to:
+  /// **'Provisionar {month}'**
+  String provisionButton(String month);
+
+  /// No description provided for @provisionTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Provisionar o próximo mês?'**
+  String get provisionTitle;
+
+  /// No description provided for @provisionText.
+  ///
+  /// In pt, this message translates to:
+  /// **'O Tally vai criar os lançamentos de {month} a partir das recorrências cadastradas. Quem já tem lançamento nesse mês não é duplicado.'**
+  String provisionText(String month);
+
+  /// No description provided for @provisionConfirm.
+  ///
+  /// In pt, this message translates to:
+  /// **'Provisionar'**
+  String get provisionConfirm;
+
+  /// No description provided for @provisionCreated.
+  ///
+  /// In pt, this message translates to:
+  /// **'{created, plural, =1{1 lançamento criado em {month}.} other{{created} lançamentos criados em {month}.}}'**
+  String provisionCreated(int created, String month);
+
+  /// No description provided for @provisionNothingNew.
+  ///
+  /// In pt, this message translates to:
+  /// **'Tudo já estava provisionado em {month}.'**
+  String provisionNothingNew(String month);
+
+  /// No description provided for @recurrenceFormDescriptionHint.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ex.: Aluguel'**
+  String get recurrenceFormDescriptionHint;
+
+  /// No description provided for @recurrenceFormDayExample.
+  ///
+  /// In pt, this message translates to:
+  /// **'5'**
+  String get recurrenceFormDayExample;
+
+  /// No description provided for @homeSettings.
+  ///
+  /// In pt, this message translates to:
+  /// **'Configurações'**
+  String get homeSettings;
+
+  /// No description provided for @failureEmailExists.
+  ///
+  /// In pt, this message translates to:
+  /// **'Já existe um usuário com esse e-mail.'**
+  String get failureEmailExists;
+
+  /// No description provided for @settingsTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Configurações'**
+  String get settingsTitle;
+
+  /// No description provided for @settingsAppearance.
+  ///
+  /// In pt, this message translates to:
+  /// **'Aparência'**
+  String get settingsAppearance;
+
+  /// No description provided for @settingsThemeLight.
+  ///
+  /// In pt, this message translates to:
+  /// **'Claro'**
+  String get settingsThemeLight;
+
+  /// No description provided for @settingsThemeDark.
+  ///
+  /// In pt, this message translates to:
+  /// **'Escuro'**
+  String get settingsThemeDark;
+
+  /// No description provided for @settingsThemeSystem.
+  ///
+  /// In pt, this message translates to:
+  /// **'Sistema'**
+  String get settingsThemeSystem;
+
+  /// No description provided for @settingsHousehold.
+  ///
+  /// In pt, this message translates to:
+  /// **'Casa'**
+  String get settingsHousehold;
+
+  /// No description provided for @settingsUsers.
+  ///
+  /// In pt, this message translates to:
+  /// **'Usuários'**
+  String get settingsUsers;
+
+  /// No description provided for @settingsUsersHint.
+  ///
+  /// In pt, this message translates to:
+  /// **'Quem usa o Tally nesta casa'**
+  String get settingsUsersHint;
+
+  /// No description provided for @usersTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Usuários'**
+  String get usersTitle;
+
+  /// No description provided for @usersNew.
+  ///
+  /// In pt, this message translates to:
+  /// **'Novo usuário'**
+  String get usersNew;
+
+  /// No description provided for @usersAddedNotice.
+  ///
+  /// In pt, this message translates to:
+  /// **'Usuário criado.'**
+  String get usersAddedNotice;
+
+  /// No description provided for @userDetailTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Usuário'**
+  String get userDetailTitle;
+
+  /// No description provided for @userEditAction.
+  ///
+  /// In pt, this message translates to:
+  /// **'Editar dados'**
+  String get userEditAction;
+
+  /// No description provided for @userEditTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Editar usuário'**
+  String get userEditTitle;
+
+  /// No description provided for @userNewTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Novo usuário'**
+  String get userNewTitle;
+
+  /// No description provided for @userFieldFirstName.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nome'**
+  String get userFieldFirstName;
+
+  /// No description provided for @userFieldLastName.
+  ///
+  /// In pt, this message translates to:
+  /// **'Sobrenome'**
+  String get userFieldLastName;
+
+  /// No description provided for @userFieldSurname.
+  ///
+  /// In pt, this message translates to:
+  /// **'Apelido'**
+  String get userFieldSurname;
+
+  /// No description provided for @userFieldSurnameHelp.
+  ///
+  /// In pt, this message translates to:
+  /// **'É o nome que aparece nos filtros e nas telas.'**
+  String get userFieldSurnameHelp;
+
+  /// No description provided for @userFieldEmail.
+  ///
+  /// In pt, this message translates to:
+  /// **'E-mail'**
+  String get userFieldEmail;
+
+  /// No description provided for @userFieldPassword.
+  ///
+  /// In pt, this message translates to:
+  /// **'Senha'**
+  String get userFieldPassword;
+
+  /// No description provided for @userFieldPasswordHelp.
+  ///
+  /// In pt, this message translates to:
+  /// **'Mínimo de 8 caracteres.'**
+  String get userFieldPasswordHelp;
+
+  /// No description provided for @userNotInformed.
+  ///
+  /// In pt, this message translates to:
+  /// **'Não informado'**
+  String get userNotInformed;
+
+  /// No description provided for @userSave.
+  ///
+  /// In pt, this message translates to:
+  /// **'Salvar'**
+  String get userSave;
+
+  /// No description provided for @userCreate.
+  ///
+  /// In pt, this message translates to:
+  /// **'Criar usuário'**
+  String get userCreate;
+
+  /// No description provided for @userSavedNotice.
+  ///
+  /// In pt, this message translates to:
+  /// **'Dados salvos.'**
+  String get userSavedNotice;
+
+  /// No description provided for @userEmailInvalid.
+  ///
+  /// In pt, this message translates to:
+  /// **'Digite um e-mail válido.'**
+  String get userEmailInvalid;
+
+  /// No description provided for @userPasswordShort.
+  ///
+  /// In pt, this message translates to:
+  /// **'Use ao menos 8 caracteres.'**
+  String get userPasswordShort;
+
+  /// No description provided for @userPluggySection.
+  ///
+  /// In pt, this message translates to:
+  /// **'Credenciais da Pluggy'**
+  String get userPluggySection;
+
+  /// No description provided for @userPluggyAction.
+  ///
+  /// In pt, this message translates to:
+  /// **'Credenciais da Pluggy'**
+  String get userPluggyAction;
+
+  /// No description provided for @userPluggyIntro.
+  ///
+  /// In pt, this message translates to:
+  /// **'Cada pessoa usa a própria aplicação da Pluggy. Consulte o Client ID e o Client Secret dela no portal da Pluggy.'**
+  String get userPluggyIntro;
+
+  /// No description provided for @userPluggyHidden.
+  ///
+  /// In pt, this message translates to:
+  /// **'Por segurança, as credenciais atuais não são exibidas.'**
+  String get userPluggyHidden;
+
+  /// No description provided for @pluggyClientId.
+  ///
+  /// In pt, this message translates to:
+  /// **'Client ID'**
+  String get pluggyClientId;
+
+  /// No description provided for @pluggyClientSecret.
+  ///
+  /// In pt, this message translates to:
+  /// **'Client Secret'**
+  String get pluggyClientSecret;
+
+  /// No description provided for @pluggyClientIdInvalid.
+  ///
+  /// In pt, this message translates to:
+  /// **'Digite um Client ID válido (formato UUID).'**
+  String get pluggyClientIdInvalid;
+
+  /// No description provided for @pluggySave.
+  ///
+  /// In pt, this message translates to:
+  /// **'Salvar credenciais'**
+  String get pluggySave;
+
+  /// No description provided for @pluggyConfirmTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Alterar as credenciais?'**
+  String get pluggyConfirmTitle;
+
+  /// No description provided for @pluggyConfirmMessage.
+  ///
+  /// In pt, this message translates to:
+  /// **'Se as credenciais estiverem erradas, o Tally deixa de importar os dados bancários desta pessoa e o sistema passa a funcionar mal. Confira no portal da Pluggy antes de continuar.'**
+  String get pluggyConfirmMessage;
+
+  /// No description provided for @pluggyConfirmOk.
+  ///
+  /// In pt, this message translates to:
+  /// **'Alterar credenciais'**
+  String get pluggyConfirmOk;
+
+  /// No description provided for @pluggySavedNotice.
+  ///
+  /// In pt, this message translates to:
+  /// **'Credenciais atualizadas.'**
+  String get pluggySavedNotice;
 }
 
 class _AppLocalizationsDelegate

@@ -11,9 +11,13 @@ from domain.read_models import (
     FinancialEntrySummary,
     FinancialEntryTotals,
 )
-from infra.repositories import financial_entries_repository
-from services.common.exceptions import translate_repository_errors
-from services.common.mappers import to_entities
+from infra.repositories import bank_account_repository, financial_entries_repository
+from services.common.exceptions import (
+    InvalidDataError,
+    NotFoundError,
+    translate_repository_errors,
+)
+from services.common.mappers import to_entities, to_entity, to_values
 
 
 @translate_repository_errors
@@ -148,3 +152,89 @@ def summarize_financial_entries(
         setattr(totals, fields[0], total)
         setattr(totals, fields[1], count)
     return summary
+
+
+# A reconciled entry is tied to a bank transaction: these would break that link.
+_RECONCILED_LOCKED = {"amount", "type", "status", "reference_month"}
+
+
+def _load_entry(session: Session, household_id: uuid.UUID, entry_id: uuid.UUID):
+    """The stored entry of the household. Another household's entry is "not found"."""
+    entry = financial_entries_repository.get_financial_entry(
+        session, entry_id, household_id
+    )
+    if entry is None:
+        raise NotFoundError("Financial entry not found")
+    return entry
+
+
+def _check_bank_account(
+    session: Session, household_id: uuid.UUID, bank_account_id: uuid.UUID | None
+) -> None:
+    if bank_account_id is None:
+        return
+    found = bank_account_repository.get_bank_account_with_owner(
+        session, bank_account_id, household_id
+    )
+    if found is None:
+        raise InvalidDataError("Bank account is not in the household")
+
+
+def _check_installments(number: int | None, total: int | None) -> None:
+    if (number is None) != (total is None):
+        raise InvalidDataError("Send both installment fields or none")
+    if number is not None and total is not None and total < number:
+        raise InvalidDataError("installment_total must not be less than installment_number")
+
+
+@translate_repository_errors
+def get_financial_entry(
+    session: Session, household_id: uuid.UUID, entry_id: uuid.UUID
+) -> FinancialEntry:
+    return to_entity(FinancialEntry, _load_entry(session, household_id, entry_id))
+
+
+@translate_repository_errors
+def create_financial_entry(session: Session, entry: FinancialEntry) -> FinancialEntry:
+    _check_bank_account(session, entry.household_id, entry.bank_account_id)
+    created = financial_entries_repository.create_financial_entry(
+        session, to_values(entry)
+    )
+    return to_entity(FinancialEntry, created)
+
+
+@translate_repository_errors
+def update_financial_entry(
+    session: Session,
+    household_id: uuid.UUID,
+    entry_id: uuid.UUID,
+    values: dict[str, object],
+) -> FinancialEntry:
+    """Changes only the given columns. 404 outside the household, 422 when it breaks a rule."""
+    stored = _load_entry(session, household_id, entry_id)
+    if stored.status == "RECONCILED" and any(
+        column in _RECONCILED_LOCKED and value != getattr(stored, column)
+        for column, value in values.items()
+    ):
+        # Sending the same value again is fine: the app sends the whole form on an edit
+        raise InvalidDataError("A reconciled entry cannot change these fields")
+    _check_installments(
+        values.get("installment_number", stored.installment_number),
+        values.get("installment_total", stored.installment_total),
+    )
+    _check_bank_account(session, household_id, values.get("bank_account_id"))
+    updated = financial_entries_repository.update_financial_entry(
+        session, stored, values
+    )
+    return to_entity(FinancialEntry, updated)
+
+
+@translate_repository_errors
+def delete_financial_entry(
+    session: Session, household_id: uuid.UUID, entry_id: uuid.UUID
+) -> None:
+    """Soft delete. A reconciled entry must have its reconciliation undone first."""
+    stored = _load_entry(session, household_id, entry_id)
+    if stored.status == "RECONCILED":
+        raise InvalidDataError("Undo the reconciliation before deleting the entry")
+    financial_entries_repository.soft_delete_financial_entry(session, stored)

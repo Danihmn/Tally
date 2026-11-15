@@ -15,7 +15,7 @@ class GetHouseholdMembers {
           users
               .where((u) => u.householdId == me.householdId && u.id != me.id)
               .toList()
-            ..sort((a, b) => a.firstName.compareTo(b.firstName));
+            ..sort((a, b) => a.displayName.compareTo(b.displayName));
       return [me, ...others];
     });
   }

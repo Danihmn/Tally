@@ -10,6 +10,7 @@ class EntryDetailArgs {
     required this.account,
     required this.owner,
     required this.ownerColorIndex,
+    this.accounts = const [],
   });
 
   final FinancialEntry entry;
@@ -22,4 +23,7 @@ class EntryDetailArgs {
 
   /// The place of the owner in the list of the house, which gives the color.
   final int ownerColorIndex;
+
+  /// The accounts the entry form can offer when the entry is edited.
+  final List<BankAccount> accounts;
 }

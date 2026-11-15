@@ -1,4 +1,5 @@
 import uuid
+from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -16,6 +17,15 @@ def get_user_by_id(session: Session, user_id: uuid.UUID) -> Users:
     if user is None:
         raise RecordNotFoundError("users", "get_user_by_id")
     return user
+
+
+@translate_db_errors("users")
+def get_user_in_household(
+    session: Session, user_id: uuid.UUID, household_id: uuid.UUID
+) -> Users | None:
+    """The user, only if they belong to the household."""
+    stmt = select(Users).where(Users.id == user_id, Users.household_id == household_id)
+    return session.scalars(stmt).one_or_none()
 
 
 @translate_db_errors("users")
@@ -59,10 +69,14 @@ def create_user(
     pluggy_client_id: uuid.UUID,
     pluggy_client_secret_crypto: str,
     household_id: uuid.UUID,
+    last_name: str | None = None,
+    surname: str | None = None,
 ) -> Users:
     user = Users(
         household_id=household_id,
         first_name=first_name,
+        last_name=last_name,
+        surname=surname,
         email=email,
         hashed_password=hashed_password,
         pluggy_client_id=pluggy_client_id,
@@ -79,5 +93,14 @@ def update_user_pluggy_webhook_secret_hash(
 ) -> Users:
     user = get_user_by_id(session, user_id)
     user.pluggy_webhook_secret_hash = secret_hash
+    session.flush()
+    return user
+
+
+@translate_db_errors("users")
+def update_user(session: Session, user: Users, values: dict[str, Any]) -> Users:
+    """Sets the given columns on a user already loaded (the table has no updated_at)."""
+    for column, value in values.items():
+        setattr(user, column, value)
     session.flush()
     return user

@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:mobile/app/theme/app_spacing.dart';
 import 'package:mobile/core/utils/date_formatter.dart';
 import 'package:mobile/core/utils/money_formatter.dart';
+import 'package:mobile/core/widgets/ellipsis_text.dart';
 import 'package:mobile/features/home/domain/entities/top_expense.dart';
 import 'package:mobile/l10n/app_localizations.dart';
 
@@ -48,14 +49,12 @@ class TopExpensesCard extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
+                          EllipsisText(
                             expenses[i].description ??
                                 l10n.topExpensesNoDescription,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
                             style: theme.textTheme.bodyMedium,
                           ),
-                          Text(
+                          EllipsisText(
                             DateFormatter.dayMonth(expenses[i].date),
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: scheme.onSurfaceVariant,
@@ -65,7 +64,7 @@ class TopExpensesCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: AppSpacing.xs),
-                    Text(
+                    EllipsisText(
                       MoneyFormatter.format(expenses[i].amount),
                       style: theme.textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.w600,

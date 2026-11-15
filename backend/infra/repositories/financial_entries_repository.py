@@ -1,6 +1,7 @@
 import datetime
 import decimal
 import uuid
+from typing import Any
 
 from sqlalchemy import Select, exists, func, select, update
 from sqlalchemy.orm import Session
@@ -179,3 +180,66 @@ def summarize_financial_entries(
         (type_, status, total, count)
         for type_, status, total, count in session.execute(stmt)
     ]
+
+
+@translate_db_errors("financial_entries")
+def get_financial_entry(
+    session: Session, entry_id: uuid.UUID, household_id: uuid.UUID
+) -> FinancialEntries | None:
+    """The entry when it is in the household and was not soft deleted, else None."""
+    stmt = (
+        select(FinancialEntries)
+        .where(FinancialEntries.id == entry_id)
+        .where(FinancialEntries.household_id == household_id)
+        .where(FinancialEntries.deleted_at.is_(None))
+    )
+    return session.scalars(stmt).first()
+
+
+@translate_db_errors("financial_entries")
+def create_financial_entry(
+    session: Session, values: dict[str, Any]
+) -> FinancialEntries:
+    entry = FinancialEntries(**values)
+    session.add(entry)
+    session.flush()
+    return entry
+
+
+@translate_db_errors("financial_entries")
+def update_financial_entry(
+    session: Session, entry: FinancialEntries, values: dict[str, Any]
+) -> FinancialEntries:
+    """Writes the given columns of a loaded entry (and its updated_at)."""
+    for column, value in values.items():
+        setattr(entry, column, value)
+    entry.updated_at = datetime.datetime.now(datetime.UTC)
+    session.flush()
+    return entry
+
+
+@translate_db_errors("financial_entries")
+def soft_delete_financial_entry(
+    session: Session, entry: FinancialEntries
+) -> FinancialEntries:
+    """The unique recurrence/month index is partial, so the month can be provisioned again."""
+    now = datetime.datetime.now(datetime.UTC)
+    entry.deleted_at = now
+    entry.updated_at = now
+    session.flush()
+    return entry
+
+
+@translate_db_errors("financial_entries")
+def list_recurrence_ids_in_month(
+    session: Session, household_id: uuid.UUID, reference_month: datetime.date
+) -> set[uuid.UUID]:
+    """Recurrences of the household that already have an active entry in the month."""
+    stmt = (
+        select(FinancialEntries.recurrence_id)
+        .where(FinancialEntries.household_id == household_id)
+        .where(FinancialEntries.reference_month == reference_month)
+        .where(FinancialEntries.recurrence_id.is_not(None))
+        .where(FinancialEntries.deleted_at.is_(None))
+    )
+    return {recurrence_id for recurrence_id in session.scalars(stmt).all()}  # type: ignore

@@ -80,14 +80,13 @@ class TestSystemPrompt(unittest.TestCase):
         self.assertIn("Today is 2026-11-10.", text)
 
 
-def _system_prompt_text() -> str:
+def _system_prompt_text(user=None, partner_names=("Bruno",)) -> str:
     """Runs the dynamic prompt function and returns the text it builds."""
     captured = {}
+    context = TallyContext(user=user or make_user(first_name="Ana"), partner_names=partner_names)
 
     class _Request:
-        runtime = SimpleNamespace(
-            context=TallyContext(user=make_user(first_name="Ana"), partner_names=("Bruno",))
-        )
+        runtime = SimpleNamespace(context=context)
 
         def override(self, **kwargs):
             captured.update(kwargs)
@@ -97,6 +96,24 @@ def _system_prompt_text() -> str:
     _system_prompt.wrap_model_call(_Request(), handler)  # type: ignore[arg-type]
     message = captured["system_message"]
     return message.content if hasattr(message, "content") else str(message)
+
+
+class TestPeopleInThePrompt(unittest.TestCase):
+    def test_the_person_talking_is_named_by_the_nickname(self):
+        text = _system_prompt_text(make_user(first_name="Ana", surname="Aninha"))
+
+        self.assertIn("You are talking to Aninha.", text)
+        self.assertNotIn("You are talking to Ana.", text)
+
+    def test_without_a_nickname_it_is_the_first_name(self):
+        text = _system_prompt_text(make_user(first_name="Ana"))
+
+        self.assertIn("You are talking to Ana.", text)
+
+    def test_the_partner_comes_as_the_router_named_them(self):
+        text = _system_prompt_text(partner_names=("Bibi",))
+
+        self.assertIn("The other person in the household is Bibi", text)
 
 
 class TestGetTallyAi(unittest.TestCase):

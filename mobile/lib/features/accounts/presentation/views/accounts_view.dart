@@ -208,7 +208,7 @@ class _AccountsViewState extends State<AccountsView> {
           ),
         ];
       case UiEmpty<List<AccountBalance>>():
-        final who = vm.scope?.member?.firstName ?? l10n.transactionsTheHouse;
+        final who = vm.scope?.member?.displayName ?? l10n.transactionsTheHouse;
         return [
           _EmptyCard(
             title: l10n.accountsEmptyNoBankTitle(who),

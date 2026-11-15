@@ -23,7 +23,7 @@ class ScopeSelector extends StatelessWidget {
       switch (option.kind) {
         ScopeKind.me => l10n.scopeMe,
         ScopeKind.house => l10n.scopeHouse,
-        ScopeKind.member => option.member!.firstName,
+        ScopeKind.member => option.member!.displayName,
       };
 
   @override

@@ -10,8 +10,11 @@ from services.users_service import list_users_by_household
 
 
 def owner_names(session: Session, household_id: uuid.UUID) -> dict[uuid.UUID, str]:
-    """First name of each household member, by user id: the tools name owners by first name."""
-    return {u.id: u.first_name for u in list_users_by_household(session, household_id)}  # type: ignore[misc]
+    """Display name (the nickname, else the first name) of each household member, by user id:
+    the tools name owners by it."""
+    return {
+        u.id: u.display_name for u in list_users_by_household(session, household_id)
+    }  # type: ignore[misc]
 
 
 def tool_errors[**P](func: Callable[P, str]) -> Callable[P, str]:

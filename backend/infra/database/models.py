@@ -84,6 +84,8 @@ class Users(Base):
     )
     household_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
     pluggy_webhook_secret_hash: Mapped[str | None] = mapped_column(Text)
+    last_name: Mapped[str | None] = mapped_column(Text)
+    surname: Mapped[str | None] = mapped_column(Text)
 
     household: Mapped[Households] = relationship("Households", back_populates="users")
     conversations: Mapped[list[Conversations]] = relationship(

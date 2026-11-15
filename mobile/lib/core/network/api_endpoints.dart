@@ -35,6 +35,28 @@ abstract final class ApiEndpoints {
 
   static const users = ApiEndpoint('GET', '/users', usedBy: 'Home');
 
+  // Settings: the people of the house
+
+  static const createUser = ApiEndpoint(
+    'POST',
+    '/users',
+    usedBy: 'Configurações',
+  );
+
+  /// Name, nickname and e-mail. `{id}` is the user id.
+  static const updateUser = ApiEndpoint(
+    'PATCH',
+    '/users/{id}',
+    usedBy: 'Configurações',
+  );
+
+  /// Replaces the Pluggy client id and secret. `{id}` is the user id.
+  static const updateUserPluggyCredentials = ApiEndpoint(
+    'PUT',
+    '/users/{id}/pluggy-credentials',
+    usedBy: 'Configurações',
+  );
+
   // Transactions list (and the accounts it names)
 
   static const transactions = ApiEndpoint(
@@ -118,6 +140,61 @@ abstract final class ApiEndpoints {
     usedBy: 'Planning',
   );
 
+  // Planning screen: create, edit and delete entries
+
+  static const createFinancialEntry = ApiEndpoint(
+    'POST',
+    '/financial-entries',
+    usedBy: 'Planejamento',
+  );
+
+  /// `{id}` is the entry id. Also used to cancel or reopen (`status`).
+  static const updateFinancialEntry = ApiEndpoint(
+    'PATCH',
+    '/financial-entries/{id}',
+    usedBy: 'Planejamento',
+  );
+
+  static const deleteFinancialEntry = ApiEndpoint(
+    'DELETE',
+    '/financial-entries/{id}',
+    usedBy: 'Planejamento',
+  );
+
+  // Planning screen: recurrences
+
+  static const recurrences = ApiEndpoint(
+    'GET',
+    '/recurrences',
+    usedBy: 'Planejamento',
+  );
+
+  static const createRecurrence = ApiEndpoint(
+    'POST',
+    '/recurrences',
+    usedBy: 'Planejamento',
+  );
+
+  static const updateRecurrence = ApiEndpoint(
+    'PATCH',
+    '/recurrences/{id}',
+    usedBy: 'Planejamento',
+  );
+
+  static const deleteRecurrence = ApiEndpoint(
+    'DELETE',
+    '/recurrences/{id}',
+    usedBy: 'Planejamento',
+  );
+
+  /// Creates next month's entries from the recurrences. 422 with the code
+  /// `NO_RECURRENCES` when the house has none.
+  static const provisionRecurrences = ApiEndpoint(
+    'POST',
+    '/recurrences/provision',
+    usedBy: 'Planejamento',
+  );
+
   // Spending analysis (transactions)
 
   static const topExpenses = ApiEndpoint(
@@ -169,6 +246,9 @@ abstract final class ApiEndpoints {
     login,
     me,
     users,
+    createUser,
+    updateUser,
+    updateUserPluggyCredentials,
     transactions,
     bankAccounts,
     accountBalances,
@@ -181,6 +261,14 @@ abstract final class ApiEndpoints {
     totalPlanned,
     totalReconciled,
     reconciliationCounts,
+    createFinancialEntry,
+    updateFinancialEntry,
+    deleteFinancialEntry,
+    recurrences,
+    createRecurrence,
+    updateRecurrence,
+    deleteRecurrence,
+    provisionRecurrences,
     topExpenses,
     dailyExpenses,
     averageDailyExpenses,

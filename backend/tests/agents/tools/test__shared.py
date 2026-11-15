@@ -22,6 +22,15 @@ class TestOwnerNames(unittest.TestCase):
         list_users.assert_called_once_with(session, household_id)
         self.assertEqual(names, {ana.id: "Ana", bia.id: "Bia"})
 
+    def test_uses_the_nickname_when_a_member_has_one(self):
+        ana = make_user(id=uuid.uuid4(), first_name="Ana", surname="Aninha")
+        bia = make_user(id=uuid.uuid4(), first_name="Bia")
+
+        with patch(f"{MODULE}.list_users_by_household", return_value=[ana, bia]):
+            names = owner_names(MagicMock(), uuid.uuid4())
+
+        self.assertEqual(names, {ana.id: "Aninha", bia.id: "Bia"})
+
 
 class TestToolErrors(unittest.TestCase):
     def test_returns_the_result_when_nothing_fails(self):

@@ -1,5 +1,6 @@
 """Date helpers shared by every layer. Everything is in UTC, like the database columns."""
 
+import calendar
 import datetime
 from zoneinfo import ZoneInfo
 
@@ -27,6 +28,19 @@ def first_day_of_month(day: datetime.date) -> datetime.date:
     return day.replace(day=1)
 
 
+def next_month_start(day: datetime.date) -> datetime.date:
+    """Day 1 of the month after the one of `day` (December goes to January of the next year)."""
+    if day.month == 12:
+        return datetime.date(day.year + 1, 1, 1)
+    return datetime.date(day.year, day.month + 1, 1)
+
+
+def clamp_day_to_month(month_start: datetime.date, day: int) -> datetime.date:
+    """`day` inside the month of `month_start`; a day past the end becomes the last day."""
+    last_day = calendar.monthrange(month_start.year, month_start.month)[1]
+    return month_start.replace(day=min(day, last_day))
+
+
 def today_local() -> datetime.date:
     """Today where the couple lives. Near midnight it differs from `today_utc()`."""
     return datetime.datetime.now(_LOCAL_TIMEZONE).date()
@@ -37,7 +51,9 @@ def to_local_date(moment: datetime.datetime) -> datetime.date:
     return moment.astimezone(_LOCAL_TIMEZONE).date()
 
 
-def default_analysis_period(today: datetime.date) -> tuple[datetime.date, datetime.date]:
+def default_analysis_period(
+    today: datetime.date,
+) -> tuple[datetime.date, datetime.date]:
     """Day 1 of the month until yesterday (both inclusive).
 
     On day 1 yesterday is in the previous month, so the whole previous month is used.

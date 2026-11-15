@@ -32,6 +32,14 @@ String requireString(Object? value, String field) {
   throw FormatException('Expected a text for "$field".');
 }
 
+/// A text field that may be missing or `null`. An empty text counts as
+/// missing, so the app never shows a blank name.
+String? optionalString(Object? value) {
+  if (value == null) return null;
+  if (value is String) return value.trim().isEmpty ? null : value;
+  throw const FormatException('Expected a text or null.');
+}
+
 /// A required whole number.
 int requireInt(Object? value, String field) {
   if (value is int) return value;

@@ -32,6 +32,19 @@ void main() {
       expect(result.valueOrNull, [me, bia, caio]);
     });
 
+    test('the_others_are_sorted_by_the_nickname_when_they_have_one', () async {
+      const dudu = Member(
+        id: 'm4',
+        firstName: 'Eduardo',
+        surname: 'Aaron',
+        householdId: 'h1',
+      );
+
+      final result = await run([caio, dudu, bia, me]);
+
+      expect(result.valueOrNull, [me, dudu, bia, caio]);
+    });
+
     test('the_logged_user_is_there_even_if_the_list_leaves_them_out', () async {
       final result = await run([bia]);
 

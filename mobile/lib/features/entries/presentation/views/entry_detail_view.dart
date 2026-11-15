@@ -5,10 +5,13 @@ import 'package:mobile/app/theme/app_spacing.dart';
 import 'package:mobile/app/theme/tally_colors.dart';
 import 'package:mobile/core/utils/date_formatter.dart';
 import 'package:mobile/core/utils/money_formatter.dart';
+import 'package:mobile/core/widgets/ellipsis_text.dart';
 import 'package:mobile/core/widgets/empty_state.dart';
 import 'package:mobile/features/entries/domain/entities/financial_entry.dart';
+import 'package:mobile/features/entries/presentation/viewmodels/entry_actions_view_model.dart';
 import 'package:mobile/features/entries/presentation/viewmodels/linked_transactions_view_model.dart';
 import 'package:mobile/features/entries/presentation/views/entry_detail_args.dart';
+import 'package:mobile/features/entries/presentation/widgets/entry_detail_actions.dart';
 import 'package:mobile/features/entries/presentation/widgets/entry_icon.dart';
 import 'package:mobile/features/entries/presentation/widgets/entry_status.dart';
 import 'package:mobile/features/entries/presentation/widgets/linked_transaction_section.dart';
@@ -16,13 +19,15 @@ import 'package:mobile/features/household/presentation/widgets/member_palette.da
 import 'package:mobile/l10n/app_localizations.dart';
 
 /// The data of one entry, its timeline and, when it is reconciled, the bank
-/// transaction it is matched with. Read only: there are no buttons to
-/// reconcile, cancel or reopen yet.
+/// transaction it is matched with. A planned or cancelled entry can be edited,
+/// cancelled, reopened and deleted from here; when it changes, the screen
+/// closes and answers `true`, so the list reads again.
 class EntryDetailView extends StatelessWidget {
   const EntryDetailView({
     super.key,
     required this.args,
     required this.createLinkedViewModel,
+    required this.createActionsViewModel,
     DateTime Function()? now,
   }) : _now = now ?? DateTime.now;
 
@@ -33,6 +38,9 @@ class EntryDetailView extends StatelessWidget {
   /// Builds the ViewModel of the "Transação do banco" block.
   final LinkedTransactionsViewModel Function(String entryId)
   createLinkedViewModel;
+
+  /// Builds the ViewModel of the edit, cancel, reopen and delete buttons.
+  final EntryActionsViewModel Function() createActionsViewModel;
   final DateTime Function() _now;
 
   @override
@@ -53,6 +61,7 @@ class EntryDetailView extends StatelessWidget {
           : _Content(
               args: args,
               createLinkedViewModel: createLinkedViewModel,
+              createActionsViewModel: createActionsViewModel,
               today: () {
                 final now = _now();
                 return DateTime(now.year, now.month, now.day);
@@ -66,12 +75,14 @@ class _Content extends StatelessWidget {
   const _Content({
     required this.args,
     required this.createLinkedViewModel,
+    required this.createActionsViewModel,
     required this.today,
   });
 
   final EntryDetailArgs args;
   final LinkedTransactionsViewModel Function(String entryId)
   createLinkedViewModel;
+  final EntryActionsViewModel Function() createActionsViewModel;
   final DateTime today;
 
   @override
@@ -87,7 +98,10 @@ class _Content extends StatelessWidget {
     final due = entry.dueDate;
 
     final rows = <_DetailRow>[
-      _DetailRow(l10n.detailDescription, Text(entry.description)),
+      _DetailRow(
+        l10n.detailDescription,
+        EllipsisText(entry.description, tapToShow: true, maxLines: 2),
+      ),
       _DetailRow(
         l10n.detailType,
         Text(entry.isRevenue ? l10n.entryTypeRevenue : l10n.entryTypeExpense),
@@ -101,8 +115,14 @@ class _Content extends StatelessWidget {
         }),
       ),
       if (category != null && category.isNotEmpty)
-        _DetailRow(l10n.detailCategory, Text(category)),
-      _DetailRow(l10n.filterAmount, Text(MoneyFormatter.format(entry.amount))),
+        _DetailRow(
+          l10n.detailCategory,
+          EllipsisText(category, tapToShow: true),
+        ),
+      _DetailRow(
+        l10n.filterAmount,
+        EllipsisText(MoneyFormatter.format(entry.amount)),
+      ),
       _DetailRow(
         l10n.entryDetailReference,
         Text(DateFormatter.monthYear(entry.referenceMonth)),
@@ -113,21 +133,23 @@ class _Content extends StatelessWidget {
       ),
       _DetailRow(
         l10n.detailAccount,
-        Text(
+        EllipsisText(
           account == null
               ? '—'
               : '${account.displayName} ••${account.shortNumber}',
+          tapToShow: true,
         ),
       ),
       _DetailRow(
         l10n.entryDetailInstallment,
-        Text(
+        EllipsisText(
           entry.installmentNumber == null || entry.installmentTotal == null
               ? '—'
               : l10n.entryDetailInstallmentOf(
                   entry.installmentNumber!,
                   entry.installmentTotal!,
                 ),
+          tapToShow: true,
         ),
       ),
       if (owner != null)
@@ -154,15 +176,17 @@ class _Content extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: AppSpacing.xs),
-              Text(owner.firstName),
+              EllipsisText(owner.displayName, tapToShow: true),
             ],
           ),
         ),
       _DetailRow(
         l10n.entryDetailNotes,
-        Text(
+        EllipsisText(
           notes == null || notes.isEmpty ? '—' : notes,
           textAlign: TextAlign.end,
+          tapToShow: true,
+          maxLines: 3,
         ),
       ),
     ];
@@ -174,7 +198,7 @@ class _Content extends StatelessWidget {
           children: [
             EntryIcon(entry: entry, size: 56),
             const SizedBox(height: AppSpacing.sm),
-            Text(
+            EllipsisText(
               MoneyFormatter.signed(entry.amount, isIncome: entry.isRevenue),
               style: theme.textTheme.headlineMedium?.copyWith(
                 fontWeight: FontWeight.w600,
@@ -182,10 +206,12 @@ class _Content extends StatelessWidget {
               ),
             ),
             const SizedBox(height: AppSpacing.xxs),
-            Text(
+            EllipsisText(
               entry.description,
               style: theme.textTheme.titleMedium,
               textAlign: TextAlign.center,
+              tapToShow: true,
+              maxLines: 3,
             ),
             const SizedBox(height: AppSpacing.xs),
             EntryStatusBadge(badge: entryBadge(entry, today)),
@@ -203,7 +229,14 @@ class _Content extends StatelessWidget {
           ),
         ),
         const SizedBox(height: AppSpacing.lg),
-        _Timeline(entry: entry, owner: owner?.firstName),
+        _Timeline(entry: entry, owner: owner?.displayName),
+        const SizedBox(height: AppSpacing.md),
+        EntryDetailActions(
+          entry: entry,
+          accounts: args.accounts,
+          today: today,
+          createViewModel: createActionsViewModel,
+        ),
         if (entry.status == EntryStatus.reconciled) ...[
           const SizedBox(height: AppSpacing.lg),
           LinkedTransactionSection(

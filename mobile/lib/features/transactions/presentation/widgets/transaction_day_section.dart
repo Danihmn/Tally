@@ -3,6 +3,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:mobile/app/theme/app_spacing.dart';
 import 'package:mobile/core/utils/date_formatter.dart';
 import 'package:mobile/core/utils/money_formatter.dart';
+import 'package:mobile/core/widgets/ellipsis_text.dart';
 import 'package:mobile/features/transactions/domain/entities/transaction_day_group.dart';
 import 'package:mobile/l10n/app_localizations.dart';
 
@@ -60,7 +61,7 @@ class TransactionDaySection extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(transactionDayLabel(l10n, group.day, today), style: muted),
-              Text(
+              EllipsisText(
                 MoneyFormatter.signed(total.abs(), isIncome: positive),
                 style: muted,
               ),

@@ -1,3 +1,4 @@
+import datetime
 import unittest
 from decimal import Decimal
 from unittest.mock import MagicMock, patch
@@ -8,12 +9,18 @@ from domain.read_models import FinancialEntryFilters
 from services.financial_entries_service import (
     count_not_reconciled_entries,
     count_reconciled_entries,
+    create_financial_entry,
+    delete_financial_entry,
+    get_financial_entry,
     get_total_not_reconciled,
     get_total_planned,
     get_total_reconciled,
     list_upcoming_entries,
     summarize_financial_entries,
+    update_financial_entry,
 )
+from services.common.exceptions import InvalidDataError, NotFoundError
+from tests.factories import HOUSEHOLD_ID, make_entry
 
 MODULE = "services.financial_entries_service"
 
@@ -180,3 +187,159 @@ class ListUpcomingEntriesTests(unittest.TestCase):
         result, _, _ = self._run([])
 
         self.assertEqual(result, [])
+
+
+def _as_model(entry):
+    """What the repository returns: an object with the columns of the entry."""
+    import dataclasses
+    from types import SimpleNamespace
+
+    return SimpleNamespace(**{f.name: getattr(entry, f.name) for f in dataclasses.fields(entry)})
+
+
+class GetFinancialEntryTests(unittest.TestCase):
+    def test_returns_the_entry_of_the_household(self):
+        entry = make_entry()
+        with patch(f"{MODULE}.financial_entries_repository") as repository:
+            repository.get_financial_entry.return_value = _as_model(entry)
+            result = get_financial_entry(MagicMock(), HOUSEHOLD_ID, entry.id)
+
+        self.assertEqual(result, entry)
+        self.assertEqual(repository.get_financial_entry.call_args.args[1:], (entry.id, HOUSEHOLD_ID))
+
+    def test_an_entry_outside_the_household_is_not_found(self):
+        with patch(f"{MODULE}.financial_entries_repository") as repository:
+            repository.get_financial_entry.return_value = None
+            with self.assertRaises(NotFoundError):
+                get_financial_entry(MagicMock(), HOUSEHOLD_ID, uuid.uuid4())
+
+
+class CreateFinancialEntryTests(unittest.TestCase):
+    def test_stores_the_entry_and_returns_it(self):
+        entry = make_entry(id=None)
+        with patch(f"{MODULE}.financial_entries_repository") as repository:
+            repository.create_financial_entry.side_effect = lambda session, values: _as_model(
+                make_entry(**{**values, "id": uuid.uuid4()})
+            )
+            result = create_financial_entry(MagicMock(), entry)
+
+        values = repository.create_financial_entry.call_args.args[1]
+        self.assertNotIn("id", values)
+        self.assertEqual(values["description"], entry.description)
+        self.assertIsNotNone(result.id)
+
+    def test_a_bank_account_of_another_household_is_invalid_data(self):
+        entry = make_entry(id=None, bank_account_id=uuid.uuid4())
+        with (
+            patch(f"{MODULE}.financial_entries_repository") as repository,
+            patch(f"{MODULE}.bank_account_repository") as accounts,
+        ):
+            accounts.get_bank_account_with_owner.return_value = None
+            with self.assertRaises(InvalidDataError):
+                create_financial_entry(MagicMock(), entry)
+
+        repository.create_financial_entry.assert_not_called()
+
+    def test_a_bank_account_of_the_household_is_accepted(self):
+        entry = make_entry(id=None, bank_account_id=uuid.uuid4())
+        with (
+            patch(f"{MODULE}.financial_entries_repository") as repository,
+            patch(f"{MODULE}.bank_account_repository") as accounts,
+        ):
+            accounts.get_bank_account_with_owner.return_value = (MagicMock(), uuid.uuid4())
+            repository.create_financial_entry.return_value = _as_model(make_entry())
+            create_financial_entry(MagicMock(), entry)
+
+        repository.create_financial_entry.assert_called_once()
+
+
+class UpdateFinancialEntryTests(unittest.TestCase):
+    def _update(self, stored, values):
+        with patch(f"{MODULE}.financial_entries_repository") as repository:
+            repository.get_financial_entry.return_value = _as_model(stored)
+            repository.update_financial_entry.side_effect = lambda session, model, vals: _as_model(
+                make_entry(**{**vars(model), **vals})
+            )
+            result = update_financial_entry(MagicMock(), HOUSEHOLD_ID, stored.id, values)
+        return result, repository
+
+    def test_writes_only_the_given_values(self):
+        stored = make_entry()
+
+        result, repository = self._update(stored, {"notes": "new"})
+
+        self.assertEqual(repository.update_financial_entry.call_args.args[2], {"notes": "new"})
+        self.assertEqual(result.notes, "new")
+
+    def test_an_entry_outside_the_household_is_not_found(self):
+        with patch(f"{MODULE}.financial_entries_repository") as repository:
+            repository.get_financial_entry.return_value = None
+            with self.assertRaises(NotFoundError):
+                update_financial_entry(MagicMock(), HOUSEHOLD_ID, uuid.uuid4(), {"notes": "x"})
+
+    def test_a_reconciled_entry_cannot_change_amount_type_month_or_status(self):
+        stored = make_entry(status="RECONCILED")
+        for values in (
+            {"amount": Decimal("1")},
+            {"type": "REVENUES"},
+            {"status": "CANCELLED"},
+            {"reference_month": datetime.date(2027, 1, 1)},
+        ):
+            with self.assertRaises(InvalidDataError, msg=values):
+                self._update(stored, values)
+
+    def test_a_reconciled_entry_accepts_the_locked_fields_with_the_same_value(self):
+        stored = make_entry(status="RECONCILED")
+
+        result, _ = self._update(
+            stored,
+            {"amount": stored.amount, "type": stored.type, "notes": "n"},
+        )
+
+        self.assertEqual(result.notes, "n")
+
+    def test_a_reconciled_entry_can_still_change_its_notes_and_category(self):
+        stored = make_entry(status="RECONCILED")
+
+        result, _ = self._update(stored, {"notes": "n", "category": "Moradia"})
+
+        self.assertEqual((result.notes, result.category), ("n", "Moradia"))
+
+    def test_installments_must_stay_together_after_the_change(self):
+        stored = make_entry(installment_number=1, installment_total=3)
+
+        with self.assertRaises(InvalidDataError):
+            self._update(stored, {"installment_total": None})
+
+    def test_the_total_of_installments_cannot_be_below_the_number(self):
+        stored = make_entry(installment_number=2, installment_total=3)
+
+        with self.assertRaises(InvalidDataError):
+            self._update(stored, {"installment_total": 1})
+
+
+class DeleteFinancialEntryTests(unittest.TestCase):
+    def test_soft_deletes_a_planned_entry(self):
+        stored = make_entry()
+        model = _as_model(stored)
+        with patch(f"{MODULE}.financial_entries_repository") as repository:
+            repository.get_financial_entry.return_value = model
+            delete_financial_entry(MagicMock(), HOUSEHOLD_ID, stored.id)
+
+        repository.soft_delete_financial_entry.assert_called_once()
+        self.assertIs(repository.soft_delete_financial_entry.call_args.args[1], model)
+
+    def test_a_reconciled_entry_is_not_deleted(self):
+        stored = make_entry(status="RECONCILED")
+        with patch(f"{MODULE}.financial_entries_repository") as repository:
+            repository.get_financial_entry.return_value = _as_model(stored)
+            with self.assertRaises(InvalidDataError):
+                delete_financial_entry(MagicMock(), HOUSEHOLD_ID, stored.id)
+
+        repository.soft_delete_financial_entry.assert_not_called()
+
+    def test_an_entry_outside_the_household_is_not_found(self):
+        with patch(f"{MODULE}.financial_entries_repository") as repository:
+            repository.get_financial_entry.return_value = None
+            with self.assertRaises(NotFoundError):
+                delete_financial_entry(MagicMock(), HOUSEHOLD_ID, uuid.uuid4())

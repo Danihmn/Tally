@@ -32,6 +32,28 @@ void main() {
       expect(find.text('2 pessoas'), findsOneWidget);
     });
 
+    testWidgets('shows_only_the_nickname_of_each_person', (tester) async {
+      const dudu = Member(
+        id: 'm3',
+        firstName: 'Eduardo',
+        lastName: 'Souza',
+        surname: 'Dudu',
+        householdId: 'h',
+      );
+      final withNickname = SpendingByMember([
+        MemberSpending(member: dudu, amount: dec('100.00')),
+      ]);
+
+      await pumpApp(
+        tester,
+        MembersCard(spending: withNickname, members: const [dudu], meId: 'm9'),
+      );
+
+      expect(find.text('Dudu'), findsOneWidget);
+      expect(find.textContaining('Eduardo'), findsNothing);
+      expect(find.textContaining('Souza'), findsNothing);
+    });
+
     testWidgets('the_split_bar_has_a_visible_height_for_each_person', (
       tester,
     ) async {

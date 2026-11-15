@@ -10,6 +10,12 @@ import 'package:mobile/core/error/failure.dart';
 /// validation (422). We read only the field names from the list and never
 /// show server text to the user.
 class ErrorInterceptor extends Interceptor {
+  /// The `code` the API sends when there is no recurrence to provision from.
+  static const noRecurrencesCode = 'NO_RECURRENCES';
+
+  /// The `code` the API sends when a user's e-mail is already taken.
+  static const emailAlreadyExistsCode = 'EMAIL_ALREADY_EXISTS';
+
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) {
     handler.next(err.copyWith(error: failureFrom(err)));
@@ -42,9 +48,20 @@ class ErrorInterceptor extends Interceptor {
     if (status == null) return const UnknownFailure();
     if (status == 401) return const UnauthorizedFailure();
     if (status == 404) return const NotFoundFailure();
-    if (status == 409) return const ConflictFailure();
+    if (status == 409) {
+      final data = response?.data;
+      if (data is Map<String, dynamic> &&
+          data['code'] == emailAlreadyExistsCode) {
+        return const EmailAlreadyExistsFailure();
+      }
+      return const ConflictFailure();
+    }
     if (status == 422) {
-      return ValidationFailure(fields: _invalidFields(response?.data));
+      final data = response?.data;
+      if (data is Map<String, dynamic> && data['code'] == noRecurrencesCode) {
+        return const NoRecurrencesFailure();
+      }
+      return ValidationFailure(fields: _invalidFields(data));
     }
     if (status >= 500) return const ServerUnavailableFailure();
     return const UnknownFailure();
