@@ -228,6 +228,8 @@ void main() {
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
       final router = createAppRouter(
+        chat: const SizedBox(),
+        conversations: const SizedBox(),
         home: const SizedBox(),
         login: const SizedBox(),
         transactions: const Text('TRANSACTIONS-PAGE'),

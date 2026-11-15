@@ -64,6 +64,7 @@ cp .env.example .env
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | Access token lifetime |
 | `ENCRYPTION_KEY` | Fernet key that encrypts the Pluggy client secret |
 | `PUBLIC_BASE_URL` | Public HTTPS URL Pluggy reaches the backend at (the ngrok one) |
+| `CONVERSATION_TOKEN_LIMIT` | Optional, default `50000`. Size of a Tally AI conversation (tokens the model reads) at which it is full: the app warns at 80% and `POST /tally/chat` answers 409 `conversation_limit_reached` at 100%. Copied to each conversation when it is created |
 | `BEDROCK_API_KEY` | Optional. Empty or unset: the AI agents use local Ollama (dev). Filled: they use the OpenAI model on AWS Bedrock (production) |
 | `BEDROCK_BASE_URL` | OpenAI-compatible Bedrock endpoint. Required when `BEDROCK_API_KEY` is set |
 | `BEDROCK_MODEL` | Bedrock model id. Required when `BEDROCK_API_KEY` is set |

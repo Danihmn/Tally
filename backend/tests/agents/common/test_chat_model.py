@@ -46,6 +46,7 @@ class TestBuildChatModel(unittest.TestCase):
             model="openai.gpt-oss-120b-1:0",
             api_key="secret",
             base_url="https://bedrock.example/openai/v1",
+            stream_usage=True,
         )
         chat_ollama.assert_not_called()
         self.assertIs(model, chat_openai.return_value)

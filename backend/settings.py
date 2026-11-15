@@ -22,6 +22,8 @@ class Settings(BaseSettings):
     bedrock_api_key: str | None = None
     bedrock_base_url: str | None = None
     bedrock_model: str | None = None
+    # Context size (tokens the model reads) at which a Tally AI conversation is full. Copied to conversations.token_limit
+    conversation_token_limit: int = 50_000
 
 
 settings = Settings()  # type: ignore

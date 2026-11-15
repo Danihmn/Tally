@@ -39,6 +39,18 @@ void main() {
       }
     });
 
+    test('lists_the_three_tally_chat_endpoints', () {
+      expect(ApiEndpoints.all, contains(ApiEndpoints.chat));
+      expect(ApiEndpoints.all, contains(ApiEndpoints.conversations));
+      expect(ApiEndpoints.all, contains(ApiEndpoints.conversation));
+      expect(ApiEndpoints.chat.toString(), 'POST /tally/chat');
+      expect(ApiEndpoints.conversations.toString(), 'GET /tally/conversations');
+      expect(
+        ApiEndpoints.conversation.toString(),
+        'GET /tally/conversations/{id}',
+      );
+    });
+
     test('prints_as_method_and_path', () {
       expect(
         ApiEndpoints.totalExpenses.toString(),

@@ -15,7 +15,7 @@ behind a repository interface.
 | 6 | No update/delete for entries | Edit/cancel actions | Not built |
 | 7 | No credit limit or due date in `BankAccountResponse` | Card details | Not shown |
 | 8 | `GET /bank-accounts` and `GET /users` return plain lists (no `total`) | "Has more" is guessed from a full page | `PaginatedViewModel` handles it |
-| 9 | Chat is stateless (`POST /tally/chat {message}`); no conversation id or history | "Nova conversa", history list | The thread lives in memory. History will be owned by the API |
+| 9 | **Resolved.** Chat now has many conversations per user: `POST /tally/chat` (`message`, `conversation_id`, answer as SSE `meta`/`token`/`done`/`error`; 404, 409 `conversation_limit_reached`), `GET /tally/conversations` and `GET /tally/conversations/{id}`. Still missing: rename and delete a conversation, a time per message | "Nova conversa", history list, token limit banner | Built in `features/chat`. The history list has no rename or delete. Messages show no time |
 | 10 | Validation 422 returns `detail` as a list, other errors as a string | Client must accept both | Done in `ErrorInterceptor` |
 | 11 | `GET /users` lists the users of every household (no filter) | The Home needs only the people of its house | The app filters by `household_id` |
 | 12 | Home "Precisa de atenção": no endpoint for a bank authorization about to expire (gap 1) or for overdue entries | Only "N lançamentos sem conciliar" is shown (from `reconciliation-counts`) | The other two items are left out |

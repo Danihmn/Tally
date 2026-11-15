@@ -36,6 +36,12 @@ final class ValidationFailure extends Failure {
   List<Object?> get props => [fields];
 }
 
+/// 409 on a chat message: the conversation reached its token limit and only
+/// a new conversation can go on.
+final class ConversationFullFailure extends Failure {
+  const ConversationFullFailure();
+}
+
 /// 5xx, including 503 when the AI or a service is down.
 final class ServerUnavailableFailure extends Failure {
   const ServerUnavailableFailure();

@@ -18,7 +18,9 @@ def build_chat_model():
             "BEDROCK_API_KEY is set, so BEDROCK_MODEL and BEDROCK_BASE_URL must be set too"
         )
     return ChatOpenAI(
-        model=settings.bedrock_model,
+        model=settings.bedrock_model,  # type: ignore
         api_key=settings.bedrock_api_key,  # type: ignore
         base_url=settings.bedrock_base_url,
+        # Without it a streamed answer carries no token usage, and the conversation limit needs it
+        stream_usage=True,
     )

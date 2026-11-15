@@ -12,6 +12,10 @@ import 'package:mobile/features/accounts/presentation/viewmodels/accounts_view_m
 import 'package:mobile/features/accounts/presentation/views/accounts_view.dart';
 import 'package:mobile/features/auth/presentation/viewmodels/login_view_model.dart';
 import 'package:mobile/features/auth/presentation/views/login_view.dart';
+import 'package:mobile/features/chat/presentation/viewmodels/chat_view_model.dart';
+import 'package:mobile/features/chat/presentation/viewmodels/conversations_view_model.dart';
+import 'package:mobile/features/chat/presentation/views/chat_view.dart';
+import 'package:mobile/features/chat/presentation/views/conversations_view.dart';
 import 'package:mobile/features/entries/presentation/viewmodels/entries_view_model.dart';
 import 'package:mobile/features/entries/presentation/viewmodels/linked_transactions_view_model.dart';
 import 'package:mobile/features/entries/presentation/views/entries_view.dart';
@@ -58,6 +62,10 @@ Future<void> main() async {
         accounts: AccountsView(
           createViewModel: () => getIt<AccountsViewModel>(),
           filterRequest: getIt<TransactionsFilterRequest>(),
+        ),
+        chat: ChatView(createViewModel: () => getIt<ChatViewModel>()),
+        conversations: ConversationsView(
+          createViewModel: () => getIt<ConversationsViewModel>(),
         ),
         transactionDetail: (args) => TransactionDetailView(
           args: args,

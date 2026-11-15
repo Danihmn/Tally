@@ -15,6 +15,8 @@ void main() {
     String? Function(BuildContext, Object)? redirect,
   }) {
     final router = createAppRouter(
+      chat: const Text('CHAT-PAGE'),
+      conversations: const Text('CONVERSATIONS-PAGE'),
       home: const SizedBox(),
       login: const SizedBox(),
       transactions: const SizedBox(),
@@ -65,6 +67,41 @@ void main() {
         );
       }
       expect(AppRoutes.home, '/home');
+    });
+
+    testWidgets(
+      'the_conversations_route_opens_over_the_tabs_and_pops_a_value',
+      (tester) async {
+        await pumpRouter(tester);
+        await tester.pumpAndSettle();
+        final context = tester.element(find.byType(NavigationBar));
+
+        final result = GoRouter.of(context)
+            .push<String>(AppRoutes.chatConversations);
+        await tester.pumpAndSettle();
+        expect(find.text('CONVERSATIONS-PAGE'), findsOneWidget);
+        expect(find.byType(NavigationBar), findsNothing);
+
+        GoRouter.of(tester.element(find.text('CONVERSATIONS-PAGE'))).pop('c1');
+        await tester.pumpAndSettle();
+
+        expect(await result, 'c1');
+      },
+    );
+
+    testWidgets('the_chat_tab_shows_the_chat_view', (tester) async {
+      await pumpRouter(tester);
+      await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.descendant(
+          of: find.byType(NavigationBar),
+          matching: find.text('Tally IA'),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('CHAT-PAGE'), findsOneWidget);
     });
 
     testWidgets('the_transaction_detail_without_args_gets_null', (

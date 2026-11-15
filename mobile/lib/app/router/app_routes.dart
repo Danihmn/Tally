@@ -12,4 +12,7 @@ abstract final class AppRoutes {
   static const entryDetail = '/entries/detail';
   static const accounts = '/accounts';
   static const chat = '/chat';
+
+  /// The conversation history. It covers the tabs and pops with the id.
+  static const chatConversations = '/chat/conversations';
 }

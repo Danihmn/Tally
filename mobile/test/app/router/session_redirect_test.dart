@@ -38,6 +38,8 @@ void main() {
   }) async {
     await session.restore();
     final router = createAppRouter(
+      chat: const SizedBox(),
+      conversations: const SizedBox(),
       home: const Text('HOME-PAGE'),
       login: const Text('LOGIN-PAGE'),
       transactions: const Text('TRANSACTIONS-PAGE'),

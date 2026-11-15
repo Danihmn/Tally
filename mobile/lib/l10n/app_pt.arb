@@ -501,5 +501,53 @@
   "accountsEmptyKindText": "Não há itens deste tipo conectados para esta seleção.",
   "accountsTotalsError": "Não foi possível carregar os totais.",
   "configErrorTitle": "Configuração ausente",
-  "configErrorMessage": "O app não foi iniciado com uma URL de API válida. Rode com --dart-define=API_BASE_URL=<url>."
+  "configErrorMessage": "O app não foi iniciado com uma URL de API válida. Rode com --dart-define=API_BASE_URL=<url>.",
+  "failureConversationFull": "Esta conversa atingiu o limite. Inicie uma nova conversa.",
+  "chatNewConversation": "Nova conversa",
+  "chatHistory": "Histórico de conversas",
+  "chatEmptyTitle": "Pergunte sobre o dinheiro da casa",
+  "chatEmptySubtitle": "Eu consulto transações, lançamentos, contas e cartões e respondo em linguagem simples.",
+  "chatSuggestion1": "Quanto gastei este mês?",
+  "chatSuggestion2": "Quanto cada pessoa da casa gastou?",
+  "chatSuggestion3": "Quais são meus próximos lançamentos?",
+  "chatSuggestion4": "Qual o saldo das nossas contas?",
+  "chatSuggestion5": "Quanto gastei em mercado?",
+  "chatSuggestion6": "Quais cartões temos e qual o limite?",
+  "chatInputHint": "Pergunte ao Tally…",
+  "chatSend": "Enviar mensagem",
+  "chatCaption": "O Tally IA pode errar. Confira os valores importantes.",
+  "chatHistorySaved": "O histórico das conversas fica salvo e você pode continuar depois.",
+  "chatTyping": "Digitando… consultando seus dados",
+  "chatErrorMessage": "Não consegui responder agora.",
+  "chatErrorRetry": "Tentar de novo",
+  "chatWarning": "A conversa está chegando ao limite. Considere iniciar uma nova conversa.",
+  "chatFullTitle": "Conversa cheia",
+  "chatFullMessage": "Esta conversa atingiu o limite e agora é só de leitura.",
+  "chatStartNew": "Iniciar nova conversa",
+  "chatCounter": "{count}/{max}",
+  "@chatCounter": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "chatYou": "Você",
+  "chatAssistant": "Tally IA",
+  "conversationsTitle": "Histórico",
+  "conversationsBack": "Voltar ao chat",
+  "conversationsEmptyTitle": "Nenhuma conversa ainda",
+  "conversationsEmptyMessage": "Quando você perguntar algo ao Tally IA, a conversa aparece aqui.",
+  "conversationUntitled": "Conversa sem título",
+  "conversationUsage": "{percent}% do limite",
+  "@conversationUsage": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  }
 }

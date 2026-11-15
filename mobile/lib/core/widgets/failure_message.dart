@@ -9,6 +9,7 @@ String failureMessage(AppLocalizations l10n, Failure failure) =>
       NotFoundFailure() => l10n.failureNotFound,
       ConflictFailure() => l10n.failureConflict,
       ValidationFailure() => l10n.failureValidation,
+      ConversationFullFailure() => l10n.failureConversationFull,
       ServerUnavailableFailure() => l10n.failureServer,
       NetworkFailure() => l10n.failureNetwork,
       TimeoutFailure() => l10n.failureTimeout,

@@ -24,7 +24,7 @@ class ApiEndpoint {
 /// [all] too.
 ///
 /// NOT COMPLETE YET: the endpoints created before this registry and used by
-/// the app (the entry list, `/tally/chat`, ...) are not marked yet. Until they
+/// the app (the entry list, ...) are not marked yet. Until they
 /// are, do not use this list alone to delete routes from the backend.
 abstract final class ApiEndpoints {
   // Login and household
@@ -146,6 +146,24 @@ abstract final class ApiEndpoints {
     usedBy: 'Upcoming entries',
   );
 
+  // Tally IA chat
+
+  /// Sends a question. The answer is a `text/event-stream` (SSE).
+  static const chat = ApiEndpoint('POST', '/tally/chat', usedBy: 'Tally IA');
+
+  static const conversations = ApiEndpoint(
+    'GET',
+    '/tally/conversations',
+    usedBy: 'Tally IA',
+  );
+
+  /// One conversation with its messages. `{id}` is the conversation id.
+  static const conversation = ApiEndpoint(
+    'GET',
+    '/tally/conversations/{id}',
+    usedBy: 'Tally IA',
+  );
+
   /// Every endpoint above. Add new ones here too.
   static const all = <ApiEndpoint>[
     login,
@@ -167,5 +185,8 @@ abstract final class ApiEndpoints {
     dailyExpenses,
     averageDailyExpenses,
     upcomingEntries,
+    chat,
+    conversations,
+    conversation,
   ];
 }

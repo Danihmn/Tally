@@ -808,4 +808,108 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get configErrorMessage =>
       'O app não foi iniciado com uma URL de API válida. Rode com --dart-define=API_BASE_URL=<url>.';
+
+  @override
+  String get failureConversationFull =>
+      'Esta conversa atingiu o limite. Inicie uma nova conversa.';
+
+  @override
+  String get chatNewConversation => 'Nova conversa';
+
+  @override
+  String get chatHistory => 'Histórico de conversas';
+
+  @override
+  String get chatEmptyTitle => 'Pergunte sobre o dinheiro da casa';
+
+  @override
+  String get chatEmptySubtitle =>
+      'Eu consulto transações, lançamentos, contas e cartões e respondo em linguagem simples.';
+
+  @override
+  String get chatSuggestion1 => 'Quanto gastei este mês?';
+
+  @override
+  String get chatSuggestion2 => 'Quanto cada pessoa da casa gastou?';
+
+  @override
+  String get chatSuggestion3 => 'Quais são meus próximos lançamentos?';
+
+  @override
+  String get chatSuggestion4 => 'Qual o saldo das nossas contas?';
+
+  @override
+  String get chatSuggestion5 => 'Quanto gastei em mercado?';
+
+  @override
+  String get chatSuggestion6 => 'Quais cartões temos e qual o limite?';
+
+  @override
+  String get chatInputHint => 'Pergunte ao Tally…';
+
+  @override
+  String get chatSend => 'Enviar mensagem';
+
+  @override
+  String get chatCaption =>
+      'O Tally IA pode errar. Confira os valores importantes.';
+
+  @override
+  String get chatHistorySaved =>
+      'O histórico das conversas fica salvo e você pode continuar depois.';
+
+  @override
+  String get chatTyping => 'Digitando… consultando seus dados';
+
+  @override
+  String get chatErrorMessage => 'Não consegui responder agora.';
+
+  @override
+  String get chatErrorRetry => 'Tentar de novo';
+
+  @override
+  String get chatWarning =>
+      'A conversa está chegando ao limite. Considere iniciar uma nova conversa.';
+
+  @override
+  String get chatFullTitle => 'Conversa cheia';
+
+  @override
+  String get chatFullMessage =>
+      'Esta conversa atingiu o limite e agora é só de leitura.';
+
+  @override
+  String get chatStartNew => 'Iniciar nova conversa';
+
+  @override
+  String chatCounter(int count, int max) {
+    return '$count/$max';
+  }
+
+  @override
+  String get chatYou => 'Você';
+
+  @override
+  String get chatAssistant => 'Tally IA';
+
+  @override
+  String get conversationsTitle => 'Histórico';
+
+  @override
+  String get conversationsBack => 'Voltar ao chat';
+
+  @override
+  String get conversationsEmptyTitle => 'Nenhuma conversa ainda';
+
+  @override
+  String get conversationsEmptyMessage =>
+      'Quando você perguntar algo ao Tally IA, a conversa aparece aqui.';
+
+  @override
+  String get conversationUntitled => 'Conversa sem título';
+
+  @override
+  String conversationUsage(int percent) {
+    return '$percent% do limite';
+  }
 }

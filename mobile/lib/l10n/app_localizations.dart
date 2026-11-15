@@ -1467,6 +1467,192 @@ abstract class AppLocalizations {
   /// In pt, this message translates to:
   /// **'O app não foi iniciado com uma URL de API válida. Rode com --dart-define=API_BASE_URL=<url>.'**
   String get configErrorMessage;
+
+  /// No description provided for @failureConversationFull.
+  ///
+  /// In pt, this message translates to:
+  /// **'Esta conversa atingiu o limite. Inicie uma nova conversa.'**
+  String get failureConversationFull;
+
+  /// No description provided for @chatNewConversation.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nova conversa'**
+  String get chatNewConversation;
+
+  /// No description provided for @chatHistory.
+  ///
+  /// In pt, this message translates to:
+  /// **'Histórico de conversas'**
+  String get chatHistory;
+
+  /// No description provided for @chatEmptyTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Pergunte sobre o dinheiro da casa'**
+  String get chatEmptyTitle;
+
+  /// No description provided for @chatEmptySubtitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Eu consulto transações, lançamentos, contas e cartões e respondo em linguagem simples.'**
+  String get chatEmptySubtitle;
+
+  /// No description provided for @chatSuggestion1.
+  ///
+  /// In pt, this message translates to:
+  /// **'Quanto gastei este mês?'**
+  String get chatSuggestion1;
+
+  /// No description provided for @chatSuggestion2.
+  ///
+  /// In pt, this message translates to:
+  /// **'Quanto cada pessoa da casa gastou?'**
+  String get chatSuggestion2;
+
+  /// No description provided for @chatSuggestion3.
+  ///
+  /// In pt, this message translates to:
+  /// **'Quais são meus próximos lançamentos?'**
+  String get chatSuggestion3;
+
+  /// No description provided for @chatSuggestion4.
+  ///
+  /// In pt, this message translates to:
+  /// **'Qual o saldo das nossas contas?'**
+  String get chatSuggestion4;
+
+  /// No description provided for @chatSuggestion5.
+  ///
+  /// In pt, this message translates to:
+  /// **'Quanto gastei em mercado?'**
+  String get chatSuggestion5;
+
+  /// No description provided for @chatSuggestion6.
+  ///
+  /// In pt, this message translates to:
+  /// **'Quais cartões temos e qual o limite?'**
+  String get chatSuggestion6;
+
+  /// No description provided for @chatInputHint.
+  ///
+  /// In pt, this message translates to:
+  /// **'Pergunte ao Tally…'**
+  String get chatInputHint;
+
+  /// No description provided for @chatSend.
+  ///
+  /// In pt, this message translates to:
+  /// **'Enviar mensagem'**
+  String get chatSend;
+
+  /// No description provided for @chatCaption.
+  ///
+  /// In pt, this message translates to:
+  /// **'O Tally IA pode errar. Confira os valores importantes.'**
+  String get chatCaption;
+
+  /// No description provided for @chatHistorySaved.
+  ///
+  /// In pt, this message translates to:
+  /// **'O histórico das conversas fica salvo e você pode continuar depois.'**
+  String get chatHistorySaved;
+
+  /// No description provided for @chatTyping.
+  ///
+  /// In pt, this message translates to:
+  /// **'Digitando… consultando seus dados'**
+  String get chatTyping;
+
+  /// No description provided for @chatErrorMessage.
+  ///
+  /// In pt, this message translates to:
+  /// **'Não consegui responder agora.'**
+  String get chatErrorMessage;
+
+  /// No description provided for @chatErrorRetry.
+  ///
+  /// In pt, this message translates to:
+  /// **'Tentar de novo'**
+  String get chatErrorRetry;
+
+  /// No description provided for @chatWarning.
+  ///
+  /// In pt, this message translates to:
+  /// **'A conversa está chegando ao limite. Considere iniciar uma nova conversa.'**
+  String get chatWarning;
+
+  /// No description provided for @chatFullTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Conversa cheia'**
+  String get chatFullTitle;
+
+  /// No description provided for @chatFullMessage.
+  ///
+  /// In pt, this message translates to:
+  /// **'Esta conversa atingiu o limite e agora é só de leitura.'**
+  String get chatFullMessage;
+
+  /// No description provided for @chatStartNew.
+  ///
+  /// In pt, this message translates to:
+  /// **'Iniciar nova conversa'**
+  String get chatStartNew;
+
+  /// No description provided for @chatCounter.
+  ///
+  /// In pt, this message translates to:
+  /// **'{count}/{max}'**
+  String chatCounter(int count, int max);
+
+  /// No description provided for @chatYou.
+  ///
+  /// In pt, this message translates to:
+  /// **'Você'**
+  String get chatYou;
+
+  /// No description provided for @chatAssistant.
+  ///
+  /// In pt, this message translates to:
+  /// **'Tally IA'**
+  String get chatAssistant;
+
+  /// No description provided for @conversationsTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Histórico'**
+  String get conversationsTitle;
+
+  /// No description provided for @conversationsBack.
+  ///
+  /// In pt, this message translates to:
+  /// **'Voltar ao chat'**
+  String get conversationsBack;
+
+  /// No description provided for @conversationsEmptyTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nenhuma conversa ainda'**
+  String get conversationsEmptyTitle;
+
+  /// No description provided for @conversationsEmptyMessage.
+  ///
+  /// In pt, this message translates to:
+  /// **'Quando você perguntar algo ao Tally IA, a conversa aparece aqui.'**
+  String get conversationsEmptyMessage;
+
+  /// No description provided for @conversationUntitled.
+  ///
+  /// In pt, this message translates to:
+  /// **'Conversa sem título'**
+  String get conversationUntitled;
+
+  /// No description provided for @conversationUsage.
+  ///
+  /// In pt, this message translates to:
+  /// **'{percent}% do limite'**
+  String conversationUsage(int percent);
 }
 
 class _AppLocalizationsDelegate
