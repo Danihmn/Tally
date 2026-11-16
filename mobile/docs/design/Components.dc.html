@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Tally — componentes</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;margin:0;cursor:pointer;text-align:inherit}
+button:disabled{opacity:.5;cursor:default}
+input{font:inherit;color:inherit;margin:0}
+h1,h2,h3,p{margin:0}
+.doc{width:1330px;height:3780px;overflow:hidden;padding:40px;background:#EDEFF3;font-family:'Inter',system-ui,sans-serif;font-size:14px;line-height:1.4;color:#14181F;display:flex;flex-direction:column;gap:28px;-webkit-font-smoothing:antialiased}
+.top{display:flex;flex-direction:column;gap:6px}
+.top h1{font-family:'Space Grotesk','Inter',sans-serif;font-size:34px;font-weight:600;letter-spacing:-.02em}
+.top p{color:#434B59;max-width:760px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.p{background:var(--bg);color:var(--tx);border-radius:24px;padding:24px;display:flex;flex-direction:column;gap:14px;border:1px solid #D5D9E1}
+.ph{display:flex;align-items:center;justify-content:space-between}
+.ph h2{font-family:'Space Grotesk','Inter',sans-serif;font-size:20px;font-weight:600}
+.ph span{font-size:12px;color:var(--tx3)}
+.sl{font-size:12px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.04em;margin-top:8px}
+.sl:first-of-type{margin-top:0}
+.c{display:flex;flex-direction:column}.r{display:flex;align-items:center}.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.g6{gap:6px}.g10{gap:10px}.g12{gap:12px}
+.swg{display:grid;grid-template-columns:repeat(7,1fr);gap:10px}
+.sw{display:flex;flex-direction:column;gap:4px}
+.chipc{height:48px;border-radius:12px;border:1px solid rgba(110,120,140,.35)}
+.sn{font-size:11px;font-weight:600;color:#14181F}.sv{font-size:11px;color:#5F6978;font-variant-numeric:tabular-nums}
+.ic{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.ic.s{width:20px;height:20px}.ic.xs{width:16px;height:16px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:52px;padding:0 24px;border-radius:26px;font-weight:600;font-size:15px}
+.btn.p{background:var(--pr);color:var(--onpr)}.btn.t{background:var(--prc);color:var(--onprc)}.btn.o{border:1.5px solid var(--ol2);color:var(--tx)}.btn.d{border:1.5px solid var(--out);color:var(--out)}
+.chip{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 14px;border-radius:12px;border:1px solid var(--ol2);color:var(--tx2);font-weight:500}
+.chip.on{background:var(--prc);border-color:transparent;color:var(--onprc);font-weight:600}
+.av{width:32px;height:32px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:700}
+.av.s{width:22px;height:22px;font-size:11px}
+.av.a{background:var(--abg);color:var(--afg)}.av.b{background:var(--bbg);color:var(--bfg)}
+.seg{display:flex;background:var(--sf2);border-radius:16px;padding:3px;gap:2px}
+.sb{flex:1;min-height:42px;display:flex;align-items:center;justify-content:center;border-radius:13px;font-weight:500;color:var(--tx2);border:1px solid transparent}
+.sb.on{background:var(--sf);color:var(--tx);font-weight:600;border-color:var(--ol);box-shadow:var(--sh)}
+.badge{font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;display:inline-flex;align-items:center;line-height:1.4;white-space:nowrap}
+.b-in{background:var(--inc);color:var(--inn)}.b-out{background:var(--outc);color:var(--out)}.b-wa{background:var(--wac);color:var(--wa)}.b-pr{background:var(--prc);color:var(--onprc)}.b-n{background:var(--sf2);color:var(--tx2)}
+.lbl{font-size:13px;font-weight:600;color:var(--tx2)}
+.inpw{display:flex;align-items:center;border:1.5px solid var(--ol2);border-radius:14px;background:var(--sf);padding-right:4px}
+.inpw.bad{border-color:var(--out)}
+.inp{flex:1;min-width:0;min-height:52px;border:0;background:none;padding:0 14px;font-size:16px;outline:0}
+.pre{padding-left:14px;color:var(--tx3);font-weight:600}
+.err{display:flex;align-items:center;gap:6px;color:var(--out);font-size:12px;font-weight:500}
+.eyeb{width:44px;height:44px;display:flex;align-items:center;justify-content:center;color:var(--tx2)}
+.card{background:var(--sf);border:1px solid var(--ol);border-radius:20px;padding:16px;box-shadow:var(--sh)}
+.cic{width:40px;height:40px;border-radius:20px;display:flex;align-items:center;justify-content:center;flex:none}
+.tm{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
+.te{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.t1{font-size:14px;font-weight:600}.t2{font-size:12px;color:var(--tx3)}
+.amt{font-size:15px;font-weight:600;white-space:nowrap}
+.num{font-family:'Space Grotesk','Inter',sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.in{color:var(--inn)}.out{color:var(--out)}
+.hero{background:var(--pr);color:var(--onpr);border-radius:24px;padding:20px;display:flex;flex-direction:column;gap:4px}
+.hl{font-size:13px;opacity:.92}.hbig{font-size:36px;font-weight:600;line-height:1.1}.hs{font-size:12px;opacity:.9}
+.prog{height:10px;border-radius:5px;background:var(--sf2);overflow:hidden}.prog i{display:block;height:100%;border-radius:5px;background:var(--inn)}
+.trk{height:8px;border-radius:4px;background:var(--sf2);overflow:hidden}.trk i{display:block;height:100%;border-radius:4px}
+.nav{display:flex;border:1px solid var(--ol);border-radius:18px;background:var(--sf);padding:8px 4px 10px}
+.nt{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;font-weight:500;color:var(--tx2)}
+.nt .pill{width:56px;height:30px;border-radius:15px;display:flex;align-items:center;justify-content:center}
+.nt.on{color:var(--tx);font-weight:600}.nt.on .pill{background:var(--prc);color:var(--onprc)}
+.snack{background:#7E2619;color:#F1F3F6;border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:10px;font-weight:500}
+.box{background:#FFFFFF;border:1px solid #D5D9E1;border-radius:24px;padding:24px;display:flex;flex-direction:column;gap:14px}
+.box h2{font-family:'Space Grotesk','Inter',sans-serif;font-size:20px;font-weight:600}
+.ty{display:grid;grid-template-columns:150px 1fr 190px;gap:8px 16px;align-items:baseline;border-top:1px solid #E1E4EA;padding-top:10px}
+.ty:first-of-type{border-top:0;padding-top:0}
+.tk{font-size:12px;font-weight:600;color:#5F6978}.tt{font-size:12px;color:#5F6978;font-variant-numeric:tabular-nums}
+.mp{display:grid;grid-template-columns:200px 1.2fr 1.4fr;gap:0;font-size:13px}
+.mp>div{padding:10px 12px;border-top:1px solid #E1E4EA}
+.mp .h{font-size:12px;font-weight:700;color:#5F6978;text-transform:uppercase;letter-spacing:.04em;border-top:0;padding-top:0}
+.mp .k{font-weight:600}
+.mp .w{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;color:#1B2F5E}
+pre{margin:0;background:#14181F;color:#DCE5F8;border-radius:16px;padding:16px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;line-height:1.55;white-space:pre-wrap}
+.sp{display:flex;gap:10px;flex-wrap:wrap}
+.spi{display:flex;flex-direction:column;gap:6px;align-items:flex-start;font-size:12px;color:#5F6978}
+.spb{background:#34528F;border-radius:4px}
+.rd{width:56px;height:40px;background:#DCE5F8;border:1.5px solid #34528F}
+</style>
+</helmet>
+<div class="doc">
+<div class="top"><h1>Tally · guia de componentes</h1><p>Cores, tipografia e peças do app em tema claro e escuro, com o widget Flutter que cada uma vira. Os valores são os mesmos do protótipo.</p></div>
+<div class="two"><div class="box"><div class="ph"><h2>Cores · claro</h2><span style="font-size:12px;color:#5F6978">Fundo, superfícies, texto e estados</span></div><div class="swg"><div class="sw"><span class="chipc" style="background:#F6F7F9"></span><span class="sn">fundo</span><span class="sv">#F6F7F9</span></div><div class="sw"><span class="chipc" style="background:#FFFFFF"></span><span class="sn">superfície</span><span class="sv">#FFFFFF</span></div><div class="sw"><span class="chipc" style="background:#EEF0F4"></span><span class="sn">superfície 2</span><span class="sv">#EEF0F4</span></div><div class="sw"><span class="chipc" style="background:#E1E4EA"></span><span class="sn">contorno</span><span class="sv">#E1E4EA</span></div><div class="sw"><span class="chipc" style="background:#14181F"></span><span class="sn">texto</span><span class="sv">#14181F</span></div><div class="sw"><span class="chipc" style="background:#434B59"></span><span class="sn">texto 2</span><span class="sv">#434B59</span></div><div class="sw"><span class="chipc" style="background:#34528F"></span><span class="sn">primária</span><span class="sv">#34528F</span></div><div class="sw"><span class="chipc" style="background:#DCE5F8"></span><span class="sn">primária cont.</span><span class="sv">#DCE5F8</span></div><div class="sw"><span class="chipc" style="background:#17703F"></span><span class="sn">receita</span><span class="sv">#17703F</span></div><div class="sw"><span class="chipc" style="background:#DDF3E6"></span><span class="sn">receita cont.</span><span class="sv">#DDF3E6</span></div><div class="sw"><span class="chipc" style="background:#B93A27"></span><span class="sn">despesa</span><span class="sv">#B93A27</span></div><div class="sw"><span class="chipc" style="background:#FBE4DF"></span><span class="sn">despesa cont.</span><span class="sv">#FBE4DF</span></div><div class="sw"><span class="chipc" style="background:#80530A"></span><span class="sn">alerta</span><span class="sv">#80530A</span></div><div class="sw"><span class="chipc" style="background:#FFF0CC"></span><span class="sn">alerta cont.</span><span class="sv">#FFF0CC</span></div></div></div><div class="box"><div class="ph"><h2>Cores · escuro</h2><span style="font-size:12px;color:#5F6978">Fundo, superfícies, texto e estados</span></div><div class="swg"><div class="sw"><span class="chipc" style="background:#0E1116"></span><span class="sn">fundo</span><span class="sv">#0E1116</span></div><div class="sw"><span class="chipc" style="background:#171B22"></span><span class="sn">superfície</span><span class="sv">#171B22</span></div><div class="sw"><span class="chipc" style="background:#1E232C"></span><span class="sn">superfície 2</span><span class="sv">#1E232C</span></div><div class="sw"><span class="chipc" style="background:#2A303B"></span><span class="sn">contorno</span><span class="sv">#2A303B</span></div><div class="sw"><span class="chipc" style="background:#EAEDF2"></span><span class="sn">texto</span><span class="sv">#EAEDF2</span></div><div class="sw"><span class="chipc" style="background:#B5BCC9"></span><span class="sn">texto 2</span><span class="sv">#B5BCC9</span></div><div class="sw"><span class="chipc" style="background:#9EB6F0"></span><span class="sn">primária</span><span class="sv">#9EB6F0</span></div><div class="sw"><span class="chipc" style="background:#27396A"></span><span class="sn">primária cont.</span><span class="sv">#27396A</span></div><div class="sw"><span class="chipc" style="background:#62D49C"></span><span class="sn">receita</span><span class="sv">#62D49C</span></div><div class="sw"><span class="chipc" style="background:#143826"></span><span class="sn">receita cont.</span><span class="sv">#143826</span></div><div class="sw"><span class="chipc" style="background:#FF9784"></span><span class="sn">despesa</span><span class="sv">#FF9784</span></div><div class="sw"><span class="chipc" style="background:#42201A"></span><span class="sn">despesa cont.</span><span class="sv">#42201A</span></div><div class="sw"><span class="chipc" style="background:#F4C762"></span><span class="sn">alerta</span><span class="sv">#F4C762</span></div><div class="sw"><span class="chipc" style="background:#3A2E0E"></span><span class="sn">alerta cont.</span><span class="sv">#3A2E0E</span></div></div></div></div>
+<div class="two">
+<div class="box"><h2>Tipografia</h2><div class="ty"><span class="tk">Título de tela</span><span style="font-family:Space Grotesk,sans-serif;font-size:24px;font-weight:600;letter-spacing:-.02em">Contas</span><span class="tt">Space Grotesk 600 · 24/29</span></div><div class="ty"><span class="tk">Valor em destaque</span><span style="font-family:Space Grotesk,sans-serif;font-size:36px;font-weight:600;font-variant-numeric:tabular-nums">R$ 2.301,45</span><span class="tt">Space Grotesk 600 · 36/40</span></div><div class="ty"><span class="tk">Título de seção</span><span style="font-size:16px;font-weight:600">Gastos por categoria</span><span class="tt">Inter 600 · 16/22</span></div><div class="ty"><span class="tk">Corpo e linha principal</span><span style="font-size:14px;font-weight:600">Assaí Atacadista</span><span class="tt">Inter 400 e 600 · 14/20</span></div><div class="ty"><span class="tk">Legenda</span><span style="font-size:12px;color:#5F6978">Mercado · Santander</span><span class="tt">Inter 400 · 12/16</span></div><div class="ty"><span class="tk">Badge e rótulo</span><span style="font-size:11px;font-weight:600">CONCILIADO</span><span class="tt">Inter 600 · 11/15</span></div></div>
+<div class="box"><h2>Espaço e cantos</h2><span class="tk">ESCALA DE ESPAÇO (PONTOS)</span><div class="sp"><div class="spi"><span class="spb" style="width:4px;height:4px"></span>4</div><div class="spi"><span class="spb" style="width:8px;height:8px"></span>8</div><div class="spi"><span class="spb" style="width:12px;height:12px"></span>12</div><div class="spi"><span class="spb" style="width:16px;height:16px"></span>16</div><div class="spi"><span class="spb" style="width:24px;height:24px"></span>24</div><div class="spi"><span class="spb" style="width:32px;height:32px"></span>32</div></div><span class="tk" style="margin-top:6px">RAIOS</span><div class="sp"><div class="spi"><span class="rd" style="border-radius:10px"></span>10 · botão pequeno</div><div class="spi"><span class="rd" style="border-radius:14px"></span>14 · campo, aviso</div><div class="spi"><span class="rd" style="border-radius:20px"></span>20 · card</div><div class="spi"><span class="rd" style="border-radius:24px"></span>24 · destaque</div><div class="spi"><span class="rd" style="border-radius:26px"></span>26 · botão</div></div><span class="tk" style="margin-top:6px">TOQUE</span><p style="color:#434B59">Todo item que se toca tem pelo menos 44 pontos de altura e largura. Margem lateral das telas: 16.</p></div>
+</div>
+<div class="two"><div class="p" style="--bg:#F6F7F9;--sf:#FFFFFF;--sf2:#EEF0F4;--sf3:#E2E6ED;--ol:#E1E4EA;--ol2:#BFC6D2;--tx:#14181F;--tx2:#434B59;--tx3:#5F6978;--pr:#34528F;--onpr:#FFFFFF;--prc:#DCE5F8;--onprc:#1B2F5E;--inn:#17703F;--inc:#DDF3E6;--out:#B93A27;--outc:#FBE4DF;--wa:#80530A;--wac:#FFF0CC;--sh:0 1px 2px rgba(20,24,31,.05),0 6px 18px rgba(20,24,31,.06);--abg:#DDE5FA;--afg:#2A3F85;--bbg:#FADDE8;--bfg:#8A2150;--mark1:#C96A1E22;--mark1t:#C96A1E"><div class="ph"><h2>Tema claro</h2><span>mesmos componentes, outros tokens</span></div>
+<div class="sl">Botões · FilledButton, FilledButton.tonal, OutlinedButton</div>
+<div class="row"><button class="btn p">Salvar</button><button class="btn t"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Conectar</button><button class="btn o">Pular</button><button class="btn d">Sair da conta</button><button class="btn p" disabled>Entrar</button></div>
+<div class="sl">Chips · ChoiceChip / FilterChip</div>
+<div class="row"><span class="chip on">Mercado</span><span class="chip">Moradia</span><span class="chip">Saúde</span><span class="chip on"><span class="av a s">D</span>Dudu</span><span class="chip"><span class="av b s">A</span>Ana</span></div>
+<div class="sl">Controle segmentado · SegmentedButton</div>
+<div class="seg"><span class="sb on">Eu</span><span class="sb">Ana</span><span class="sb">Casa</span></div>
+<div class="sl">Badges · Container + Text 11/600</div>
+<div class="row"><span class="badge b-in">Conciliado</span><span class="badge b-pr">Planejado</span><span class="badge b-out">Vencido</span><span class="badge b-wa">Pendente</span><span class="badge b-n">Cancelado</span><span class="badge b-n">3/12</span></div>
+<div class="sl">Campos · TextField (raio 14, borda 1.5)</div>
+<div class="c g10">
+<div class="c g6"><span class="lbl">Descrição</span><div class="inpw"><input class="inp" placeholder="Ex.: Conta de luz" aria-label="Descrição"></div></div>
+<div class="c g6"><span class="lbl">Valor</span><div class="inpw bad"><span class="pre">R$</span><input class="inp" value="0,0x" aria-label="Valor com erro"></div><span class="err"><svg class="ic xs" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0zM12 9v4M12 17h.01"></path></svg>Informe um valor válido, como 120,50.</span></div>
+<div class="c g6"><span class="lbl">Senha</span><div class="inpw"><input class="inp" type="password" value="12345678" aria-label="Senha"><span class="eyeb"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"></path></svg></span></div></div>
+</div>
+<div class="sl">Card + linha de transação · Card(elevation 0) + ListTile</div>
+<div class="card c g12">
+<div class="r g12"><span class="cic" style="background:var(--mark1);color:var(--mark1t)"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2l2.4 11a1 1 0 0 0 1 .8h8.8a1 1 0 0 0 1-.8L20 8H6M9 20h.01M17 20h.01"></path></svg></span><span class="tm"><span class="t1">Assaí Atacadista</span><span class="t2">Mercado · Santander Conta Corrente</span></span><span class="te"><span class="amt num out">− R$ 412,37</span><span class="badge b-n">Efetivada</span></span></div>
+<div class="r g12"><span class="cic" style="background:var(--inc);color:var(--inn)"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10l9-6 9 6M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 21h18"></path></svg></span><span class="tm"><span class="t1">Salário</span><span class="t2">Salário · Itaú Conta Corrente</span></span><span class="te"><span class="amt num in">+ R$ 8.900,00</span><span class="badge b-wa">Pendente</span></span></div>
+</div>
+<div class="sl">Saldo em destaque · Container com cor primária</div>
+<div class="hero"><span class="hl">Saldo do mês</span><span class="hbig num">R$ 2.301,45</span><span class="hs">Recebido R$ 8.900,00 · Gasto R$ 3.910,28</span></div>
+<div class="sl">Progresso · LinearProgressIndicator (altura 8 e 10)</div>
+<div class="c g10"><div class="prog"><i style="width:75%"></i></div><div class="trk"><i style="width:62%;background:var(--wa)"></i></div></div>
+<div class="sl">Navegação inferior · NavigationBar</div>
+<div class="nav"><div class="nt"><span class="pill"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"></path></svg></span><span>Início</span></div><div class="nt"><span class="pill"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"></path></svg></span><span>Transações</span></div><div class="nt on"><span class="pill"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3v18l2.5-1.5L10 21l2-1.5 2 1.5 2.5-1.5L19 21V3zM9 8h6M9 12h6"></path></svg></span><span>Lançamentos</span></div><div class="nt"><span class="pill"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10l9-6 9 6M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 21h18"></path></svg></span><span>Contas</span></div><div class="nt"><span class="pill"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9zM19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z"></path></svg></span><span>Tally IA</span></div></div>
+<div class="sl">Snackbar · SnackBar(behavior floating)</div>
+<div class="snack"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0zM12 9v4M12 17h.01"></path></svg><span>Serviço indisponível. Tente novamente em instantes.</span></div>
+</div><div class="p" style="--bg:#0E1116;--sf:#171B22;--sf2:#1E232C;--sf3:#2A303B;--ol:#2A303B;--ol2:#465061;--tx:#EAEDF2;--tx2:#B5BCC9;--tx3:#8E98A8;--pr:#9EB6F0;--onpr:#10224B;--prc:#27396A;--onprc:#DCE5FB;--inn:#62D49C;--inc:#143826;--out:#FF9784;--outc:#42201A;--wa:#F4C762;--wac:#3A2E0E;--sh:none;--abg:#26335A;--afg:#BBCBF5;--bbg:#4A2335;--bfg:#F5BCD2;--mark1:#F0A05633;--mark1t:#F0A056"><div class="ph"><h2>Tema escuro</h2><span>mesmos componentes, outros tokens</span></div>
+<div class="sl">Botões · FilledButton, FilledButton.tonal, OutlinedButton</div>
+<div class="row"><button class="btn p">Salvar</button><button class="btn t"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Conectar</button><button class="btn o">Pular</button><button class="btn d">Sair da conta</button><button class="btn p" disabled>Entrar</button></div>
+<div class="sl">Chips · ChoiceChip / FilterChip</div>
+<div class="row"><span class="chip on">Mercado</span><span class="chip">Moradia</span><span class="chip">Saúde</span><span class="chip on"><span class="av a s">D</span>Dudu</span><span class="chip"><span class="av b s">A</span>Ana</span></div>
+<div class="sl">Controle segmentado · SegmentedButton</div>
+<div class="seg"><span class="sb on">Eu</span><span class="sb">Ana</span><span class="sb">Casa</span></div>
+<div class="sl">Badges · Container + Text 11/600</div>
+<div class="row"><span class="badge b-in">Conciliado</span><span class="badge b-pr">Planejado</span><span class="badge b-out">Vencido</span><span class="badge b-wa">Pendente</span><span class="badge b-n">Cancelado</span><span class="badge b-n">3/12</span></div>
+<div class="sl">Campos · TextField (raio 14, borda 1.5)</div>
+<div class="c g10">
+<div class="c g6"><span class="lbl">Descrição</span><div class="inpw"><input class="inp" placeholder="Ex.: Conta de luz" aria-label="Descrição"></div></div>
+<div class="c g6"><span class="lbl">Valor</span><div class="inpw bad"><span class="pre">R$</span><input class="inp" value="0,0x" aria-label="Valor com erro"></div><span class="err"><svg class="ic xs" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0zM12 9v4M12 17h.01"></path></svg>Informe um valor válido, como 120,50.</span></div>
+<div class="c g6"><span class="lbl">Senha</span><div class="inpw"><input class="inp" type="password" value="12345678" aria-label="Senha"><span class="eyeb"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"></path></svg></span></div></div>
+</div>
+<div class="sl">Card + linha de transação · Card(elevation 0) + ListTile</div>
+<div class="card c g12">
+<div class="r g12"><span class="cic" style="background:var(--mark1);color:var(--mark1t)"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2l2.4 11a1 1 0 0 0 1 .8h8.8a1 1 0 0 0 1-.8L20 8H6M9 20h.01M17 20h.01"></path></svg></span><span class="tm"><span class="t1">Assaí Atacadista</span><span class="t2">Mercado · Santander Conta Corrente</span></span><span class="te"><span class="amt num out">− R$ 412,37</span><span class="badge b-n">Efetivada</span></span></div>
+<div class="r g12"><span class="cic" style="background:var(--inc);color:var(--inn)"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10l9-6 9 6M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 21h18"></path></svg></span><span class="tm"><span class="t1">Salário</span><span class="t2">Salário · Itaú Conta Corrente</span></span><span class="te"><span class="amt num in">+ R$ 8.900,00</span><span class="badge b-wa">Pendente</span></span></div>
+</div>
+<div class="sl">Saldo em destaque · Container com cor primária</div>
+<div class="hero"><span class="hl">Saldo do mês</span><span class="hbig num">R$ 2.301,45</span><span class="hs">Recebido R$ 8.900,00 · Gasto R$ 3.910,28</span></div>
+<div class="sl">Progresso · LinearProgressIndicator (altura 8 e 10)</div>
+<div class="c g10"><div class="prog"><i style="width:75%"></i></div><div class="trk"><i style="width:62%;background:var(--wa)"></i></div></div>
+<div class="sl">Navegação inferior · NavigationBar</div>
+<div class="nav"><div class="nt"><span class="pill"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"></path></svg></span><span>Início</span></div><div class="nt"><span class="pill"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"></path></svg></span><span>Transações</span></div><div class="nt on"><span class="pill"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3v18l2.5-1.5L10 21l2-1.5 2 1.5 2.5-1.5L19 21V3zM9 8h6M9 12h6"></path></svg></span><span>Lançamentos</span></div><div class="nt"><span class="pill"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10l9-6 9 6M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 21h18"></path></svg></span><span>Contas</span></div><div class="nt"><span class="pill"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9zM19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z"></path></svg></span><span>Tally IA</span></div></div>
+<div class="sl">Snackbar · SnackBar(behavior floating)</div>
+<div class="snack"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0zM12 9v4M12 17h.01"></path></svg><span>Serviço indisponível. Tente novamente em instantes.</span></div>
+</div></div>
+<div class="box"><h2>Como virar Flutter</h2><div class="mp"><div class="h">Elemento</div><div class="h">Widget Flutter</div><div class="h">Observação</div><div class="k">Tema claro e escuro</div><div class="w">ThemeData + ColorScheme (light e dark) e ThemeMode.system</div><div>Tokens abaixo; receita, despesa e alerta ficam em uma ThemeExtension chamada TallyColors.</div><div class="k">Texto e números</div><div class="w">TextTheme com google_fonts: Space Grotesk (títulos, valores) e Inter (corpo)</div><div>Valores usam FontFeature.tabularFigures() para alinhar as casas.</div><div class="k">Moeda e datas</div><div class="w">intl: NumberFormat.currency(locale: pt_BR, symbol: R$) e DateFormat(dd/MM/yyyy)</div><div>Sinal e cor vêm do tipo da transação (DEBIT ou CREDIT), nunca do texto.</div><div class="k">Navegação inferior</div><div class="w">NavigationBar com 5 NavigationDestination</div><div>Cada aba mantém a própria pilha (go_router com StatefulShellRoute).</div><div class="k">Botões</div><div class="w">FilledButton, FilledButton.tonal, OutlinedButton, TextButton</div><div>Altura mínima 52 (44 no tamanho pequeno), raio 26.</div><div class="k">Chips e filtros ativos</div><div class="w">ChoiceChip e FilterChip; chips de pessoa com CircleAvatar</div><div>Toque mínimo de 44 pontos (materialTapTargetSize).</div><div class="k">Seletor Eu, Parceiro, Casa</div><div class="w">SegmentedButton com 2 membros; ListView horizontal de ChoiceChip com 3 ou mais</div><div>O escopo escolhido vai como filtro de pessoa em todas as listas.</div><div class="k">Cards e listas</div><div class="w">Card(elevation: 0, shape com raio 20 e borda) e ListTile</div><div>Listas longas: ListView.builder com ScrollController para rolagem infinita.</div><div class="k">Filtros e formulários</div><div class="w">showModalBottomSheet(isScrollControlled: true) e Form com TextFormField</div><div>Erros de validação em errorText, abaixo de cada campo (422).</div><div class="k">Atualizar puxando</div><div class="w">RefreshIndicator em volta da lista</div><div>No protótipo, o toque em "Atualizado há 2 min" simula o gesto.</div><div class="k">Carregando</div><div class="w">Skeletons com o pacote shimmer</div><div>Mostre o esqueleto na primeira carga; use o indicador nos próximos.</div><div class="k">Gráficos</div><div class="w">fl_chart: PieChart (rosca), BarChart (diário e por pessoa)</div><div>Nenhuma legenda depende só da cor; sempre há texto ao lado.</div><div class="k">Avisos de erro</div><div class="w">ScaffoldMessenger com SnackBar flutuante</div><div>401 leva ao login; 404, 409, 422 e 503 só mostram o aviso.</div><div class="k">Chat</div><div class="w">ListView(reverse: true) e campo com maxLength 2000 e contador</div><div>Histórico só no aparelho (Hive ou shared_preferences). Resposta renderizada com flutter_markdown.</div><div class="k">Campo secreto</div><div class="w">TextField(obscureText: true) com botão de mostrar</div><div>Client secret nunca volta da API; só se envia ao criar.</div></div><pre>const tallyLight = ColorScheme(
+  brightness: Brightness.light,
+  primary: Color(0xFF34528F), onPrimary: Color(0xFFFFFFFF),
+  primaryContainer: Color(0xFFDCE5F8), onPrimaryContainer: Color(0xFF1B2F5E),
+  surface: Color(0xFFFFFFFF), onSurface: Color(0xFF14181F),
+  surfaceContainerHighest: Color(0xFFEEF0F4), outline: Color(0xFFBFC6D2),
+  outlineVariant: Color(0xFFE1E4EA), error: Color(0xFFB93A27),
+  onError: Color(0xFFFFFFFF), errorContainer: Color(0xFFFBE4DF),
+  secondary: Color(0xFF434B59), onSecondary: Color(0xFFFFFFFF));
+
+const tallyDark = ColorScheme(
+  brightness: Brightness.dark,
+  primary: Color(0xFF9EB6F0), onPrimary: Color(0xFF10224B),
+  primaryContainer: Color(0xFF27396A), onPrimaryContainer: Color(0xFFDCE5FB),
+  surface: Color(0xFF171B22), onSurface: Color(0xFFEAEDF2),
+  surfaceContainerHighest: Color(0xFF1E232C), outline: Color(0xFF465061),
+  outlineVariant: Color(0xFF2A303B), error: Color(0xFFFF9784),
+  onError: Color(0xFF10224B), errorContainer: Color(0xFF42201A),
+  secondary: Color(0xFFB5BCC9), onSecondary: Color(0xFF0E1116));
+
+// ThemeExtension TallyColors: income, incomeContainer, expense,
+// expenseContainer, warning, warningContainer (valores nos swatches acima)</pre></div>
+</div>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1330,"height":3780}}'>
+class Component extends DCLogic {
+renderVals(){return{};}
+}
+</script>
+</x-dc>
+</body>
+</html>
