@@ -9,11 +9,12 @@ import 'package:mobile/core/widgets/empty_state.dart';
 import 'package:mobile/features/household/domain/entities/member.dart';
 import 'package:mobile/features/household/presentation/viewmodels/users_view_model.dart';
 import 'package:mobile/features/household/presentation/widgets/edit_user_sheet.dart';
+import 'package:mobile/features/household/presentation/widgets/password_sheet.dart';
 import 'package:mobile/features/household/presentation/widgets/pluggy_credentials_sheet.dart';
 import 'package:mobile/l10n/app_localizations.dart';
 
-/// The details of one person of the house, with the buttons to edit their data
-/// and to change their Pluggy credentials (a sheet of its own).
+/// The details of one person of the house, with the buttons to edit their
+/// data, their password and their Pluggy credentials (each a sheet of its own).
 ///
 /// [member] is what the list handed over, or `null` when the screen was opened
 /// without it. It creates its own ViewModel and reads the up-to-date person
@@ -76,6 +77,16 @@ class _UserDetailViewState extends State<UserDetailView> {
     _notice(AppLocalizations.of(context).pluggySavedNotice);
   }
 
+  Future<void> _password(Member member) async {
+    final saved = await PasswordSheet.show(
+      context,
+      onSubmit: (password) async =>
+          (await _viewModel.updatePassword(member.id, password)).failureOrNull,
+    );
+    if (saved != true || !mounted) return;
+    _notice(AppLocalizations.of(context).userPasswordSavedNotice);
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -98,6 +109,7 @@ class _UserDetailViewState extends State<UserDetailView> {
                 return _Content(
                   member: member,
                   onEdit: () => unawaited(_edit(member)),
+                  onPassword: () => unawaited(_password(member)),
                   onCredentials: () => unawaited(_credentials(member)),
                 );
               },
@@ -110,11 +122,13 @@ class _Content extends StatelessWidget {
   const _Content({
     required this.member,
     required this.onEdit,
+    required this.onPassword,
     required this.onCredentials,
   });
 
   final Member member;
   final VoidCallback onEdit;
+  final VoidCallback onPassword;
   final VoidCallback onCredentials;
 
   @override
@@ -177,6 +191,12 @@ class _Content extends StatelessWidget {
           onPressed: onEdit,
           icon: const Icon(Icons.edit_outlined),
           label: Text(l10n.userEditAction),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        OutlinedButton.icon(
+          onPressed: onPassword,
+          icon: const Icon(Icons.lock_outline),
+          label: Text(l10n.userPasswordAction),
         ),
         const SizedBox(height: AppSpacing.sm),
         OutlinedButton.icon(

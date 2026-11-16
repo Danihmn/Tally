@@ -33,4 +33,8 @@ class HouseholdRepositoryImpl implements HouseholdRepository {
     String id,
     PluggyCredentials credentials,
   ) => _remote.updatePluggyCredentials(id, credentials);
+
+  @override
+  Future<Result<void>> updatePassword(String id, String password) =>
+      _remote.updatePassword(id, password);
 }

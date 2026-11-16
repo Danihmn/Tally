@@ -10,9 +10,10 @@ class RecurrencesRepositoryImpl implements RecurrencesRepository {
   final RecurrencesRemoteDataSource _remote;
 
   @override
-  Future<Result<List<Recurrence>>> list() async => (await _remote.list()).map(
-    (items) => [for (final dto in items) dto.toEntity()],
-  );
+  Future<Result<List<Recurrence>>> list(RecurrenceStatus status) async =>
+      (await _remote.list(
+        status,
+      )).map((items) => [for (final dto in items) dto.toEntity()]);
 
   @override
   Future<Result<Recurrence>> create(RecurrenceDraft draft) async =>
@@ -21,6 +22,13 @@ class RecurrencesRepositoryImpl implements RecurrencesRepository {
   @override
   Future<Result<Recurrence>> update(String id, RecurrenceDraft draft) async =>
       (await _remote.update(id, draft)).map((dto) => dto.toEntity());
+
+  @override
+  Future<Result<Recurrence>> setStatus(
+    String id,
+    RecurrenceStatus status,
+  ) async =>
+      (await _remote.setStatus(id, status)).map((dto) => dto.toEntity());
 
   @override
   Future<Result<void>> delete(String id) => _remote.delete(id);

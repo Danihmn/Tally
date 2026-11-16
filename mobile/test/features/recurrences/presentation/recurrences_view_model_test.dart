@@ -11,6 +11,7 @@ import 'package:mobile/features/recurrences/domain/entities/recurrence.dart';
 import '../../../support/recurrences_kit.dart';
 
 RecurrenceDraft draft() => RecurrenceDraft(
+  ownerId: 'm2',
   description: 'Internet',
   type: EntryType.expenses,
   amount: Decimal.parse('120'),
@@ -21,7 +22,10 @@ void main() {
   late RecurrencesKit kit;
 
   setUp(() => kit = RecurrencesKit());
-  tearDown(() => kit.viewModel.dispose());
+  tearDown(() async {
+    kit.viewModel.dispose();
+    await kit.dispose();
+  });
 
   List<Recurrence> items() => switch (kit.viewModel.state) {
     UiSuccess<List<Recurrence>>(:final data) => data,
@@ -39,6 +43,16 @@ void main() {
 
       expect(states.first, UiLoading<List<Recurrence>>);
       expect(items().map((r) => r.id), ['r1', 'r2']);
+      expect(kit.repository.listedStatuses, [RecurrenceStatus.active]);
+    });
+
+    test('loads_the_people_of_the_house_for_the_owner', () async {
+      await kit.viewModel.load();
+
+      expect(kit.viewModel.me?.id, 'm1');
+      expect(kit.viewModel.members.map((m) => m.id), ['m1', 'm2']);
+      expect(kit.viewModel.memberOf('m2')?.firstName, 'Bia');
+      expect(kit.viewModel.memberOf(null), isNull);
     });
 
     test('no_recurrences_is_the_empty_state', () async {
@@ -113,6 +127,64 @@ void main() {
         expect(kit.repository.listCalls, 1);
       },
     );
+  });
+
+  group('tabs and status', () {
+    test('the_cancelled_tab_lists_the_cancelled_recurrences', () async {
+      await kit.viewModel.load();
+
+      await kit.viewModel.selectTab(RecurrenceStatus.cancelled);
+
+      expect(kit.viewModel.tab, RecurrenceStatus.cancelled);
+      expect(items().map((r) => r.id), ['r3']);
+      expect(kit.repository.listedStatuses.last, RecurrenceStatus.cancelled);
+    });
+
+    test('choosing_the_tab_on_screen_does_not_load_again', () async {
+      await kit.viewModel.load();
+
+      await kit.viewModel.selectTab(RecurrenceStatus.active);
+
+      expect(kit.repository.listCalls, 1);
+    });
+
+    test('cancelling_takes_it_out_of_the_active_tab', () async {
+      await kit.viewModel.load();
+
+      final failure = await kit.viewModel.setStatus(
+        'r1',
+        RecurrenceStatus.cancelled,
+      );
+
+      expect(failure, isNull);
+      expect(kit.repository.statusChanges.single, (
+        'r1',
+        RecurrenceStatus.cancelled,
+      ));
+      expect(items().map((r) => r.id), ['r2']);
+    });
+
+    test('reactivating_takes_it_out_of_the_cancelled_tab', () async {
+      await kit.viewModel.load();
+      await kit.viewModel.selectTab(RecurrenceStatus.cancelled);
+
+      await kit.viewModel.setStatus('r3', RecurrenceStatus.active);
+
+      expect(kit.viewModel.state, isA<UiEmpty<List<Recurrence>>>());
+    });
+
+    test('a_failed_status_change_is_returned', () async {
+      await kit.viewModel.load();
+      kit.repository.failure = const NetworkFailure();
+
+      final failure = await kit.viewModel.setStatus(
+        'r1',
+        RecurrenceStatus.cancelled,
+      );
+
+      expect(failure, const NetworkFailure());
+      expect(items(), hasLength(2));
+    });
   });
 
   group('provisionNextMonth', () {

@@ -308,5 +308,42 @@ void main() {
 
       expect(result.failureOrNull, const ServerUnavailableFailure());
     });
+
+    test('linking_posts_to_the_pair_without_a_body', () async {
+      final adapter = answering(null, status: 204);
+
+      final result = await build(adapter).linkEntry('t1', 'e9');
+
+      final request = adapter.requests.single;
+      expect(
+        (request.method, request.path),
+        ('POST', '/transactions/t1/financial-entries/e9'),
+      );
+      expect(request.data, isNull);
+      expect(result.isSuccess, isTrue);
+    });
+
+    test('unlinking_deletes_the_pair', () async {
+      final adapter = answering(null, status: 204);
+
+      final result = await build(adapter).unlinkEntry('t1', 'e9');
+
+      final request = adapter.requests.single;
+      expect(
+        (request.method, request.path),
+        ('DELETE', '/transactions/t1/financial-entries/e9'),
+      );
+      expect(result.isSuccess, isTrue);
+    });
+
+    test('linking_a_pair_already_linked_is_a_conflict', () async {
+      final adapter = answering({
+        'detail': 'Record already exists',
+      }, status: 409);
+
+      final result = await build(adapter).linkEntry('t1', 'e9');
+
+      expect(result.isSuccess, isFalse);
+    });
   });
 }

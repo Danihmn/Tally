@@ -7,7 +7,9 @@ import 'package:mobile/features/transactions/data/datasources/transactions_remot
 import 'package:mobile/features/transactions/data/repositories/transactions_repository_impl.dart';
 import 'package:mobile/features/transactions/domain/repositories/transactions_repository.dart';
 import 'package:mobile/features/transactions/domain/transactions_filter_request.dart';
+import 'package:mobile/features/transactions/domain/usecases/link_transaction_entry.dart';
 import 'package:mobile/features/transactions/domain/usecases/search_transactions.dart';
+import 'package:mobile/features/transactions/domain/usecases/unlink_transaction_entry.dart';
 import 'package:mobile/features/transactions/presentation/viewmodels/linked_entries_view_model.dart';
 import 'package:mobile/features/transactions/presentation/viewmodels/transactions_view_model.dart';
 
@@ -23,6 +25,12 @@ void registerTransactionsDependencies(GetIt container) {
     )
     ..registerLazySingleton<SearchTransactions>(
       () => SearchTransactions(container<TransactionsRepository>()),
+    )
+    ..registerLazySingleton<LinkTransactionEntry>(
+      () => LinkTransactionEntry(container<TransactionsRepository>()),
+    )
+    ..registerLazySingleton<UnlinkTransactionEntry>(
+      () => UnlinkTransactionEntry(container<TransactionsRepository>()),
     )
     ..registerLazySingleton<TransactionsFilterRequest>(
       TransactionsFilterRequest.new,
@@ -40,6 +48,8 @@ void registerTransactionsDependencies(GetIt container) {
       (transactionId, _) => LinkedEntriesViewModel(
         transactionId: transactionId,
         searchEntries: container<SearchEntries>(),
+        linkEntry: container<LinkTransactionEntry>(),
+        unlinkEntry: container<UnlinkTransactionEntry>(),
         getAccounts: container<GetBankAccounts>(),
         scopeController: container<HouseholdScopeController>(),
       ),

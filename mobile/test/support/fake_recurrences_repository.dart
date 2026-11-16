@@ -22,6 +22,13 @@ class FakeRecurrencesRepository implements RecurrencesRepository {
       amount: '5000.00',
       dueDay: null,
       category: null,
+      ownerId: 'm2',
+    ),
+    makeRecurrence(
+      id: 'r3',
+      description: 'Academia',
+      ownerId: 'm2',
+      status: RecurrenceStatus.cancelled,
     ),
   ];
 
@@ -32,12 +39,18 @@ class FakeRecurrencesRepository implements RecurrencesRepository {
   Completer<Result<ProvisionResult>>? gate;
 
   int listCalls = 0;
+  final List<RecurrenceStatus> listedStatuses = [];
+  final List<(String, RecurrenceStatus)> statusChanges = [];
   int provisionCalls = 0;
   final List<RecurrenceDraft> created = [];
   final List<(String, RecurrenceDraft)> updated = [];
   final List<String> deleted = [];
 
-  Recurrence _from(String id, RecurrenceDraft draft) => Recurrence(
+  Recurrence _from(
+    String id,
+    RecurrenceDraft draft, {
+    RecurrenceStatus status = RecurrenceStatus.active,
+  }) => Recurrence(
     id: id,
     description: draft.description,
     type: draft.type,
@@ -46,14 +59,20 @@ class FakeRecurrencesRepository implements RecurrencesRepository {
     dueDay: draft.dueDay,
     category: draft.category,
     notes: draft.notes,
+    ownerId: draft.ownerId,
+    status: status,
   );
 
   @override
-  Future<Result<List<Recurrence>>> list() async {
+  Future<Result<List<Recurrence>>> list(RecurrenceStatus status) async {
     listCalls++;
+    listedStatuses.add(status);
     final error = failure;
     if (error != null) return Result.failure(error);
-    return Result.success(List.of(all));
+    return Result.success([
+      for (final r in all)
+        if (r.status == status) r,
+    ]);
   }
 
   @override
@@ -71,9 +90,35 @@ class FakeRecurrencesRepository implements RecurrencesRepository {
     final error = failure;
     if (error != null) return Result.failure(error);
     updated.add((id, draft));
-    final recurrence = _from(id, draft);
+    final status = all.firstWhere((r) => r.id == id).status;
+    final recurrence = _from(id, draft, status: status);
     all = [for (final r in all) r.id == id ? recurrence : r];
     return Result.success(recurrence);
+  }
+
+  @override
+  Future<Result<Recurrence>> setStatus(
+    String id,
+    RecurrenceStatus status,
+  ) async {
+    final error = failure;
+    if (error != null) return Result.failure(error);
+    statusChanges.add((id, status));
+    final old = all.firstWhere((r) => r.id == id);
+    final changed = Recurrence(
+      id: old.id,
+      description: old.description,
+      type: old.type,
+      paymentType: old.paymentType,
+      amount: old.amount,
+      dueDay: old.dueDay,
+      category: old.category,
+      notes: old.notes,
+      ownerId: old.ownerId,
+      status: status,
+    );
+    all = [for (final r in all) r.id == id ? changed : r];
+    return Result.success(changed);
   }
 
   @override

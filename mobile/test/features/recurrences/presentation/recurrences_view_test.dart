@@ -21,6 +21,7 @@ void main() {
     kit = RecurrencesKit();
     provisioned = [];
   });
+  tearDown(() => kit.dispose());
 
   Future<void> pumpView(WidgetTester tester) async {
     tester.view.physicalSize = const Size(800, 4000);
@@ -49,8 +50,10 @@ void main() {
 
       expect(find.text('Aluguel'), findsOneWidget);
       expect(find.text('Salário'), findsOneWidget);
-      expect(find.text('Moradia · Débito · Despesa'), findsOneWidget);
-      expect(find.text('Crédito · Receita'), findsOneWidget);
+      expect(find.text('Ana · Moradia · Débito · Despesa'), findsOneWidget);
+      expect(find.text('Bia · Crédito · Receita'), findsOneWidget);
+      // The cancelled one is in its own tab.
+      expect(find.text('Academia'), findsNothing);
       expect(find.text('Todo dia 5'), findsOneWidget);
       expect(find.text('Sem dia fixo'), findsOneWidget);
       expect(find.textContaining('1.500,00'), findsOneWidget);
@@ -95,11 +98,28 @@ void main() {
       await tester.pumpAndSettle();
 
       final draft = kit.repository.created.single;
+      // The logged person is the owner unless another one is chosen.
+      expect(draft.ownerId, 'm1');
       expect(draft.description, 'Internet');
       expect(draft.amount.toString(), '120');
       expect(draft.dueDay, 10);
       expect(find.text('Recorrência salva.'), findsOneWidget);
       expect(find.text('Internet'), findsOneWidget);
+    });
+
+    testWidgets('the_owner_can_be_another_person_of_the_house', (tester) async {
+      await pumpView(tester);
+
+      await tester.tap(find.text('Nova recorrência'));
+      await tester.pumpAndSettle();
+      expect(find.text('Dono'), findsOneWidget);
+      await tester.tap(find.widgetWithText(ChoiceChip, 'Bia'));
+      await tester.enterText(sheetField(0), 'Internet');
+      await tester.enterText(find.widgetWithText(TextField, 'Valor'), '120');
+      await tester.tap(find.text('Salvar recorrência'));
+      await tester.pumpAndSettle();
+
+      expect(kit.repository.created.single.ownerId, 'm2');
     });
 
     testWidgets('an_empty_form_says_what_is_missing', (tester) async {
@@ -165,6 +185,7 @@ void main() {
 
       final (id, draft) = kit.repository.updated.single;
       expect(id, 'r1');
+      expect(draft.ownerId, 'm1');
       expect(draft.description, 'Aluguel novo');
       expect(draft.dueDay, 5);
       expect(find.text('Aluguel novo'), findsOneWidget);
@@ -203,6 +224,67 @@ void main() {
       expect(kit.repository.deleted, ['r1']);
       expect(find.text('Aluguel'), findsNothing);
       expect(find.text('Recorrência excluída.'), findsOneWidget);
+    });
+  });
+
+  group('RecurrencesView cancel and reactivate', () {
+    Future<void> tapMenu(WidgetTester tester, String item) async {
+      await tester.tap(find.byType(PopupMenuButton<RecurrenceAction>).first);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(item));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('cancelling_asks_first_and_moves_it_to_the_cancelled_tab', (
+      tester,
+    ) async {
+      await pumpView(tester);
+
+      await tapMenu(tester, 'Cancelar recorrência');
+      expect(find.text('Cancelar a recorrência?'), findsOneWidget);
+      await tester.tap(
+        find.widgetWithText(FilledButton, 'Cancelar recorrência'),
+      );
+      await tester.pumpAndSettle();
+
+      expect(kit.repository.statusChanges.single, (
+        'r1',
+        RecurrenceStatus.cancelled,
+      ));
+      expect(find.text('Recorrência cancelada.'), findsOneWidget);
+      expect(find.text('Aluguel'), findsNothing);
+    });
+
+    testWidgets('backing_out_of_the_dialog_keeps_it_active', (tester) async {
+      await pumpView(tester);
+
+      await tapMenu(tester, 'Cancelar recorrência');
+      await tester.tap(find.text('Cancelar'));
+      await tester.pumpAndSettle();
+
+      expect(kit.repository.statusChanges, isEmpty);
+      expect(find.text('Aluguel'), findsOneWidget);
+    });
+
+    testWidgets('the_cancelled_tab_lists_them_and_reactivates_one', (
+      tester,
+    ) async {
+      await pumpView(tester);
+
+      await tester.tap(find.text('Canceladas'));
+      await tester.pumpAndSettle();
+      expect(find.text('Academia'), findsOneWidget);
+      expect(find.text('Aluguel'), findsNothing);
+      expect(find.text('Provisionar dezembro'), findsNothing);
+
+      await tapMenu(tester, 'Reativar');
+
+      expect(kit.repository.statusChanges.single, (
+        'r3',
+        RecurrenceStatus.active,
+      ));
+      expect(find.text('Recorrência reativada.'), findsOneWidget);
+      expect(find.text('Nenhuma recorrência cancelada'), findsOneWidget);
     });
   });
 

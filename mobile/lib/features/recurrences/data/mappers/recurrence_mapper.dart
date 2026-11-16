@@ -20,6 +20,10 @@ extension RecurrenceDtoMapper on RecurrenceDto {
     dueDay: dueDay,
     category: category,
     notes: notes,
+    ownerId: userId,
+    status: status == RecurrenceStatus.cancelled.apiValue
+        ? RecurrenceStatus.cancelled
+        : RecurrenceStatus.active,
   );
 }
 
@@ -35,6 +39,7 @@ extension RecurrenceDraftJson on RecurrenceDraft {
   /// The body of `POST` and `PATCH /recurrences`. Every key is sent, so a
   /// field left empty is cleared on an edit (`null`).
   Map<String, dynamic> toJson() => {
+    'user_id': ownerId,
     'description': description.trim(),
     'type': type.apiValue,
     'amount': amount.toStringAsFixed(2),

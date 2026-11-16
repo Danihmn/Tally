@@ -48,6 +48,14 @@ void _checkName(
   }
 }
 
+void _checkPassword(String password, Map<UserFormField, UserFormError> errors) {
+  if (password.isEmpty) {
+    errors[UserFormField.password] = UserFormError.required;
+  } else if (password.length < minPasswordLength) {
+    errors[UserFormField.password] = UserFormError.shortPassword;
+  }
+}
+
 void _checkCredentials(
   String clientId,
   String clientSecret,
@@ -97,11 +105,7 @@ UserFormResult<UserDraft> validateNewUser({
 }) {
   final errors = <UserFormField, UserFormError>{};
   _checkName(firstName, email, errors);
-  if (password.isEmpty) {
-    errors[UserFormField.password] = UserFormError.required;
-  } else if (password.length < minPasswordLength) {
-    errors[UserFormField.password] = UserFormError.shortPassword;
-  }
+  _checkPassword(password, errors);
   _checkCredentials(clientId, clientSecret, errors);
   if (errors.isNotEmpty) return UserFormResult(errors: errors);
   return UserFormResult(
@@ -131,4 +135,12 @@ UserFormResult<PluggyCredentials> validatePluggyCredentials({
       clientSecret: clientSecret.trim(),
     ),
   );
+}
+
+/// Checks the "Alterar senha" form. The password is sent as typed.
+UserFormResult<String> validatePassword(String password) {
+  final errors = <UserFormField, UserFormError>{};
+  _checkPassword(password, errors);
+  if (errors.isNotEmpty) return UserFormResult(errors: errors);
+  return UserFormResult(value: password);
 }

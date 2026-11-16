@@ -59,4 +59,12 @@ class HouseholdRemoteDataSource {
       data: credentials.toJson(),
     );
   });
+
+  Future<Result<void>> updatePassword(String id, String password) =>
+      apiCall(() async {
+        await _dio.put<void>(
+          ApiEndpoints.updateUserPassword.path.replaceFirst('{id}', id),
+          data: {'password': password},
+        );
+      });
 }

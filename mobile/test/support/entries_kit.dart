@@ -16,7 +16,9 @@ import 'package:mobile/features/household/domain/entities/member.dart';
 import 'package:mobile/features/household/domain/usecases/get_household_members.dart';
 import 'package:mobile/features/household/domain/usecases/get_me.dart';
 import 'package:mobile/features/household/presentation/viewmodels/household_scope_controller.dart';
+import 'package:mobile/features/transactions/domain/usecases/link_transaction_entry.dart';
 import 'package:mobile/features/transactions/domain/usecases/search_transactions.dart';
+import 'package:mobile/features/transactions/domain/usecases/unlink_transaction_entry.dart';
 import 'package:mobile/features/transactions/presentation/viewmodels/linked_entries_view_model.dart';
 
 import 'fake_entries_repository.dart';
@@ -70,6 +72,8 @@ class EntriesKit {
       LinkedEntriesViewModel(
         transactionId: transactionId,
         searchEntries: SearchEntries(entries),
+        linkEntry: LinkTransactionEntry(transactions),
+        unlinkEntry: UnlinkTransactionEntry(transactions),
         getAccounts: GetBankAccounts(accounts),
         scopeController: scope,
       );

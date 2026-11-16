@@ -119,6 +119,17 @@ void main() {
       expect(kit.household.usersCalls, usersCalls);
     });
 
+    test('changing_the_password_does_not_reload_the_list', () async {
+      await kit.viewModel.load();
+      final usersCalls = kit.household.usersCalls;
+
+      final result = await kit.viewModel.updatePassword('m2', 'new-password');
+
+      expect(result.isSuccess, isTrue);
+      expect(kit.household.passwordsSent.single, ('m2', 'new-password'));
+      expect(kit.household.usersCalls, usersCalls);
+    });
+
     test('listeners_hear_about_changes_of_the_shared_list', () async {
       var heard = 0;
       kit.viewModel.addListener(() => heard++);

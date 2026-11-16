@@ -8,10 +8,11 @@ import 'package:mobile/features/household/domain/entities/user_draft.dart';
 import 'package:mobile/features/household/domain/usecases/create_user.dart';
 import 'package:mobile/features/household/domain/usecases/update_pluggy_credentials.dart';
 import 'package:mobile/features/household/domain/usecases/update_user.dart';
+import 'package:mobile/features/household/domain/usecases/update_user_password.dart';
 import 'package:mobile/features/household/presentation/viewmodels/household_scope_controller.dart';
 
 /// The people of the house, for the "Usuários" screens: the list, adding a
-/// person, editing one and changing the Pluggy credentials.
+/// person, editing one, changing the Pluggy credentials and the password.
 ///
 /// The list is the one the whole app shares ([HouseholdScopeController]), so
 /// a change shows up in the filters and on the home too. Nobody is deleted.
@@ -21,6 +22,7 @@ class UsersViewModel extends ChangeNotifier {
     required this._createUser,
     required this._updateUser,
     required this._updateCredentials,
+    required this._updatePassword,
   }) {
     _scope.addListener(notifyListeners);
   }
@@ -29,6 +31,7 @@ class UsersViewModel extends ChangeNotifier {
   final CreateUser _createUser;
   final UpdateUser _updateUser;
   final UpdatePluggyCredentials _updateCredentials;
+  final UpdateUserPassword _updatePassword;
 
   UiState<HouseholdProfile> get profile => _scope.profile;
 
@@ -66,6 +69,10 @@ class UsersViewModel extends ChangeNotifier {
     String id,
     PluggyCredentials credentials,
   ) => _updateCredentials(id, credentials);
+
+  /// Nothing to reload: the list does not carry the password.
+  Future<Result<void>> updatePassword(String id, String password) =>
+      _updatePassword(id, password);
 
   @override
   void dispose() {

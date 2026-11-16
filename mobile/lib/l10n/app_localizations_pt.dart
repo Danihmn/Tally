@@ -1265,4 +1265,79 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get pluggySavedNotice => 'Credenciais atualizadas.';
+
+  @override
+  String get userPasswordAction => 'Alterar senha';
+
+  @override
+  String get userPasswordIntro => 'Defina uma nova senha para esta pessoa. Ela passa a valer no próximo login.';
+
+  @override
+  String get userPasswordSave => 'Salvar senha';
+
+  @override
+  String get userPasswordSavedNotice => 'Senha alterada.';
+
+  @override
+  String get recurrencesTabActive => 'Ativas';
+
+  @override
+  String get recurrencesTabCancelled => 'Canceladas';
+
+  @override
+  String get recurrenceFormOwner => 'Dono';
+
+  @override
+  String get recurrenceCancelAction => 'Cancelar recorrência';
+
+  @override
+  String get recurrenceReactivateAction => 'Reativar';
+
+  @override
+  String get recurrenceCancelTitle => 'Cancelar a recorrência?';
+
+  @override
+  String get recurrenceCancelText => 'Ela deixa de criar lançamentos nos próximos meses. Os lançamentos já criados continuam. Você pode reativá-la depois.';
+
+  @override
+  String get recurrenceCancelledNotice => 'Recorrência cancelada.';
+
+  @override
+  String get recurrenceReactivatedNotice => 'Recorrência reativada.';
+
+  @override
+  String get recurrencesEmptyCancelledTitle => 'Nenhuma recorrência cancelada';
+
+  @override
+  String get recurrencesEmptyCancelledText => 'As recorrências canceladas aparecem aqui e podem ser reativadas.';
+
+  @override
+  String get linkEntryAction => 'Vincular lançamento';
+
+  @override
+  String get linkEntryShort => 'Vincular';
+
+  @override
+  String get linkEntryIntro => 'Escolha um lançamento planejado do mesmo tipo da transação.';
+
+  @override
+  String get linkEntrySearchHint => 'Buscar pela descrição';
+
+  @override
+  String get linkEntryNone => 'Nenhum lançamento planejado encontrado.';
+
+  @override
+  String get linkEntryDone => 'Lançamento vinculado.';
+
+  @override
+  String get unlinkEntryAction => 'Desvincular';
+
+  @override
+  String get unlinkEntryTitle => 'Desvincular o lançamento?';
+
+  @override
+  String get unlinkEntryText => 'O lançamento volta para planejado, a não ser que tenha outra transação vinculada.';
+
+  @override
+  String get unlinkEntryDone => 'Lançamento desvinculado.';
 }

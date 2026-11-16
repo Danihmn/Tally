@@ -83,6 +83,68 @@ void main() {
     });
   });
 
+  group('LinkedEntriesViewModel link and unlink', () {
+    test('candidates_are_planned_of_the_type_and_not_linked', () async {
+      kit.entries.byTransaction['t1'] = [
+        makeEntry(id: 'e1', status: EntryStatus.reconciled),
+      ];
+      final viewModel = kit.linkedEntries('t1');
+      await viewModel.load();
+
+      final result = await viewModel.candidates(
+        type: EntryType.expenses,
+        search: 'net',
+      );
+
+      final call = kit.entries.calls.last;
+      expect(call.status, EntryStatus.planned);
+      expect(call.filters.type, EntryType.expenses);
+      expect(call.search, 'net');
+      expect(call.transactionId, isNull);
+      expect(result.valueOrNull!.map((e) => e.id), isNot(contains('e1')));
+      viewModel.dispose();
+    });
+
+    test('linking_sends_the_pair_and_reads_the_block_again', () async {
+      final viewModel = kit.linkedEntries('t1');
+      await viewModel.load();
+      final calls = kit.entries.calls.length;
+
+      final failure = await viewModel.link('e2');
+
+      expect(failure, isNull);
+      expect(kit.transactions.linked.single, ('t1', 'e2'));
+      expect(kit.entries.calls.length, calls + 1);
+      viewModel.dispose();
+    });
+
+    test('unlinking_sends_the_pair_and_reads_the_block_again', () async {
+      final viewModel = kit.linkedEntries('t1');
+      await viewModel.load();
+      final calls = kit.entries.calls.length;
+
+      final failure = await viewModel.unlink('e2');
+
+      expect(failure, isNull);
+      expect(kit.transactions.unlinked.single, ('t1', 'e2'));
+      expect(kit.entries.calls.length, calls + 1);
+      viewModel.dispose();
+    });
+
+    test('a_failed_link_is_returned_and_nothing_is_read_again', () async {
+      kit.transactions.linkResult = const Result.failure(ConflictFailure());
+      final viewModel = kit.linkedEntries('t1');
+      await viewModel.load();
+      final calls = kit.entries.calls.length;
+
+      final failure = await viewModel.link('e2');
+
+      expect(failure, const ConflictFailure());
+      expect(kit.entries.calls.length, calls);
+      viewModel.dispose();
+    });
+  });
+
   group('LinkedTransactionsViewModel', () {
     test('asks_for_the_transactions_matched_with_the_entry', () async {
       final viewModel = kit.linkedTransactions('e4');

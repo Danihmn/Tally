@@ -15,11 +15,13 @@ class RecurrencesRemoteDataSource {
 
   final Dio _dio;
 
-  Future<Result<List<RecurrenceDto>>> list() => apiCall(() async {
-    final response = await _dio.get<Map<String, dynamic>>(
-      ApiEndpoints.recurrences.path,
-      queryParameters: {'limit': _pageSize},
-    );
+  /// The recurrences with [status] (the API lists the active ones by default).
+  Future<Result<List<RecurrenceDto>>> list(RecurrenceStatus status) =>
+      apiCall(() async {
+        final response = await _dio.get<Map<String, dynamic>>(
+          ApiEndpoints.recurrences.path,
+          queryParameters: {'limit': _pageSize, 'status': status.apiValue},
+        );
     return [
       for (final item in response.data!['items'] as List<dynamic>)
         RecurrenceDto.fromJson(item as Map<String, dynamic>),
@@ -41,6 +43,16 @@ class RecurrencesRemoteDataSource {
         final response = await _dio.patch<Map<String, dynamic>>(
           ApiEndpoints.updateRecurrence.path.replaceFirst('{id}', id),
           data: draft.toJson(),
+        );
+        return RecurrenceDto.fromJson(response.data!);
+      });
+
+  /// Cancels or reactivates a recurrence.
+  Future<Result<RecurrenceDto>> setStatus(String id, RecurrenceStatus status) =>
+      apiCall(() async {
+        final response = await _dio.patch<Map<String, dynamic>>(
+          ApiEndpoints.updateRecurrence.path.replaceFirst('{id}', id),
+          data: {'status': status.apiValue},
         );
         return RecurrenceDto.fromJson(response.data!);
       });

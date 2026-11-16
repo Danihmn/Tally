@@ -12,6 +12,8 @@ Recurrence makeRecurrence({
   int? dueDay = 5,
   String? category = 'Moradia',
   String? notes,
+  String? ownerId = 'm1',
+  RecurrenceStatus status = RecurrenceStatus.active,
 }) => Recurrence(
   id: id,
   description: description,
@@ -21,4 +23,6 @@ Recurrence makeRecurrence({
   dueDay: dueDay,
   category: category,
   notes: notes,
+  ownerId: ownerId,
+  status: status,
 );

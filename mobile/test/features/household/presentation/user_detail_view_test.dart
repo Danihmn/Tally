@@ -230,5 +230,38 @@ void main() {
       expect(find.text('Salvar credenciais'), findsOneWidget);
       expect(find.text('Credenciais atualizadas.'), findsNothing);
     });
+
+    testWidgets('the_password_has_a_sheet_of_its_own_and_is_sent', (
+      tester,
+    ) async {
+      await pumpDetail(tester);
+      await tester.tap(find.widgetWithText(OutlinedButton, 'Alterar senha'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(TextField), findsOneWidget);
+      expect(tester.widget<TextField>(field(0)).obscureText, isTrue);
+      await tester.enterText(field(0), 'new-password');
+      await tester.tap(find.text('Salvar senha'));
+      await tester.pumpAndSettle();
+
+      expect(kit.household.passwordsSent.single, ('m2', 'new-password'));
+      expect(find.text('Senha alterada.'), findsOneWidget);
+      expect(find.text('Salvar senha'), findsNothing);
+    });
+
+    testWidgets('a_short_password_shows_an_error_and_sends_nothing', (
+      tester,
+    ) async {
+      await pumpDetail(tester);
+      await tester.tap(find.widgetWithText(OutlinedButton, 'Alterar senha'));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(field(0), '123');
+      await tester.tap(find.text('Salvar senha'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Use ao menos 8 caracteres.'), findsOneWidget);
+      expect(kit.household.passwordsSent, isEmpty);
+    });
   });
 }

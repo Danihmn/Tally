@@ -14,8 +14,8 @@ import 'package:mobile/features/transactions/presentation/widgets/linked_entry_s
 import 'package:mobile/features/transactions/presentation/widgets/transaction_icon.dart';
 import 'package:mobile/l10n/app_localizations.dart';
 
-/// The data of one transaction and, below it, the planned entry matched with
-/// it (read only: there is no way to link or unlink yet).
+/// The data of one transaction and, below it, the entries matched with it
+/// (linked and unlinked by hand there).
 class TransactionDetailView extends StatelessWidget {
   const TransactionDetailView({
     super.key,
@@ -213,6 +213,7 @@ class _Content extends StatelessWidget {
         const SizedBox(height: AppSpacing.lg),
         LinkedEntrySection(
           transactionId: transaction.id,
+          isIncome: transaction.isIncome,
           createViewModel: createLinkedViewModel,
         ),
       ],

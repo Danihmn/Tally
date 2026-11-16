@@ -139,16 +139,91 @@ void main() {
       expect(kit.entries.calls.single.transactionId, 't1');
     });
 
-    testWidgets('without_an_entry_it_only_says_so_and_has_no_buttons', (
+    testWidgets('without_an_entry_it_says_so_and_offers_to_link_one', (
       tester,
     ) async {
       await pumpDetail(tester, argsOf('t1'));
 
       expect(find.text('Sem lançamento'), findsOneWidget);
-      expect(find.byType(FilledButton), findsNothing);
-      expect(find.byType(OutlinedButton), findsNothing);
-      expect(find.text('Vincular a um lançamento'), findsNothing);
-      expect(find.text('Desfazer vínculo'), findsNothing);
+      expect(find.widgetWithText(TextButton, 'Vincular'), findsOneWidget);
+      expect(find.byTooltip('Desvincular'), findsNothing);
+    });
+
+    testWidgets('linking_lists_planned_expenses_and_links_the_one_tapped', (
+      tester,
+    ) async {
+      await pumpDetail(tester, argsOf('t1'));
+
+      await tester.tap(find.widgetWithText(TextButton, 'Vincular'));
+      await tester.pumpAndSettle();
+      expect(find.text('Vincular lançamento'), findsOneWidget);
+      final call = kit.entries.calls.last;
+      expect(call.status, EntryStatus.planned);
+      // The transaction is a debit, so only expenses are offered.
+      expect(call.filters.type, EntryType.expenses);
+
+      await tester.tap(find.text('Internet'));
+      await tester.pumpAndSettle();
+
+      expect(kit.transactions.linked.single, ('t1', 'e2'));
+      expect(find.text('Lançamento vinculado.'), findsOneWidget);
+      expect(find.text('Vincular lançamento'), findsNothing);
+    });
+
+    testWidgets('a_failed_link_keeps_the_sheet_open_with_the_reason', (
+      tester,
+    ) async {
+      kit.transactions.linkResult = const Result.failure(
+        ServerUnavailableFailure(),
+      );
+      await pumpDetail(tester, argsOf('t1'));
+
+      await tester.tap(find.widgetWithText(TextButton, 'Vincular'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Internet'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Vincular lançamento'), findsOneWidget);
+      expect(
+        find.text('Serviço indisponível. Tente novamente em instantes.'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('unlinking_asks_first_and_sends_the_pair', (tester) async {
+      kit.entries.byTransaction['t1'] = [
+        makeEntry(
+          id: 'e9',
+          description: 'Streaming',
+          status: EntryStatus.reconciled,
+        ),
+      ];
+      await pumpDetail(tester, argsOf('t1'));
+
+      await tester.tap(find.byTooltip('Desvincular'));
+      await tester.pumpAndSettle();
+      expect(find.text('Desvincular o lançamento?'), findsOneWidget);
+      await tester.tap(find.widgetWithText(FilledButton, 'Desvincular'));
+      await tester.pumpAndSettle();
+
+      expect(kit.transactions.unlinked.single, ('t1', 'e9'));
+      expect(find.text('Lançamento desvinculado.'), findsOneWidget);
+    });
+
+    testWidgets('backing_out_of_the_unlink_dialog_sends_nothing', (
+      tester,
+    ) async {
+      kit.entries.byTransaction['t1'] = [
+        makeEntry(id: 'e9', status: EntryStatus.reconciled),
+      ];
+      await pumpDetail(tester, argsOf('t1'));
+
+      await tester.tap(find.byTooltip('Desvincular'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Cancelar'));
+      await tester.pumpAndSettle();
+
+      expect(kit.transactions.unlinked, isEmpty);
     });
 
     testWidgets('a_failure_only_breaks_the_block_and_retry_works', (
@@ -189,6 +264,7 @@ void main() {
         tester,
         LinkedEntrySection(
           transactionId: 't1',
+          isIncome: false,
           createViewModel: kit.linkedEntries,
           onOpenEntry: (args) => opened = args,
         ),

@@ -2295,6 +2295,156 @@ abstract class AppLocalizations {
   /// In pt, this message translates to:
   /// **'Credenciais atualizadas.'**
   String get pluggySavedNotice;
+
+  /// No description provided for @userPasswordAction.
+  ///
+  /// In pt, this message translates to:
+  /// **'Alterar senha'**
+  String get userPasswordAction;
+
+  /// No description provided for @userPasswordIntro.
+  ///
+  /// In pt, this message translates to:
+  /// **'Defina uma nova senha para esta pessoa. Ela passa a valer no próximo login.'**
+  String get userPasswordIntro;
+
+  /// No description provided for @userPasswordSave.
+  ///
+  /// In pt, this message translates to:
+  /// **'Salvar senha'**
+  String get userPasswordSave;
+
+  /// No description provided for @userPasswordSavedNotice.
+  ///
+  /// In pt, this message translates to:
+  /// **'Senha alterada.'**
+  String get userPasswordSavedNotice;
+
+  /// No description provided for @recurrencesTabActive.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ativas'**
+  String get recurrencesTabActive;
+
+  /// No description provided for @recurrencesTabCancelled.
+  ///
+  /// In pt, this message translates to:
+  /// **'Canceladas'**
+  String get recurrencesTabCancelled;
+
+  /// No description provided for @recurrenceFormOwner.
+  ///
+  /// In pt, this message translates to:
+  /// **'Dono'**
+  String get recurrenceFormOwner;
+
+  /// No description provided for @recurrenceCancelAction.
+  ///
+  /// In pt, this message translates to:
+  /// **'Cancelar recorrência'**
+  String get recurrenceCancelAction;
+
+  /// No description provided for @recurrenceReactivateAction.
+  ///
+  /// In pt, this message translates to:
+  /// **'Reativar'**
+  String get recurrenceReactivateAction;
+
+  /// No description provided for @recurrenceCancelTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Cancelar a recorrência?'**
+  String get recurrenceCancelTitle;
+
+  /// No description provided for @recurrenceCancelText.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ela deixa de criar lançamentos nos próximos meses. Os lançamentos já criados continuam. Você pode reativá-la depois.'**
+  String get recurrenceCancelText;
+
+  /// No description provided for @recurrenceCancelledNotice.
+  ///
+  /// In pt, this message translates to:
+  /// **'Recorrência cancelada.'**
+  String get recurrenceCancelledNotice;
+
+  /// No description provided for @recurrenceReactivatedNotice.
+  ///
+  /// In pt, this message translates to:
+  /// **'Recorrência reativada.'**
+  String get recurrenceReactivatedNotice;
+
+  /// No description provided for @recurrencesEmptyCancelledTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nenhuma recorrência cancelada'**
+  String get recurrencesEmptyCancelledTitle;
+
+  /// No description provided for @recurrencesEmptyCancelledText.
+  ///
+  /// In pt, this message translates to:
+  /// **'As recorrências canceladas aparecem aqui e podem ser reativadas.'**
+  String get recurrencesEmptyCancelledText;
+
+  /// No description provided for @linkEntryAction.
+  ///
+  /// In pt, this message translates to:
+  /// **'Vincular lançamento'**
+  String get linkEntryAction;
+
+  /// No description provided for @linkEntryShort.
+  ///
+  /// In pt, this message translates to:
+  /// **'Vincular'**
+  String get linkEntryShort;
+
+  /// No description provided for @linkEntryIntro.
+  ///
+  /// In pt, this message translates to:
+  /// **'Escolha um lançamento planejado do mesmo tipo da transação.'**
+  String get linkEntryIntro;
+
+  /// No description provided for @linkEntrySearchHint.
+  ///
+  /// In pt, this message translates to:
+  /// **'Buscar pela descrição'**
+  String get linkEntrySearchHint;
+
+  /// No description provided for @linkEntryNone.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nenhum lançamento planejado encontrado.'**
+  String get linkEntryNone;
+
+  /// No description provided for @linkEntryDone.
+  ///
+  /// In pt, this message translates to:
+  /// **'Lançamento vinculado.'**
+  String get linkEntryDone;
+
+  /// No description provided for @unlinkEntryAction.
+  ///
+  /// In pt, this message translates to:
+  /// **'Desvincular'**
+  String get unlinkEntryAction;
+
+  /// No description provided for @unlinkEntryTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Desvincular o lançamento?'**
+  String get unlinkEntryTitle;
+
+  /// No description provided for @unlinkEntryText.
+  ///
+  /// In pt, this message translates to:
+  /// **'O lançamento volta para planejado, a não ser que tenha outra transação vinculada.'**
+  String get unlinkEntryText;
+
+  /// No description provided for @unlinkEntryDone.
+  ///
+  /// In pt, this message translates to:
+  /// **'Lançamento desvinculado.'**
+  String get unlinkEntryDone;
 }
 
 class _AppLocalizationsDelegate
