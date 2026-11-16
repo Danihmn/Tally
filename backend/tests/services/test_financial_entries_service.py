@@ -15,6 +15,7 @@ from services.financial_entries_service import (
     get_total_not_reconciled,
     get_total_planned,
     get_total_reconciled,
+    list_provisioned_recurrence_ids,
     list_upcoming_entries,
     summarize_financial_entries,
     update_financial_entry,
@@ -343,3 +344,17 @@ class DeleteFinancialEntryTests(unittest.TestCase):
             repository.get_financial_entry.return_value = None
             with self.assertRaises(NotFoundError):
                 delete_financial_entry(MagicMock(), HOUSEHOLD_ID, uuid.uuid4())
+
+
+class ListProvisionedRecurrenceIdsTests(unittest.TestCase):
+    def test_returns_the_recurrences_the_repository_finds_in_the_month(self):
+        session, month = MagicMock(), datetime.date(2026, 12, 1)
+        found = {uuid.uuid4(), uuid.uuid4()}
+        with patch(f"{MODULE}.financial_entries_repository") as repository:
+            repository.list_recurrence_ids_in_month.return_value = found
+            result = list_provisioned_recurrence_ids(session, HOUSEHOLD_ID, month)
+
+        self.assertEqual(result, found)
+        repository.list_recurrence_ids_in_month.assert_called_once_with(
+            session, HOUSEHOLD_ID, month
+        )
