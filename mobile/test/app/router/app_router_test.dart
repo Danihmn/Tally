@@ -67,7 +67,7 @@ void main() {
         'Transações',
         'Planejamento',
         'Contas',
-        'Tally IA',
+        'Tally AI',
       ]) {
         expect(
           find.descendant(of: bar, matching: find.text(label)),
@@ -104,7 +104,7 @@ void main() {
       await tester.tap(
         find.descendant(
           of: find.byType(AppNavigationBar),
-          matching: find.text('Tally IA'),
+          matching: find.text('Tally AI'),
         ),
       );
       await tester.pumpAndSettle();

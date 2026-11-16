@@ -9,7 +9,7 @@ import 'package:mobile/features/chat/domain/entities/conversation.dart';
 import 'package:mobile/features/chat/domain/usecases/get_conversation.dart';
 import 'package:mobile/features/chat/domain/usecases/send_chat_message.dart';
 
-/// State of the Tally IA chat: the messages of one conversation, the answer
+/// State of the Tally AI chat: the messages of one conversation, the answer
 /// that is streaming, and how full the conversation is.
 class ChatViewModel extends ChangeNotifier {
   ChatViewModel({required this._sendMessage, required this._getConversation});

@@ -119,7 +119,7 @@ Off by default.
 ## Later phases (prepared, not enabled)
 
 - Biometric lock: `AppLockService` interface + `local_auth`, after phase 7.
-- Chat history lives in the backend (LangGraph checkpointer). The Tally IA tab (`features/chat`) is built:
+- Chat history lives in the backend (LangGraph checkpointer). The Tally AI tab (`features/chat`) is built:
   - `POST /tally/chat` answers as Server-Sent Events. `ChatRemoteDataSource` uses `dio` with `ResponseType.stream` and a longer `receiveTimeout` for this call only, and `core/network/sse_parser.dart` turns the bytes into events (`meta`, `token`, `done`, `error`). No extra package.
   - `ChatViewModel` appends the tokens to the answer, warns at 80% of `token_limit` (`context_tokens`) and blocks at 100% (the composer becomes "Conversa cheia"). A 409 also blocks. `ConversationsViewModel` is a `PaginatedViewModel`.
   - The history is the root-navigator route `/chat/conversations`. Tapping a row pops with the conversation id, and `ChatView` opens it.

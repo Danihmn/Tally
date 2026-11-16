@@ -25,7 +25,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get navAccounts => 'Contas';
 
   @override
-  String get navChat => 'Tally IA';
+  String get navChat => 'Tally AI';
 
   @override
   String get retry => 'Tentar novamente';
@@ -852,7 +852,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get chatCaption =>
-      'O Tally IA pode errar. Confira os valores importantes.';
+      'O Tally AI pode errar. Confira os valores importantes.';
 
   @override
   String get chatHistorySaved =>
@@ -890,7 +890,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get chatYou => 'Você';
 
   @override
-  String get chatAssistant => 'Tally IA';
+  String get chatAssistant => 'Tally AI';
 
   @override
   String get conversationsTitle => 'Histórico';
@@ -903,7 +903,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get conversationsEmptyMessage =>
-      'Quando você perguntar algo ao Tally IA, a conversa aparece aqui.';
+      'Quando você perguntar algo ao Tally AI, a conversa aparece aqui.';
 
   @override
   String get conversationUntitled => 'Conversa sem título';

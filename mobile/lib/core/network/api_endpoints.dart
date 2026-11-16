@@ -246,22 +246,22 @@ abstract final class ApiEndpoints {
     usedBy: 'Upcoming entries',
   );
 
-  // Tally IA chat
+  // Tally AI chat
 
   /// Sends a question. The answer is a `text/event-stream` (SSE).
-  static const chat = ApiEndpoint('POST', '/tally/chat', usedBy: 'Tally IA');
+  static const chat = ApiEndpoint('POST', '/tally/chat', usedBy: 'Tally AI');
 
   static const conversations = ApiEndpoint(
     'GET',
     '/tally/conversations',
-    usedBy: 'Tally IA',
+    usedBy: 'Tally AI',
   );
 
   /// One conversation with its messages. `{id}` is the conversation id.
   static const conversation = ApiEndpoint(
     'GET',
     '/tally/conversations/{id}',
-    usedBy: 'Tally IA',
+    usedBy: 'Tally AI',
   );
 
   /// Every endpoint above. Add new ones here too.

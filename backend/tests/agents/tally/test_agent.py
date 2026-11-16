@@ -4,6 +4,7 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 from agents.tally.agent import (
+    LANGUAGE_REMINDER,
     TALLY_AI_SYSTEM_PROMPT,
     _system_prompt,
     build_tally_ai,
@@ -18,6 +19,7 @@ from agents.tools.accounts import (
 )
 from agents.tools.calculator import calculate
 from agents.tools.entries import get_household_entries, get_my_entries
+from agents.tools.recurrences import get_household_recurrences, get_my_recurrences
 from agents.tools.transactions import (
     get_household_spending_summary,
     get_household_transactions,
@@ -44,6 +46,8 @@ class TestBuildTallyAi(unittest.TestCase):
                 get_household_spending_summary,
                 get_my_entries,
                 get_household_entries,
+                get_my_recurrences,
+                get_household_recurrences,
                 get_my_bank_accounts,
                 get_household_bank_accounts,
                 get_my_credit_cards,
@@ -70,6 +74,8 @@ class TestSystemPrompt(unittest.TestCase):
             "get_household_spending_summary",
             "get_my_entries",
             "get_household_entries",
+            "get_my_recurrences",
+            "get_household_recurrences",
             "calculate",
             "get_my_bank_accounts",
             "get_household_bank_accounts",
@@ -78,6 +84,27 @@ class TestSystemPrompt(unittest.TestCase):
         ):
             self.assertIn(name, text)
         self.assertIn("Today is 2026-11-10.", text)
+
+    def test_prompt_demands_brazilian_portuguese_and_ends_with_the_reminder(self):
+        text = _system_prompt_text()
+
+        self.assertIn("ALWAYS answer 100% in Brazilian Portuguese", text)
+        self.assertTrue(text.endswith(LANGUAGE_REMINDER))
+
+    def test_prompt_asks_for_a_friendly_tone(self):
+        self.assertIn("friendly and warm", TALLY_AI_SYSTEM_PROMPT)
+
+    def test_planning_questions_use_recurrences_and_entries(self):
+        text = _system_prompt_text()
+
+        self.assertIn("planejamento", text)
+        self.assertIn("the recurrences tools (what repeats every month) AND the entries tools", text)
+
+    def test_ambiguous_questions_get_one_short_question_instead_of_i_dont_know(self):
+        text = _system_prompt_text()
+
+        self.assertIn("Before saying you do not know something", text)
+        self.assertIn("ask ONE short question", text)
 
 
 def _system_prompt_text(user=None, partner_names=("Bruno",)) -> str:
