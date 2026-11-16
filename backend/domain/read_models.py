@@ -129,6 +129,7 @@ class RecurrenceFilters:
     household_id: uuid.UUID | None = None
     type: str | None = None  # REVENUES | EXPENSES
     search: str | None = None  # case-insensitive, inside the description
+    status: str | None = None  # ACTIVE | CANCELLED
 
 
 @dataclass(slots=True)

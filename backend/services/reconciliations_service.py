@@ -4,9 +4,17 @@ from sqlalchemy.orm import Session
 
 from domain.entities import Reconciliation
 from infra.repositories import reconciliations_repository
-from services.common.exceptions import translate_repository_errors
+from services.common.exceptions import (
+    InvalidDataError,
+    NotFoundError,
+    translate_repository_errors,
+)
 from services.common.mappers import to_entities, to_entity, to_values
-from services.financial_entries_service import mark_financial_entries_status
+from services.financial_entries_service import (
+    get_financial_entry,
+    mark_financial_entries_status,
+)
+from services.transactions_service import get_transaction
 
 
 @translate_repository_errors
@@ -74,7 +82,14 @@ def undo_reconciliations_of_transactions(
     for reconciliation in reconciliations:
         mark_reconciliation_deleted(session, reconciliation.id)  # type: ignore[arg-type]
 
-    entry_ids = list({r.financial_entry_id for r in reconciliations})
+    _reopen_entries_without_match(
+        session, list({r.financial_entry_id for r in reconciliations})
+    )
+    return len(reconciliations)
+
+
+def _reopen_entries_without_match(session: Session, entry_ids: list[uuid.UUID]) -> None:
+    """Sends back to PLANNED the RECONCILED entries that have no active reconciliation left."""
     still_reconciled = {
         r.financial_entry_id for r in list_reconciliations_by_entries(session, entry_ids)
     }
@@ -84,4 +99,48 @@ def undo_reconciliations_of_transactions(
         "PLANNED",
         only_from="RECONCILED",
     )
-    return len(reconciliations)
+
+
+def link_entry(
+    session: Session,
+    household_id: uuid.UUID,
+    transaction_id: uuid.UUID,
+    entry_id: uuid.UUID,
+) -> Reconciliation:
+    """Links by hand a transaction with an entry of the household: the entry becomes RECONCILED.
+
+    NotFoundError when one of them is not in the household, InvalidDataError for a CANCELLED
+    entry and AlreadyExistsError when the pair is already linked."""
+    get_transaction(session, household_id, transaction_id)
+    entry = get_financial_entry(session, household_id, entry_id)
+    if entry.status == "CANCELLED":
+        raise InvalidDataError("A cancelled entry cannot be linked")
+    created = create_reconciliation(
+        session,
+        Reconciliation(
+            financial_entry_id=entry_id, transaction_id=transaction_id, source="MANUAL"
+        ),
+    )
+    mark_financial_entries_status(session, [entry_id], "RECONCILED")
+    return created
+
+
+def unlink_entry(
+    session: Session,
+    household_id: uuid.UUID,
+    transaction_id: uuid.UUID,
+    entry_id: uuid.UUID,
+) -> None:
+    """Undoes the link of a transaction with an entry. The entry goes back to PLANNED when it
+    has no other link. NotFoundError when the pair is not linked."""
+    get_transaction(session, household_id, transaction_id)
+    linked = [
+        r
+        for r in list_reconciliations_by_transactions(session, [transaction_id])
+        if r.financial_entry_id == entry_id and r.id is not None
+    ]
+    if not linked:
+        raise NotFoundError("The transaction is not linked with this entry")
+    for reconciliation in linked:
+        mark_reconciliation_deleted(session, reconciliation.id)  # type: ignore[arg-type]
+    _reopen_entries_without_match(session, [entry_id])

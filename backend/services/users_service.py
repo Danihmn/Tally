@@ -137,3 +137,12 @@ def update_user_pluggy_credentials(
             "pluggy_webhook_secret_hash": None,
         },
     )
+
+
+@translate_repository_errors
+def update_user_password(
+    session: Session, household_id: uuid.UUID, user_id: uuid.UUID, hashed_password: str
+) -> None:
+    """Replaces the password of a user of the household (already hashed)."""
+    stored = _load_user(session, household_id, user_id)
+    users_repository.update_user(session, stored, {"hashed_password": hashed_password})

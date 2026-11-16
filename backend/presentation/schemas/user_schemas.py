@@ -47,7 +47,7 @@ class UserCreate(BaseModel):
 class UserUpdate(BaseModel):
     """Body of PATCH /users/{id}: only the fields sent change. `last_name` and
     `surname` accept `null` to be cleared. The Pluggy credentials and the
-    password have their own routes."""
+    password have their own routes (`/pluggy-credentials` and `/password`)."""
 
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
@@ -73,6 +73,14 @@ class UserPluggyCredentialsUpdate(BaseModel):
 
     pluggy_client_id: uuid.UUID
     pluggy_client_secret: str = Field(min_length=1)
+
+
+class UserPasswordUpdate(BaseModel):
+    """Body of PUT /users/{id}/password: the new password."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    password: str = Field(min_length=8)
 
 
 class UserResponse(BaseModel):

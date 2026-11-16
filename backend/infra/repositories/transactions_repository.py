@@ -165,6 +165,20 @@ def clear_auto_internal_transfers(session: Session, household_id: uuid.UUID) -> 
 
 
 @translate_db_errors("transactions")
+def get_transaction(
+    session: Session, transaction_id: uuid.UUID, household_id: uuid.UUID
+) -> Transactions | None:
+    """The transaction when it is in the household and was not soft deleted, else None."""
+    stmt = (
+        select(Transactions)
+        .where(Transactions.id == transaction_id)
+        .where(Transactions.household_id == household_id)
+        .where(Transactions.deleted_at.is_(None))
+    )
+    return session.scalars(stmt).first()
+
+
+@translate_db_errors("transactions")
 def search_transactions(
     session: Session,
     filters: TransactionFilters,

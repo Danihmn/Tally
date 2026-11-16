@@ -60,11 +60,9 @@ def create_recurrence_endpoint(
     session: Annotated[Session, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_user)],
 ) -> RecurrenceResponse:
-    """Creates a MANUAL recurrence owned by the logged user, in the user's household."""
-    recurrence = create_recurrence(
-        session,
-        body.to_entity(require_id(current_user, "User"), current_user.household_id),
-    )
+    """Creates a MANUAL recurrence in the household of the logged user. The owner is
+    `user_id` of the body (422 when it is not a person of the house)."""
+    recurrence = create_recurrence(session, body.to_entity(current_user.household_id))
     session.commit()
     return RecurrenceResponse.from_entity(recurrence)
 

@@ -12,6 +12,7 @@ class Recurrence:
     household_id: uuid.UUID
     currency_code: str = "BRL"
     source: str = "MANUAL"  # MANUAL | AI
+    status: str = "ACTIVE"  # ACTIVE | CANCELLED
     id: uuid.UUID | None = None
     created_at: datetime.datetime | None = None
     updated_at: datetime.datetime | None = None

@@ -5,7 +5,9 @@ from decimal import Decimal
 from unittest.mock import MagicMock, patch
 
 from domain.read_models import TransactionFilters
+from services.common.exceptions import NotFoundError
 from services.transactions_service import (
+    get_transaction,
     get_average_daily_expenses,
     get_balance,
     get_daily_expenses,
@@ -19,7 +21,7 @@ from services.transactions_service import (
     update_transactions,
     upsert_transactions,
 )
-from tests.factories import make_transaction
+from tests.factories import HOUSEHOLD_ID, make_transaction
 
 MODULE = "services.transactions_service"
 
@@ -390,3 +392,23 @@ class AverageDailyExpensesTests(unittest.TestCase):
 
         daily.assert_called_once_with(session, filters)
         self.assertEqual(average, Decimal("15.50"))
+
+
+class GetTransactionTests(unittest.TestCase):
+    def test_returns_the_transaction_of_the_household(self):
+        transaction = make_transaction()
+        with patch(f"{MODULE}.transactions_repository") as repository:
+            repository.get_transaction.return_value = transaction
+            result = get_transaction(MagicMock(), HOUSEHOLD_ID, transaction.id)
+
+        self.assertEqual(result, transaction)
+        self.assertEqual(
+            repository.get_transaction.call_args.args[1:],
+            (transaction.id, HOUSEHOLD_ID),
+        )
+
+    def test_a_transaction_outside_the_household_is_not_found(self):
+        with patch(f"{MODULE}.transactions_repository") as repository:
+            repository.get_transaction.return_value = None
+            with self.assertRaises(NotFoundError):
+                get_transaction(MagicMock(), HOUSEHOLD_ID, uuid.uuid4())
