@@ -17,6 +17,8 @@ def _apply_filters(stmt: Select, filters: RecurrenceFilters) -> Select:
         stmt = stmt.where(Recurrences.household_id == filters.household_id)
     if filters.type is not None:
         stmt = stmt.where(Recurrences.type == filters.type)
+    if filters.status is not None:
+        stmt = stmt.where(Recurrences.status == filters.status)
     if filters.search:
         stmt = stmt.where(ilike_contains(Recurrences.description, filters.search))
     return stmt
@@ -44,9 +46,10 @@ def count_recurrences(session: Session, filters: RecurrenceFilters) -> int:
 
 @translate_db_errors("recurrences")
 def list_recurrences(session: Session, household_id: uuid.UUID) -> list[Recurrences]:
-    """Every active recurrence of the household, with no pagination (few rows)."""
+    """Every ACTIVE recurrence of the household (not cancelled, not deleted), with no pagination."""
     stmt = _apply_filters(
-        select(Recurrences), RecurrenceFilters(household_id=household_id)
+        select(Recurrences),
+        RecurrenceFilters(household_id=household_id, status="ACTIVE"),
     ).order_by(Recurrences.description, Recurrences.id)
     return list(session.scalars(stmt).all())
 

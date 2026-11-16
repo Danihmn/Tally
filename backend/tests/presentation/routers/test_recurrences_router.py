@@ -11,11 +11,11 @@ from infra.database.session import get_db
 from presentation.app import app
 from presentation.dependencies.auth import get_current_user
 from services.common.exceptions import InvalidDataError, NoRecurrencesError, NotFoundError
-from tests.factories import HOUSEHOLD_ID, make_recurrence, make_user, utc
+from tests.factories import HOUSEHOLD_ID, USER_ID, make_recurrence, make_user, utc
 
 MODULE = "presentation.routers.recurrences_router"
 TODAY = datetime.date(2026, 11, 15)
-BODY = {"description": "Rent", "type": "EXPENSES", "amount": "1500.00", "due_day": 5}
+BODY = {"user_id": str(USER_ID), "description": "Rent", "type": "EXPENSES", "amount": "1500.00", "due_day": 5}
 
 
 class RecurrencesEndpointTestCase(unittest.TestCase):
@@ -63,6 +63,28 @@ class ListRecurrencesEndpointTests(RecurrencesEndpointTestCase):
         filters = self.service.call_args.args[1]
         self.assertEqual((filters.household_id, filters.type, filters.search), (HOUSEHOLD_ID, "EXPENSES", "ren"))
 
+    def test_lists_the_active_ones_unless_the_cancelled_are_asked(self):
+        self.service.return_value = ([], 0)
+
+        self.client.get("/recurrences")
+        self.assertEqual(self.service.call_args.args[1].status, "ACTIVE")
+
+        self.client.get("/recurrences", params={"status": "CANCELLED"})
+        self.assertEqual(self.service.call_args.args[1].status, "CANCELLED")
+
+    def test_an_unknown_status_is_422(self):
+        response = self.client.get("/recurrences", params={"status": "DELETED"})
+
+        self.assertEqual(response.status_code, 422)
+        self.service.assert_not_called()
+
+    def test_the_answer_has_the_status(self):
+        self.service.return_value = ([_stored(status="CANCELLED")], 1)
+
+        body = self.client.get("/recurrences").json()
+
+        self.assertEqual(body["items"][0]["status"], "CANCELLED")
+
     def test_household_in_the_query_is_rejected(self):
         response = self.client.get("/recurrences", params={"household_id": str(uuid.uuid4())})
 
@@ -91,16 +113,31 @@ class CreateRecurrenceEndpointTests(RecurrencesEndpointTestCase):
         self.assertEqual(response.json()["description"], "Rent")
         self.session.commit.assert_called_once()
 
-    def test_owner_household_and_source_are_not_taken_from_the_body(self):
-        self.client.post("/recurrences", json=BODY)
+    def test_the_owner_comes_from_the_body_and_the_household_from_the_login(self):
+        owner_id = uuid.uuid4()
+        self.client.post("/recurrences", json={**BODY, "user_id": str(owner_id)})
 
         recurrence = self.service.call_args.args[1]
-        self.assertEqual(recurrence.user_id, self.current_user.id)
+        self.assertEqual(recurrence.user_id, owner_id)
+        self.assertNotEqual(recurrence.user_id, self.current_user.id)
         self.assertEqual(recurrence.household_id, HOUSEHOLD_ID)
         self.assertEqual(recurrence.source, "MANUAL")
-        for field in ("household_id", "user_id", "source"):
+        for field in ("household_id", "source", "status"):
             response = self.client.post("/recurrences", json={**BODY, field: "AI"})
             self.assertEqual(response.status_code, 422, field)
+
+    def test_the_owner_is_required(self):
+        body = {k: v for k, v in BODY.items() if k != "user_id"}
+
+        self.assertEqual(self.client.post("/recurrences", json=body).status_code, 422)
+
+    def test_an_owner_outside_the_household_is_422_and_does_not_commit(self):
+        self.service.side_effect = InvalidDataError("x")
+
+        response = self.client.post("/recurrences", json=BODY)
+
+        self.assertEqual(response.status_code, 422)
+        self.session.commit.assert_not_called()
 
     def test_invalid_bodies_are_422_without_calling_the_service(self):
         self.service.reset_mock()
@@ -165,10 +202,30 @@ class UpdateRecurrenceEndpointTests(RecurrencesEndpointTestCase):
         self.assertEqual(self.service.call_args.args[3], {"due_day": None})
 
     def test_bad_bodies_are_422_without_calling_the_service(self):
-        for body in ({}, {"amount": None}, {"description": None}, {"due_day": 40}, {"source": "AI"}):
+        for body in (
+            {},
+            {"amount": None},
+            {"description": None},
+            {"due_day": 40},
+            {"source": "AI"},
+            {"status": None},
+            {"status": "DELETED"},
+            {"user_id": None},
+        ):
             response = self.client.patch(f"/recurrences/{self.recurrence_id}", json=body)
             self.assertEqual(response.status_code, 422, body)
         self.service.assert_not_called()
+
+    def test_cancel_reactivate_and_change_the_owner(self):
+        owner_id = uuid.uuid4()
+        for body, expected in (
+            ({"status": "CANCELLED"}, {"status": "CANCELLED"}),
+            ({"status": "ACTIVE"}, {"status": "ACTIVE"}),
+            ({"user_id": str(owner_id)}, {"user_id": owner_id}),
+        ):
+            response = self.client.patch(f"/recurrences/{self.recurrence_id}", json=body)
+            self.assertEqual(response.status_code, 200, body)
+            self.assertEqual(self.service.call_args.args[3], expected)
 
     def test_not_found_is_404_and_does_not_commit(self):
         self.service.side_effect = NotFoundError("x")

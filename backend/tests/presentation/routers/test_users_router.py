@@ -395,6 +395,54 @@ class UpdatePluggyCredentialsEndpointTests(UsersEndpointTestCase):
         self.assertEqual(response.status_code, 401)
 
 
+class UpdatePasswordEndpointTests(UsersEndpointTestCase):
+    PATCHED = ("update_user_password",)
+
+    def setUp(self):
+        super().setUp()
+        self.user_id = uuid.uuid4()
+
+    def test_saves_a_hash_of_the_new_password_and_commits(self):
+        response = self.client.put(
+            f"/users/{self.user_id}/password", json={"password": "new-password"}
+        )
+
+        self.assertEqual(response.status_code, 204)
+        session, household_id, user_id, hashed = self.mocks[
+            "update_user_password"
+        ].call_args.args
+        self.assertEqual((household_id, user_id), (HOUSEHOLD_ID, self.user_id))
+        self.assertNotEqual(hashed, "new-password")
+        self.assertTrue(verify_password("new-password", hashed))
+        self.session.commit.assert_called_once()
+
+    def test_a_short_or_missing_password_is_422_without_calling_the_service(self):
+        for body in ({}, {"password": "short"}, {"password": "long-enough", "x": 1}):
+            response = self.client.put(f"/users/{self.user_id}/password", json=body)
+            self.assertEqual(response.status_code, 422, body)
+        self.mocks["update_user_password"].assert_not_called()
+        self.session.commit.assert_not_called()
+
+    def test_not_found_is_404_and_does_not_commit(self):
+        self.mocks["update_user_password"].side_effect = NotFoundError("x")
+
+        response = self.client.put(
+            f"/users/{self.user_id}/password", json={"password": "new-password"}
+        )
+
+        self.assertEqual(response.status_code, 404)
+        self.session.commit.assert_not_called()
+
+    def test_without_a_token_it_is_unauthorized(self):
+        app.dependency_overrides.pop(get_current_user)
+
+        response = self.client.put(
+            f"/users/{self.user_id}/password", json={"password": "new-password"}
+        )
+
+        self.assertEqual(response.status_code, 401)
+
+
 class NoDeleteTests(UsersEndpointTestCase):
     def test_a_user_cannot_be_deleted(self):
         response = self.client.delete(f"/users/{uuid.uuid4()}")

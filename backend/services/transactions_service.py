@@ -15,7 +15,7 @@ from domain.read_models import (
     TransactionWithOwner,
 )
 from infra.repositories import transactions_repository
-from services.common.exceptions import translate_repository_errors
+from services.common.exceptions import NotFoundError, translate_repository_errors
 from services.common.mappers import to_entities, to_entity, to_values
 from utils.money import round_to_cents
 
@@ -25,6 +25,17 @@ CLASSIFICATION_FIELDS = (
     "internal_transfer",
     "internal_transfer_classification_source",
 )
+
+
+@translate_repository_errors
+def get_transaction(
+    session: Session, household_id: uuid.UUID, transaction_id: uuid.UUID
+) -> Transaction:
+    """The transaction of the household. Another household's one is "not found"."""
+    found = transactions_repository.get_transaction(session, transaction_id, household_id)
+    if found is None:
+        raise NotFoundError("Transaction not found")
+    return to_entity(Transaction, found)
 
 
 @translate_repository_errors

@@ -234,12 +234,15 @@ def soft_delete_financial_entry(
 def list_recurrence_ids_in_month(
     session: Session, household_id: uuid.UUID, reference_month: datetime.date
 ) -> set[uuid.UUID]:
-    """Recurrences of the household that already have an active entry in the month."""
+    """Recurrences of the household that already have an entry in the month.
+
+    A CANCELLED entry does not count: the month gets a new PLANNED one."""
     stmt = (
         select(FinancialEntries.recurrence_id)
         .where(FinancialEntries.household_id == household_id)
         .where(FinancialEntries.reference_month == reference_month)
         .where(FinancialEntries.recurrence_id.is_not(None))
+        .where(FinancialEntries.status != "CANCELLED")
         .where(FinancialEntries.deleted_at.is_(None))
     )
     return {recurrence_id for recurrence_id in session.scalars(stmt).all()}  # type: ignore

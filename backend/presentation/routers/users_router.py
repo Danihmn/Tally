@@ -12,6 +12,7 @@ from jobs.webhook_registration import register_webhooks
 from presentation.dependencies.auth import get_current_user
 from presentation.schemas.user_schemas import (
     UserCreate,
+    UserPasswordUpdate,
     UserPluggyCredentialsUpdate,
     UserResponse,
     UserUpdate,
@@ -21,6 +22,7 @@ from services.users_service import (
     get_household_user,
     list_users_by_household,
     update_user,
+    update_user_password,
     update_user_pluggy_credentials,
 )
 
@@ -116,4 +118,22 @@ def update_pluggy_credentials_endpoint(
     session.commit()
     # The new Pluggy application has no webhooks of ours yet.
     background_tasks.add_task(register_webhooks)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.put("/{user_id}/password", status_code=status.HTTP_204_NO_CONTENT)
+def update_password_endpoint(
+    user_id: uuid.UUID,
+    body: UserPasswordUpdate,
+    session: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
+) -> Response:
+    """Any person of the house can set a new password for any other person of it."""
+    update_user_password(
+        session,
+        current_user.household_id,
+        user_id,
+        get_password_hash(body.password),
+    )
+    session.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)

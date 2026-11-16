@@ -8,7 +8,11 @@ from unittest.mock import MagicMock, patch
 
 from domain.read_models import RecurrenceFilters
 from infra.repositories.common.exceptions import DuplicateRecordError
-from services.common.exceptions import NoRecurrencesError, NotFoundError
+from services.common.exceptions import (
+    InvalidDataError,
+    NoRecurrencesError,
+    NotFoundError,
+)
 from services.recurrences_service import (
     create_recurrence,
     delete_recurrence,
@@ -66,7 +70,10 @@ class GetRecurrenceTests(unittest.TestCase):
 class CreateRecurrenceTests(unittest.TestCase):
     def test_stores_the_recurrence_without_an_id_and_returns_it(self):
         recurrence = make_recurrence(id=None)
-        with patch(f"{MODULE}.recurrences_repository") as repository:
+        with (
+            patch(f"{MODULE}.recurrences_repository") as repository,
+            patch(f"{MODULE}.users_repository"),
+        ):
             repository.create_recurrence.side_effect = lambda session, values: _as_model(
                 make_recurrence(**{**values, "id": uuid.uuid4()})
             )
@@ -76,6 +83,35 @@ class CreateRecurrenceTests(unittest.TestCase):
         self.assertNotIn("id", values)
         self.assertEqual(values["description"], recurrence.description)
         self.assertIsNotNone(result.id)
+
+
+    def test_a_new_recurrence_starts_active(self):
+        self.assertEqual(make_recurrence().status, "ACTIVE")
+
+    def test_the_owner_is_checked_in_the_household(self):
+        recurrence = make_recurrence(id=None)
+        with (
+            patch(f"{MODULE}.recurrences_repository") as repository,
+            patch(f"{MODULE}.users_repository") as users,
+        ):
+            repository.create_recurrence.return_value = _as_model(make_recurrence())
+            create_recurrence(MagicMock(), recurrence)
+
+        self.assertEqual(
+            users.get_user_in_household.call_args.args[1:],
+            (recurrence.user_id, HOUSEHOLD_ID),
+        )
+
+    def test_an_owner_outside_the_household_is_invalid_and_nothing_is_stored(self):
+        with (
+            patch(f"{MODULE}.recurrences_repository") as repository,
+            patch(f"{MODULE}.users_repository") as users,
+        ):
+            users.get_user_in_household.return_value = None
+            with self.assertRaises(InvalidDataError):
+                create_recurrence(MagicMock(), make_recurrence(id=None))
+
+        repository.create_recurrence.assert_not_called()
 
 
 class UpdateRecurrenceTests(unittest.TestCase):
@@ -100,6 +136,37 @@ class UpdateRecurrenceTests(unittest.TestCase):
                 update_recurrence(MagicMock(), HOUSEHOLD_ID, uuid.uuid4(), {"notes": "x"})
 
         repository.update_recurrence.assert_not_called()
+
+    def test_a_new_owner_outside_the_household_is_invalid_and_nothing_changes(self):
+        with (
+            patch(f"{MODULE}.recurrences_repository") as repository,
+            patch(f"{MODULE}.users_repository") as users,
+        ):
+            repository.get_recurrence.return_value = _as_model(make_recurrence())
+            users.get_user_in_household.return_value = None
+            with self.assertRaises(InvalidDataError):
+                update_recurrence(
+                    MagicMock(), HOUSEHOLD_ID, uuid.uuid4(), {"user_id": uuid.uuid4()}
+                )
+
+        repository.update_recurrence.assert_not_called()
+
+    def test_the_owner_is_not_checked_when_it_does_not_change(self):
+        stored = make_recurrence()
+        with (
+            patch(f"{MODULE}.recurrences_repository") as repository,
+            patch(f"{MODULE}.users_repository") as users,
+        ):
+            repository.get_recurrence.return_value = _as_model(stored)
+            repository.update_recurrence.return_value = _as_model(
+                make_recurrence(status="CANCELLED")
+            )
+            result = update_recurrence(
+                MagicMock(), HOUSEHOLD_ID, stored.id, {"status": "CANCELLED"}
+            )
+
+        users.get_user_in_household.assert_not_called()
+        self.assertEqual(result.status, "CANCELLED")
 
 
 class DeleteRecurrenceTests(unittest.TestCase):

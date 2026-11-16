@@ -6,9 +6,14 @@ from sqlalchemy.orm import Session
 
 from domain.entities import FinancialEntry, Recurrence
 from domain.read_models import ProvisionResult, RecurrenceFilters
-from infra.repositories import financial_entries_repository, recurrences_repository
+from infra.repositories import (
+    financial_entries_repository,
+    recurrences_repository,
+    users_repository,
+)
 from infra.repositories.common.exceptions import DuplicateRecordError
 from services.common.exceptions import (
+    InvalidDataError,
     NoRecurrencesError,
     NotFoundError,
     translate_repository_errors,
@@ -27,6 +32,14 @@ def _load_recurrence(
     if recurrence is None:
         raise NotFoundError("Recurrence not found")
     return recurrence
+
+
+def _check_owner(
+    session: Session, household_id: uuid.UUID, user_id: uuid.UUID
+) -> None:
+    """The owner of a recurrence must be a person of the same household."""
+    if users_repository.get_user_in_household(session, user_id, household_id) is None:
+        raise InvalidDataError("The owner is not a person of the household")
 
 
 @translate_repository_errors
@@ -48,6 +61,8 @@ def get_recurrence(
 
 @translate_repository_errors
 def create_recurrence(session: Session, recurrence: Recurrence) -> Recurrence:
+    assert recurrence.user_id is not None
+    _check_owner(session, recurrence.household_id, recurrence.user_id)
     created = recurrences_repository.create_recurrence(session, to_values(recurrence))
     return to_entity(Recurrence, created)
 
@@ -61,6 +76,8 @@ def update_recurrence(
 ) -> Recurrence:
     """Changes only the given columns. Entries already created from it are not touched."""
     stored = _load_recurrence(session, household_id, recurrence_id)
+    if values.get("user_id") is not None:
+        _check_owner(session, household_id, values["user_id"])
     updated = recurrences_repository.update_recurrence(session, stored, values)
     return to_entity(Recurrence, updated)
 
@@ -108,10 +125,10 @@ def provision_next_month(
     user_id: uuid.UUID,
     today: datetime.date,
 ) -> ProvisionResult:
-    """Creates the PLANNED entries of next month from the active recurrences of the household.
+    """Creates the PLANNED entries of next month from the ACTIVE recurrences of the household.
 
-    A recurrence that already has an active entry in that month is skipped, so calling it again
-    creates nothing. Raises NoRecurrencesError when the household has no recurrence."""
+    A recurrence that already has an entry in that month (not CANCELLED) is skipped, so calling
+    it again creates nothing. Raises NoRecurrencesError when the household has no active one."""
     recurrences = to_entities(
         Recurrence, recurrences_repository.list_recurrences(session, household_id)
     )

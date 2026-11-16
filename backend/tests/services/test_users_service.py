@@ -11,6 +11,7 @@ from services.users_service import (
     get_household_user,
     list_users_by_household,
     update_user,
+    update_user_password,
     update_user_pluggy_credentials,
 )
 from tests.factories import HOUSEHOLD_ID, make_user, utc
@@ -181,5 +182,28 @@ class UpdatePluggyCredentialsTests(unittest.TestCase):
                 update_user_pluggy_credentials(
                     MagicMock(), HOUSEHOLD_ID, uuid.uuid4(), uuid.uuid4(), "s"
                 )
+
+        repository.update_user.assert_not_called()
+
+
+class UpdateUserPasswordTests(unittest.TestCase):
+    def test_saves_only_the_new_hash_on_the_stored_user(self):
+        user = make_user()
+        stored = _row(user)
+
+        with patch(f"{MODULE}.users_repository") as repository:
+            repository.get_user_in_household.return_value = stored
+            update_user_password(MagicMock(), HOUSEHOLD_ID, user.id, "new-hash")
+
+        self.assertEqual(
+            repository.update_user.call_args.args[1:],
+            (stored, {"hashed_password": "new-hash"}),
+        )
+
+    def test_a_user_of_another_household_is_not_found_and_nothing_changes(self):
+        with patch(f"{MODULE}.users_repository") as repository:
+            repository.get_user_in_household.return_value = None
+            with self.assertRaises(NotFoundError):
+                update_user_password(MagicMock(), HOUSEHOLD_ID, uuid.uuid4(), "h")
 
         repository.update_user.assert_not_called()
