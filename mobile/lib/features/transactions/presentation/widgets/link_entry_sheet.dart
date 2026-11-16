@@ -13,8 +13,9 @@ import 'package:mobile/features/entries/presentation/widgets/entry_row.dart';
 import 'package:mobile/l10n/app_localizations.dart';
 
 /// The planned entries that can be linked, for a search text.
-typedef EntryCandidates =
-    Future<Result<List<FinancialEntry>>> Function(String search);
+typedef EntryCandidates = Future<Result<List<FinancialEntry>>> Function(
+  String search,
+);
 
 /// Links the entry. Returns `null` when it worked, or why it did not (the
 /// sheet then stays open and shows the failure).

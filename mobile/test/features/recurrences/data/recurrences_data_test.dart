@@ -130,9 +130,8 @@ void main() {
     test('cancelling_patches_only_the_status', () async {
       final adapter = answering(item(status: 'CANCELLED'));
 
-      final result = await build(
-        adapter,
-      ).setStatus('r9', RecurrenceStatus.cancelled);
+      final result = await build(adapter)
+          .setStatus('r9', RecurrenceStatus.cancelled);
 
       final request = adapter.requests.single;
       expect((request.method, request.path), ('PATCH', '/recurrences/r9'));

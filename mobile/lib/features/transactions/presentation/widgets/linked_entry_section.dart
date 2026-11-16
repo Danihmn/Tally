@@ -6,10 +6,10 @@ import 'package:mobile/app/router/app_routes.dart';
 import 'package:mobile/app/theme/app_spacing.dart';
 import 'package:mobile/app/theme/tally_colors.dart';
 import 'package:mobile/core/state/ui_state.dart';
-import 'package:mobile/core/widgets/confirm_dialog.dart';
-import 'package:mobile/core/widgets/failure_message.dart';
 import 'package:mobile/core/utils/money_formatter.dart';
+import 'package:mobile/core/widgets/confirm_dialog.dart';
 import 'package:mobile/core/widgets/ellipsis_text.dart';
+import 'package:mobile/core/widgets/failure_message.dart';
 import 'package:mobile/core/widgets/skeleton.dart';
 import 'package:mobile/features/entries/domain/entities/financial_entry.dart';
 import 'package:mobile/features/entries/presentation/views/entry_detail_args.dart';
@@ -88,8 +88,7 @@ class _LinkedEntrySectionState extends State<LinkedEntrySection> {
     final type = widget.isIncome ? EntryType.revenues : EntryType.expenses;
     final linked = await LinkEntrySheet.show(
       context,
-      candidates: (search) =>
-          _viewModel.candidates(type: type, search: search),
+      candidates: (search) => _viewModel.candidates(type: type, search: search),
       onLink: (entry) => _viewModel.link(entry.id),
     );
     if (linked != true || !mounted) return;

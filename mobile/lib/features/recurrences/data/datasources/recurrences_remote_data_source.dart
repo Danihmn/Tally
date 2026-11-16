@@ -22,11 +22,11 @@ class RecurrencesRemoteDataSource {
           ApiEndpoints.recurrences.path,
           queryParameters: {'limit': _pageSize, 'status': status.apiValue},
         );
-    return [
-      for (final item in response.data!['items'] as List<dynamic>)
-        RecurrenceDto.fromJson(item as Map<String, dynamic>),
-    ];
-  });
+        return [
+          for (final item in response.data!['items'] as List<dynamic>)
+            RecurrenceDto.fromJson(item as Map<String, dynamic>),
+        ];
+      });
 
   Future<Result<RecurrenceDto>> create(RecurrenceDraft draft) =>
       apiCall(() async {
