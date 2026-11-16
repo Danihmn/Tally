@@ -6,19 +6,19 @@ from sqlalchemy.orm import Session
 
 from domain.entities import FinancialEntry, Recurrence
 from domain.read_models import ProvisionResult, RecurrenceFilters
-from infra.repositories import (
-    financial_entries_repository,
-    recurrences_repository,
-    users_repository,
-)
-from infra.repositories.common.exceptions import DuplicateRecordError
+from infra.repositories import recurrences_repository, users_repository
 from services.common.exceptions import (
+    AlreadyExistsError,
     InvalidDataError,
     NoRecurrencesError,
     NotFoundError,
     translate_repository_errors,
 )
 from services.common.mappers import to_entities, to_entity, to_values
+from services.financial_entries_service import (
+    create_financial_entry,
+    list_provisioned_recurrence_ids,
+)
 from utils.dates import clamp_day_to_month, next_month_start
 
 
@@ -136,7 +136,7 @@ def provision_next_month(
         raise NoRecurrencesError("The household has no recurrences")
 
     reference_month = next_month_start(today)
-    provisioned = financial_entries_repository.list_recurrence_ids_in_month(
+    provisioned = list_provisioned_recurrence_ids(
         session, household_id, reference_month
     )
     result = ProvisionResult(reference_month=reference_month)
@@ -148,10 +148,8 @@ def provision_next_month(
         try:
             # A savepoint: a concurrent call that got there first only loses this one entry
             with session.begin_nested():
-                financial_entries_repository.create_financial_entry(
-                    session, to_values(entry)
-                )
-        except DuplicateRecordError:
+                create_financial_entry(session, entry)
+        except AlreadyExistsError:
             result.skipped += 1
             continue
         result.created += 1

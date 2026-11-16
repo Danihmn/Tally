@@ -7,8 +7,8 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 from domain.read_models import RecurrenceFilters
-from infra.repositories.common.exceptions import DuplicateRecordError
 from services.common.exceptions import (
+    AlreadyExistsError,
     InvalidDataError,
     NoRecurrencesError,
     NotFoundError,
@@ -192,26 +192,29 @@ class ProvisionNextMonthTests(unittest.TestCase):
         session = MagicMock()
         with (
             patch(f"{MODULE}.recurrences_repository") as recurrences_repo,
-            patch(f"{MODULE}.financial_entries_repository") as entries_repo,
+            patch(f"{MODULE}.list_provisioned_recurrence_ids") as list_provisioned,
+            patch(f"{MODULE}.create_financial_entry") as create_entry,
         ):
             recurrences_repo.list_recurrences.return_value = [_as_model(r) for r in recurrences]
-            entries_repo.list_recurrence_ids_in_month.return_value = set(already)
-            entries_repo.create_financial_entry.side_effect = create_side_effect
+            list_provisioned.return_value = set(already)
+            create_entry.side_effect = create_side_effect
             try:
                 result = provision_next_month(session, HOUSEHOLD_ID, USER_ID, TODAY)
             finally:
-                self.entries_repo = entries_repo
+                self.list_provisioned = list_provisioned
+                self.create_entry = create_entry
                 self.session = session
         return result
 
     def _created_values(self):
-        return [call.args[1] for call in self.entries_repo.create_financial_entry.call_args_list]
+        """The entries sent to the financial entries service, as dicts."""
+        return [dataclasses.asdict(call.args[1]) for call in self.create_entry.call_args_list]
 
     def test_without_recurrences_nothing_is_created(self):
         with self.assertRaises(NoRecurrencesError):
             self._provision([])
 
-        self.entries_repo.create_financial_entry.assert_not_called()
+        self.create_entry.assert_not_called()
 
     def test_creates_a_planned_entry_in_next_month_for_each_recurrence(self):
         rent = make_recurrence(description="Rent", amount=Decimal("1500.00"), due_day=5)
@@ -243,7 +246,7 @@ class ProvisionNextMonthTests(unittest.TestCase):
         result = self._provision([recurrence], already=[recurrence.id])
 
         self.assertEqual((result.created, result.skipped), (0, 1))
-        self.entries_repo.create_financial_entry.assert_not_called()
+        self.create_entry.assert_not_called()
 
     def test_a_due_day_past_the_end_of_the_month_becomes_its_last_day(self):
         recurrence = make_recurrence(due_day=31)
@@ -257,10 +260,10 @@ class ProvisionNextMonthTests(unittest.TestCase):
         session = MagicMock()
         with (
             patch(f"{MODULE}.recurrences_repository") as recurrences_repo,
-            patch(f"{MODULE}.financial_entries_repository") as entries_repo,
+            patch(f"{MODULE}.list_provisioned_recurrence_ids", return_value=set()),
+            patch(f"{MODULE}.create_financial_entry"),
         ):
             recurrences_repo.list_recurrences.return_value = [_as_model(make_recurrence())]
-            entries_repo.list_recurrence_ids_in_month.return_value = set()
             result = provision_next_month(session, HOUSEHOLD_ID, USER_ID, datetime.date(2026, 12, 20))
 
         self.assertEqual(result.reference_month, datetime.date(2027, 1, 1))
@@ -275,6 +278,14 @@ class ProvisionNextMonthTests(unittest.TestCase):
         self.assertEqual(first["user_id"], owned.user_id)
         self.assertEqual(second["user_id"], USER_ID)
 
+    def test_asks_the_entries_service_what_is_provisioned_in_next_month(self):
+        self._provision([make_recurrence()])
+
+        self.assertEqual(
+            self.list_provisioned.call_args.args,
+            (self.session, HOUSEHOLD_ID, NEXT_MONTH),
+        )
+
     def test_each_entry_is_created_inside_a_savepoint(self):
         self._provision([make_recurrence(), make_recurrence()])
 
@@ -282,9 +293,9 @@ class ProvisionNextMonthTests(unittest.TestCase):
 
     def test_an_entry_created_by_a_concurrent_call_is_skipped_not_an_error(self):
         first, second = make_recurrence(), make_recurrence()
-        calls = iter([DuplicateRecordError("financial_entries", "insert"), None])
+        calls = iter([AlreadyExistsError("financial_entries"), None])
 
-        def create(session, values):
+        def create(session, entry):
             outcome = next(calls)
             if outcome is not None:
                 raise outcome

@@ -41,6 +41,18 @@ def list_financial_entries_by_user(
 
 
 @translate_repository_errors
+def list_provisioned_recurrence_ids(
+    session: Session, household_id: uuid.UUID, reference_month: datetime.date
+) -> set[uuid.UUID]:
+    """Recurrences of the household that already have an entry in the month.
+
+    A CANCELLED entry does not count: the month gets a new PLANNED one."""
+    return financial_entries_repository.list_recurrence_ids_in_month(
+        session, household_id, reference_month
+    )
+
+
+@translate_repository_errors
 def mark_financial_entries_status(
     session: Session,
     ids: list[uuid.UUID],
