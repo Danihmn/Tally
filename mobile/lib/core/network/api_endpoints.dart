@@ -57,6 +57,13 @@ abstract final class ApiEndpoints {
     usedBy: 'Configurações',
   );
 
+  /// Sets a new password for a person of the house. `{id}` is the user id.
+  static const updateUserPassword = ApiEndpoint(
+    'PUT',
+    '/users/{id}/password',
+    usedBy: 'Configurações',
+  );
+
   // Transactions list (and the accounts it names)
 
   static const transactions = ApiEndpoint(
@@ -68,6 +75,21 @@ abstract final class ApiEndpoints {
   static const bankAccounts = ApiEndpoint(
     'GET',
     '/bank-accounts',
+    usedBy: 'Transações',
+  );
+
+  /// Links a transaction with an entry by hand. `{transactionId}` and
+  /// `{entryId}` are the ids.
+  static const linkTransactionEntry = ApiEndpoint(
+    'POST',
+    '/transactions/{transactionId}/financial-entries/{entryId}',
+    usedBy: 'Transações',
+  );
+
+  /// Undoes the link of a transaction with an entry.
+  static const unlinkTransactionEntry = ApiEndpoint(
+    'DELETE',
+    '/transactions/{transactionId}/financial-entries/{entryId}',
     usedBy: 'Transações',
   );
 
@@ -163,6 +185,7 @@ abstract final class ApiEndpoints {
 
   // Planning screen: recurrences
 
+  /// `status` (ACTIVE or CANCELLED) picks the tab.
   static const recurrences = ApiEndpoint(
     'GET',
     '/recurrences',
@@ -249,8 +272,11 @@ abstract final class ApiEndpoints {
     createUser,
     updateUser,
     updateUserPluggyCredentials,
+    updateUserPassword,
     transactions,
     bankAccounts,
+    linkTransactionEntry,
+    unlinkTransactionEntry,
     accountBalances,
     totalAccountBalance,
     updateBankAccount,

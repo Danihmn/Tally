@@ -19,14 +19,17 @@ Map<String, dynamic> item({
   Object? paymentType = 'DEBIT',
   Object? dueDay = 5,
   Object? category = 'Moradia',
+  Object? userId = 'm1',
+  String status = 'ACTIVE',
 }) => {
   'id': id,
-  'user_id': 'm1',
+  'user_id': userId,
   'description': 'Aluguel',
   'type': type,
   'amount': '1500.00',
   'currency_code': 'BRL',
   'source': 'MANUAL',
+  'status': status,
   'category': category,
   'payment_type': paymentType,
   'notes': null,
@@ -36,6 +39,7 @@ Map<String, dynamic> item({
 };
 
 RecurrenceDraft draft({int? dueDay = 5, String? category}) => RecurrenceDraft(
+  ownerId: 'm2',
   description: ' Aluguel ',
   type: EntryType.expenses,
   amount: Decimal.parse('1500'),
@@ -61,6 +65,17 @@ void main() {
       expect(recurrence.amount, Decimal.parse('1500'));
       expect(recurrence.dueDay, 5);
       expect(recurrence.category, 'Moradia');
+      expect(recurrence.ownerId, 'm1');
+      expect(recurrence.status, RecurrenceStatus.active);
+    });
+
+    test('a_cancelled_recurrence_and_one_without_owner_are_mapped', () {
+      final recurrence = RecurrenceDto.fromJson(
+        item(status: 'CANCELLED', userId: null),
+      ).toEntity();
+
+      expect(recurrence.isCancelled, isTrue);
+      expect(recurrence.ownerId, isNull);
     });
 
     test('revenues_credit_and_missing_optionals_are_mapped', () {
@@ -90,13 +105,38 @@ void main() {
         'offset': 0,
       });
 
-      final result = await build(adapter).list();
+      final result = await build(adapter).list(RecurrenceStatus.active);
 
       expect(result.valueOrNull, hasLength(2));
       final request = adapter.requests.single;
       expect(request.method, 'GET');
       expect(request.path, '/recurrences');
-      expect(request.queryParameters, {'limit': 200});
+      expect(request.queryParameters, {'limit': 200, 'status': 'ACTIVE'});
+    });
+
+    test('lists_the_cancelled_ones_when_asked', () async {
+      final adapter = answering({
+        'items': [item(status: 'CANCELLED')],
+        'total': 1,
+        'limit': 200,
+        'offset': 0,
+      });
+
+      await build(adapter).list(RecurrenceStatus.cancelled);
+
+      expect(adapter.requests.single.queryParameters['status'], 'CANCELLED');
+    });
+
+    test('cancelling_patches_only_the_status', () async {
+      final adapter = answering(item(status: 'CANCELLED'));
+
+      final result = await build(adapter)
+          .setStatus('r9', RecurrenceStatus.cancelled);
+
+      final request = adapter.requests.single;
+      expect((request.method, request.path), ('PATCH', '/recurrences/r9'));
+      expect(request.data, {'status': 'CANCELLED'});
+      expect(result.valueOrNull?.status, 'CANCELLED');
     });
 
     test('creates_with_every_field_of_the_form', () async {
@@ -108,6 +148,7 @@ void main() {
       expect(request.method, 'POST');
       expect(request.path, '/recurrences');
       expect(request.data, {
+        'user_id': 'm2',
         'description': 'Aluguel',
         'type': 'EXPENSES',
         'amount': '1500.00',
@@ -192,7 +233,7 @@ void main() {
         ),
       );
 
-      final result = await repository.list();
+      final result = await repository.list(RecurrenceStatus.active);
 
       expect(result.valueOrNull, [makeRecurrence(notes: null)]);
     });
@@ -223,11 +264,24 @@ void main() {
     test('a_recurrence_draft_starts_from_a_recurrence', () {
       final recurrence = makeRecurrence(notes: 'n');
 
-      final fromRecurrence = RecurrenceDraft.fromRecurrence(recurrence);
+      final fromRecurrence = RecurrenceDraft.fromRecurrence(
+        recurrence,
+        fallbackOwnerId: 'm9',
+      );
 
+      expect(fromRecurrence.ownerId, 'm1');
       expect(fromRecurrence.description, 'Aluguel');
       expect(fromRecurrence.dueDay, 5);
       expect(fromRecurrence.notes, 'n');
+    });
+
+    test('a_recurrence_without_owner_starts_with_the_fallback_owner', () {
+      final fromRecurrence = RecurrenceDraft.fromRecurrence(
+        makeRecurrence(ownerId: null),
+        fallbackOwnerId: 'm9',
+      );
+
+      expect(fromRecurrence.ownerId, 'm9');
     });
   });
 }

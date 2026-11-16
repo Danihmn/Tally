@@ -18,6 +18,7 @@ class FakeHouseholdRepository implements HouseholdRepository {
     this.createResult,
     this.updateResult,
     this.credentialsResult = const Result<void>.success(null),
+    this.passwordResult = const Result<void>.success(null),
   });
 
   Result<Member> me;
@@ -31,9 +32,11 @@ class FakeHouseholdRepository implements HouseholdRepository {
   Result<Member>? createResult;
   Result<Member>? updateResult;
   Result<void> credentialsResult;
+  Result<void> passwordResult;
   final List<UserDraft> created = [];
   final List<(String, UserChanges)> updated = [];
   final List<(String, PluggyCredentials)> credentialsSent = [];
+  final List<(String, String)> passwordsSent = [];
 
   @override
   Future<Result<Member>> getMe() {
@@ -88,5 +91,11 @@ class FakeHouseholdRepository implements HouseholdRepository {
   ) async {
     credentialsSent.add((id, credentials));
     return credentialsResult;
+  }
+
+  @override
+  Future<Result<void>> updatePassword(String id, String password) async {
+    passwordsSent.add((id, password));
+    return passwordResult;
   }
 }

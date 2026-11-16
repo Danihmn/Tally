@@ -137,4 +137,25 @@ void main() {
       });
     });
   });
+
+  group('validatePassword', () {
+    test('a_long_enough_password_is_kept_as_typed', () {
+      final result = validatePassword(' new pass ');
+
+      expect(result.isValid, isTrue);
+      expect(result.value, ' new pass ');
+    });
+
+    test('an_empty_password_is_required', () {
+      expect(validatePassword('').errors, {
+        UserFormField.password: UserFormError.required,
+      });
+    });
+
+    test('a_short_password_is_refused', () {
+      expect(validatePassword('1234567').errors, {
+        UserFormField.password: UserFormError.shortPassword,
+      });
+    });
+  });
 }

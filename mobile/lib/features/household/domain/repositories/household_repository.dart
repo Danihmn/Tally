@@ -24,4 +24,7 @@ abstract interface class HouseholdRepository {
     String id,
     PluggyCredentials credentials,
   );
+
+  /// Sets a new password for a person.
+  Future<Result<void>> updatePassword(String id, String password);
 }

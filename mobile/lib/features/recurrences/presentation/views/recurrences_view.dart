@@ -14,8 +14,9 @@ import 'package:mobile/features/recurrences/presentation/widgets/recurrence_row.
 import 'package:mobile/features/transactions/presentation/widgets/transactions_states.dart';
 import 'package:mobile/l10n/app_localizations.dart';
 
-/// The recurrences section of the planning screen: the list, the form to
-/// create and edit, and the button that provisions the next month from them.
+/// The recurrences section of the planning screen: the tabs "Ativas" and
+/// "Canceladas", the list, the form to create and edit, and the button that
+/// provisions the next month from the active ones.
 ///
 /// It creates its own ViewModel and loads it. [onProvisioned] is called when
 /// the next month was provisioned, so the planning screen can show it.
@@ -58,18 +59,62 @@ class _RecurrencesViewState extends State<RecurrencesView> {
   }
 
   Future<void> _new() => _showSaved(
-    RecurrenceFormSheet.show(context, onSubmit: _viewModel.create),
+    RecurrenceFormSheet.show(
+      context,
+      members: _viewModel.members,
+      defaultOwnerId: _viewModel.me?.id,
+      onSubmit: _viewModel.create,
+    ),
     AppLocalizations.of(context).recurrenceSaved,
   );
 
   Future<void> _edit(Recurrence recurrence) => _showSaved(
     RecurrenceFormSheet.show(
       context,
+      members: _viewModel.members,
+      defaultOwnerId: _viewModel.me?.id,
       initial: recurrence,
       onSubmit: (draft) => _viewModel.update(recurrence.id, draft),
     ),
     AppLocalizations.of(context).recurrenceSaved,
   );
+
+  /// Cancels or reactivates. Cancelling asks first: it stops the entries.
+  Future<void> _setStatus(
+    Recurrence recurrence,
+    RecurrenceStatus status,
+  ) async {
+    final l10n = AppLocalizations.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final cancelling = status == RecurrenceStatus.cancelled;
+    if (cancelling) {
+      final confirmed = await showConfirmDialog(
+        context,
+        title: l10n.recurrenceCancelTitle,
+        message: l10n.recurrenceCancelText,
+        confirmLabel: l10n.recurrenceCancelAction,
+        destructive: true,
+      );
+      if (!confirmed || !mounted) return;
+    }
+    final failure = await _viewModel.setStatus(recurrence.id, status);
+    if (!mounted) return;
+    if (failure != null) {
+      showFailureSnackBar(context, failure);
+      return;
+    }
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            cancelling
+                ? l10n.recurrenceCancelledNotice
+                : l10n.recurrenceReactivatedNotice,
+          ),
+        ),
+      );
+  }
 
   Future<void> _delete(Recurrence recurrence) async {
     final l10n = AppLocalizations.of(context);
@@ -159,8 +204,12 @@ class _RecurrencesViewState extends State<RecurrencesView> {
                 ),
               ),
               const SizedBox(height: AppSpacing.sm),
-              _provisionButton(l10n),
+              _tabs(l10n),
               const SizedBox(height: AppSpacing.sm),
+              if (_viewModel.tab == RecurrenceStatus.active) ...[
+                _provisionButton(l10n),
+                const SizedBox(height: AppSpacing.sm),
+              ],
               ..._list(l10n),
             ],
           ),
@@ -168,6 +217,26 @@ class _RecurrencesViewState extends State<RecurrencesView> {
       ),
     );
   }
+
+  Widget _tabs(AppLocalizations l10n) => SizedBox(
+    width: double.infinity,
+    child: SegmentedButton<RecurrenceStatus>(
+      showSelectedIcon: false,
+      segments: [
+        ButtonSegment(
+          value: RecurrenceStatus.active,
+          label: Text(l10n.recurrencesTabActive),
+        ),
+        ButtonSegment(
+          value: RecurrenceStatus.cancelled,
+          label: Text(l10n.recurrencesTabCancelled),
+        ),
+      ],
+      selected: {_viewModel.tab},
+      onSelectionChanged: (values) =>
+          unawaited(_viewModel.selectTab(values.first)),
+    ),
+  );
 
   Widget _provisionButton(AppLocalizations l10n) {
     final busy = _viewModel.isProvisioning;
@@ -199,7 +268,16 @@ class _RecurrencesViewState extends State<RecurrencesView> {
           ),
         ];
       case UiEmpty<List<Recurrence>>():
-        return [_EmptyCard(l10n: l10n)];
+        return [
+          _EmptyCard(
+            title: _viewModel.tab == RecurrenceStatus.active
+                ? l10n.recurrencesEmptyTitle
+                : l10n.recurrencesEmptyCancelledTitle,
+            text: _viewModel.tab == RecurrenceStatus.active
+                ? l10n.recurrencesEmptyText
+                : l10n.recurrencesEmptyCancelledText,
+          ),
+        ];
       case UiSuccess<List<Recurrence>>(:final data):
         return [
           Card(
@@ -210,8 +288,17 @@ class _RecurrencesViewState extends State<RecurrencesView> {
                   if (i > 0) const Divider(height: 1),
                   RecurrenceRow(
                     recurrence: data[i],
+                    ownerName: _viewModel
+                        .memberOf(data[i].ownerId)
+                        ?.displayName,
                     onAction: (action) => switch (action) {
                       RecurrenceAction.edit => unawaited(_edit(data[i])),
+                      RecurrenceAction.cancel => unawaited(
+                        _setStatus(data[i], RecurrenceStatus.cancelled),
+                      ),
+                      RecurrenceAction.reactivate => unawaited(
+                        _setStatus(data[i], RecurrenceStatus.active),
+                      ),
                       RecurrenceAction.delete => unawaited(_delete(data[i])),
                     },
                   ),
@@ -225,9 +312,10 @@ class _RecurrencesViewState extends State<RecurrencesView> {
 }
 
 class _EmptyCard extends StatelessWidget {
-  const _EmptyCard({required this.l10n});
+  const _EmptyCard({required this.title, required this.text});
 
-  final AppLocalizations l10n;
+  final String title;
+  final String text;
 
   @override
   Widget build(BuildContext context) {
@@ -244,13 +332,13 @@ class _EmptyCard extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              l10n.recurrencesEmptyTitle,
+              title,
               style: theme.textTheme.titleMedium,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppSpacing.xxs),
             Text(
-              l10n.recurrencesEmptyText,
+              text,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),

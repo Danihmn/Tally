@@ -4,6 +4,7 @@ import 'package:mobile/features/entries/domain/entities/financial_entry.dart';
 import 'package:mobile/features/recurrences/presentation/viewmodels/recurrence_form.dart';
 
 RecurrenceFormResult validate({
+  String? ownerId = 'm2',
   String description = 'Aluguel',
   EntryType type = EntryType.expenses,
   PaymentType? paymentType,
@@ -12,6 +13,7 @@ RecurrenceFormResult validate({
   String dueDay = '',
   String notes = '',
 }) => validateRecurrenceForm(
+  ownerId: ownerId,
   description: description,
   type: type,
   paymentType: paymentType,
@@ -26,6 +28,7 @@ void main() {
     test('a_minimal_form_becomes_a_draft_without_a_fixed_day', () {
       final draft = validate().draft!;
 
+      expect(draft.ownerId, 'm2');
       expect(draft.description, 'Aluguel');
       expect(draft.amount, Decimal.parse('1500'));
       expect(draft.dueDay, isNull);
@@ -59,6 +62,15 @@ void main() {
       expect(result.errors, {
         RecurrenceFormField.description: RecurrenceFormError.required,
         RecurrenceFormField.amount: RecurrenceFormError.required,
+      });
+    });
+
+    test('the_owner_is_required', () {
+      final result = validate(ownerId: null);
+
+      expect(result.isValid, isFalse);
+      expect(result.errors, {
+        RecurrenceFormField.owner: RecurrenceFormError.required,
       });
     });
 

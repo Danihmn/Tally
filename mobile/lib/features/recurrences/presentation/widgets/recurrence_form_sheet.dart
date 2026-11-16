@@ -9,6 +9,8 @@ import 'package:mobile/core/widgets/failure_message.dart';
 import 'package:mobile/core/widgets/filter_fields.dart';
 import 'package:mobile/features/entries/domain/entities/financial_entry.dart';
 import 'package:mobile/features/entries/presentation/widgets/entry_type_fields.dart';
+import 'package:mobile/features/household/domain/entities/member.dart';
+import 'package:mobile/features/household/presentation/widgets/member_palette.dart';
 import 'package:mobile/features/recurrences/domain/entities/recurrence.dart';
 import 'package:mobile/features/recurrences/presentation/viewmodels/recurrence_form.dart';
 import 'package:mobile/l10n/app_localizations.dart';
@@ -17,11 +19,24 @@ import 'package:mobile/l10n/app_localizations.dart';
 /// sheet then stays open and shows the failure).
 typedef RecurrenceSubmit = Future<Failure?> Function(RecurrenceDraft draft);
 
-/// "Nova recorrência" and "Editar recorrência": the form of a recurrence.
+/// "Nova recorrência" and "Editar recorrência": the form of a recurrence,
+/// with the owner chosen among the people of the house.
 class RecurrenceFormSheet extends StatefulWidget {
-  const RecurrenceFormSheet({super.key, required this.onSubmit, this.initial});
+  const RecurrenceFormSheet({
+    super.key,
+    required this.onSubmit,
+    required this.members,
+    this.defaultOwnerId,
+    this.initial,
+  });
 
   final RecurrenceSubmit onSubmit;
+
+  /// The people of the house, the logged person first.
+  final List<Member> members;
+
+  /// The owner picked at first when [initial] has none (the logged person).
+  final String? defaultOwnerId;
 
   /// The recurrence being edited, or `null` for a new one.
   final Recurrence? initial;
@@ -30,11 +45,17 @@ class RecurrenceFormSheet extends StatefulWidget {
   static Future<bool?> show(
     BuildContext context, {
     required RecurrenceSubmit onSubmit,
+    required List<Member> members,
+    String? defaultOwnerId,
     Recurrence? initial,
   }) => showAppBottomSheet<bool>(
     context,
-    builder: (context) =>
-        RecurrenceFormSheet(onSubmit: onSubmit, initial: initial),
+    builder: (context) => RecurrenceFormSheet(
+      onSubmit: onSubmit,
+      members: members,
+      defaultOwnerId: defaultOwnerId,
+      initial: initial,
+    ),
   );
 
   @override
@@ -56,6 +77,7 @@ class _RecurrenceFormSheetState extends State<RecurrenceFormSheet> {
   );
   late final _notes = TextEditingController(text: widget.initial?.notes ?? '');
 
+  late String? _ownerId = widget.initial?.ownerId ?? widget.defaultOwnerId;
   late EntryType _type = widget.initial?.type ?? EntryType.expenses;
   late PaymentType? _payment = widget.initial?.paymentType;
 
@@ -79,6 +101,7 @@ class _RecurrenceFormSheetState extends State<RecurrenceFormSheet> {
 
   Future<void> _submit() async {
     final result = validateRecurrenceForm(
+      ownerId: _ownerId,
       description: _description.text,
       type: _type,
       paymentType: _payment,
@@ -139,6 +162,13 @@ class _RecurrenceFormSheetState extends State<RecurrenceFormSheet> {
               Text(
                 editing ? l10n.recurrenceEditTitle : l10n.recurrenceNew,
                 style: theme.textTheme.titleLarge,
+              ),
+              FilterSectionLabel(l10n.recurrenceFormOwner),
+              _OwnerField(
+                members: widget.members,
+                selectedId: _ownerId,
+                error: _errorText(l10n, RecurrenceFormField.owner),
+                onChanged: (id) => setState(() => _ownerId = id),
               ),
               FilterSectionLabel(l10n.entryFormDescription),
               TextField(
@@ -230,6 +260,63 @@ class _RecurrenceFormSheetState extends State<RecurrenceFormSheet> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// "Dono": one chip per person of the house, with the color of the person.
+class _OwnerField extends StatelessWidget {
+  const _OwnerField({
+    required this.members,
+    required this.selectedId,
+    required this.onChanged,
+    this.error,
+  });
+
+  final List<Member> members;
+  final String? selectedId;
+  final ValueChanged<String> onChanged;
+  final String? error;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final error = this.error;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Wrap(
+          spacing: AppSpacing.xs,
+          runSpacing: AppSpacing.xs,
+          children: [
+            for (var i = 0; i < members.length; i++)
+              ChoiceChip(
+                avatar: CircleAvatar(
+                  backgroundColor: MemberPalette.colorFor(context, i),
+                  child: Text(
+                    members[i].initial,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+                label: Text(members[i].displayName),
+                selected: members[i].id == selectedId,
+                onSelected: (_) => onChanged(members[i].id),
+              ),
+          ],
+        ),
+        if (error != null)
+          Padding(
+            padding: const EdgeInsets.only(top: AppSpacing.xxs),
+            child: Text(
+              error,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.error,
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

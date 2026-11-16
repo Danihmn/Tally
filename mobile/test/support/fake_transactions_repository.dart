@@ -50,6 +50,23 @@ class FakeTransactionsRepository implements TransactionsRepository {
   Completer<Result<PageResult<Transaction>>>? gate;
   final List<SearchCall> calls = [];
 
+  /// What `linkEntry` and `unlinkEntry` answer, and what they got.
+  Result<void> linkResult = const Result<void>.success(null);
+  final List<(String, String)> linked = [];
+  final List<(String, String)> unlinked = [];
+
+  @override
+  Future<Result<void>> linkEntry(String transactionId, String entryId) async {
+    linked.add((transactionId, entryId));
+    return linkResult;
+  }
+
+  @override
+  Future<Result<void>> unlinkEntry(String transactionId, String entryId) async {
+    unlinked.add((transactionId, entryId));
+    return linkResult;
+  }
+
   @override
   Future<Result<PageResult<Transaction>>> search({
     required int offset,

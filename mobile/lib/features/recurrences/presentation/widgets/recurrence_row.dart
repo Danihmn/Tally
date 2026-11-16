@@ -8,12 +8,17 @@ import 'package:mobile/features/recurrences/domain/entities/recurrence.dart';
 import 'package:mobile/l10n/app_localizations.dart';
 
 /// What the row menu can do with a recurrence.
-enum RecurrenceAction { edit, delete }
+enum RecurrenceAction { edit, cancel, reactivate, delete }
 
-/// The text under the description: "Categoria · Débito · Despesa".
-String recurrenceSubtitle(AppLocalizations l10n, Recurrence recurrence) {
+/// The text under the description: "Ana · Categoria · Débito · Despesa".
+String recurrenceSubtitle(
+  AppLocalizations l10n,
+  Recurrence recurrence, {
+  String? ownerName,
+}) {
   final category = recurrence.category?.trim();
   return [
+    ?ownerName,
     if (category != null && category.isNotEmpty) category,
     ?switch (recurrence.paymentType) {
       PaymentType.debit => l10n.entryPayDebit,
@@ -24,17 +29,22 @@ String recurrenceSubtitle(AppLocalizations l10n, Recurrence recurrence) {
   ].join(' · ');
 }
 
-/// One recurrence of the list: icon, description, category and payment, the
-/// day of the month, the signed amount and a menu to edit or delete it.
+/// One recurrence of the list: icon, description, owner, category and
+/// payment, the day of the month, the signed amount and a menu to edit,
+/// cancel (or reactivate) and delete it.
 class RecurrenceRow extends StatelessWidget {
   const RecurrenceRow({
     super.key,
     required this.recurrence,
     required this.onAction,
+    this.ownerName,
   });
 
   final Recurrence recurrence;
   final ValueChanged<RecurrenceAction> onAction;
+
+  /// The name of the owner, or `null` when unknown.
+  final String? ownerName;
 
   @override
   Widget build(BuildContext context) {
@@ -80,7 +90,11 @@ class RecurrenceRow extends StatelessWidget {
                       ),
                     ),
                     EllipsisText(
-                      recurrenceSubtitle(l10n, recurrence),
+                      recurrenceSubtitle(
+                        l10n,
+                        recurrence,
+                        ownerName: ownerName,
+                      ),
                       style: muted,
                     ),
                     EllipsisText(
@@ -111,6 +125,16 @@ class RecurrenceRow extends StatelessWidget {
                     value: RecurrenceAction.edit,
                     child: Text(l10n.entryActionEdit),
                   ),
+                  if (recurrence.isCancelled)
+                    PopupMenuItem(
+                      value: RecurrenceAction.reactivate,
+                      child: Text(l10n.recurrenceReactivateAction),
+                    )
+                  else
+                    PopupMenuItem(
+                      value: RecurrenceAction.cancel,
+                      child: Text(l10n.recurrenceCancelAction),
+                    ),
                   PopupMenuItem(
                     value: RecurrenceAction.delete,
                     child: Text(l10n.recurrenceDeleteAction),

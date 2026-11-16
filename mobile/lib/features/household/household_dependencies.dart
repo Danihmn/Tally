@@ -9,6 +9,7 @@ import 'package:mobile/features/household/domain/usecases/get_household_members.
 import 'package:mobile/features/household/domain/usecases/get_me.dart';
 import 'package:mobile/features/household/domain/usecases/update_pluggy_credentials.dart';
 import 'package:mobile/features/household/domain/usecases/update_user.dart';
+import 'package:mobile/features/household/domain/usecases/update_user_password.dart';
 import 'package:mobile/features/household/presentation/viewmodels/household_scope_controller.dart';
 import 'package:mobile/features/household/presentation/viewmodels/users_view_model.dart';
 
@@ -36,6 +37,9 @@ void registerHouseholdDependencies(GetIt container) {
     ..registerLazySingleton<UpdatePluggyCredentials>(
       () => UpdatePluggyCredentials(container<HouseholdRepository>()),
     )
+    ..registerLazySingleton<UpdateUserPassword>(
+      () => UpdateUserPassword(container<HouseholdRepository>()),
+    )
     // One for the whole app: every screen shares "who appears".
     ..registerLazySingleton<HouseholdScopeController>(
       () => HouseholdScopeController(
@@ -52,6 +56,7 @@ void registerHouseholdDependencies(GetIt container) {
         createUser: container<CreateUser>(),
         updateUser: container<UpdateUser>(),
         updateCredentials: container<UpdatePluggyCredentials>(),
+        updatePassword: container<UpdateUserPassword>(),
       ),
     );
 }

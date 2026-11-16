@@ -37,4 +37,12 @@ class TransactionsRepositoryImpl implements TransactionsRepository {
       ),
     );
   }
+
+  @override
+  Future<Result<void>> linkEntry(String transactionId, String entryId) =>
+      _remote.linkEntry(transactionId, entryId);
+
+  @override
+  Future<Result<void>> unlinkEntry(String transactionId, String entryId) =>
+      _remote.unlinkEntry(transactionId, entryId);
 }

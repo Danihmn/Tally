@@ -8,6 +8,7 @@ import 'package:mobile/features/household/domain/usecases/get_household_members.
 import 'package:mobile/features/household/domain/usecases/get_me.dart';
 import 'package:mobile/features/household/domain/usecases/update_pluggy_credentials.dart';
 import 'package:mobile/features/household/domain/usecases/update_user.dart';
+import 'package:mobile/features/household/domain/usecases/update_user_password.dart';
 import 'package:mobile/features/household/presentation/viewmodels/household_scope_controller.dart';
 import 'package:mobile/features/household/presentation/viewmodels/users_view_model.dart';
 
@@ -56,6 +57,7 @@ class UsersKit {
       createUser: CreateUser(household),
       updateUser: UpdateUser(household),
       updateCredentials: UpdatePluggyCredentials(household),
+      updatePassword: UpdateUserPassword(household),
     );
   }
 

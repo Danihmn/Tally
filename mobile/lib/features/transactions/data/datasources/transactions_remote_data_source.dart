@@ -6,7 +6,7 @@ import 'package:mobile/core/utils/date_formatter.dart';
 import 'package:mobile/features/transactions/data/models/transaction_dto.dart';
 import 'package:mobile/features/transactions/domain/entities/transaction_filters.dart';
 
-/// Calls the transactions list endpoint.
+/// Calls the transactions list endpoint and the manual link with entries.
 class TransactionsRemoteDataSource {
   const TransactionsRemoteDataSource(this._dio);
 
@@ -48,4 +48,32 @@ class TransactionsRemoteDataSource {
     );
     return TransactionPageDto.fromJson(response.data!);
   });
+
+  /// Links the transaction with the entry (the entry becomes reconciled).
+  Future<Result<void>> linkEntry(String transactionId, String entryId) =>
+      apiCall(() async {
+        await _dio.post<void>(
+          _linkPath(ApiEndpoints.linkTransactionEntry, transactionId, entryId),
+        );
+      });
+
+  /// Undoes the link of the transaction with the entry.
+  Future<Result<void>> unlinkEntry(String transactionId, String entryId) =>
+      apiCall(() async {
+        await _dio.delete<void>(
+          _linkPath(
+            ApiEndpoints.unlinkTransactionEntry,
+            transactionId,
+            entryId,
+          ),
+        );
+      });
+
+  static String _linkPath(
+    ApiEndpoint endpoint,
+    String transactionId,
+    String entryId,
+  ) => endpoint.path
+      .replaceFirst('{transactionId}', transactionId)
+      .replaceFirst('{entryId}', entryId);
 }

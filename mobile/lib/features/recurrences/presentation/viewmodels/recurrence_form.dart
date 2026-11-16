@@ -4,7 +4,7 @@ import 'package:mobile/features/entries/presentation/viewmodels/entry_form.dart'
 import 'package:mobile/features/recurrences/domain/entities/recurrence.dart';
 
 /// The fields of the recurrence form that are typed (and so can be wrong).
-enum RecurrenceFormField { description, amount, dueDay }
+enum RecurrenceFormField { owner, description, amount, dueDay }
 
 /// Why a typed field was refused.
 enum RecurrenceFormError { required, invalidAmount, invalidDay }
@@ -20,10 +20,11 @@ class RecurrenceFormResult {
   bool get isValid => draft != null;
 }
 
-/// Checks what was typed in the recurrence form. The day is a whole number
-/// from 1 to 31 (or empty). A plain function, so it is tested without a
-/// screen.
+/// Checks what was typed in the recurrence form. The owner is required and
+/// the day is a whole number from 1 to 31 (or empty). A plain function, so it
+/// is tested without a screen.
 RecurrenceFormResult validateRecurrenceForm({
+  required String? ownerId,
   required String description,
   required EntryType type,
   required PaymentType? paymentType,
@@ -33,6 +34,10 @@ RecurrenceFormResult validateRecurrenceForm({
   required String notes,
 }) {
   final errors = <RecurrenceFormField, RecurrenceFormError>{};
+
+  if (ownerId == null) {
+    errors[RecurrenceFormField.owner] = RecurrenceFormError.required;
+  }
 
   final name = description.trim();
   if (name.isEmpty) {
@@ -58,11 +63,12 @@ RecurrenceFormResult validateRecurrenceForm({
     }
   }
 
-  if (errors.isNotEmpty || value == null) {
+  if (errors.isNotEmpty || value == null || ownerId == null) {
     return RecurrenceFormResult(errors: errors);
   }
   return RecurrenceFormResult(
     draft: RecurrenceDraft(
+      ownerId: ownerId,
       description: name,
       type: type,
       amount: value,

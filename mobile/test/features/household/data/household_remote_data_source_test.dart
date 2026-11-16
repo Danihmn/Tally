@@ -220,5 +220,16 @@ void main() {
       });
       expect(result.isSuccess, isTrue);
     });
+
+    test('changing_the_password_puts_it_as_typed', () async {
+      final adapter = FakeHttpAdapter((_) => const FakeReply(204));
+
+      final result = await build(adapter).updatePassword('m1', ' new pass ');
+
+      final request = adapter.requests.single;
+      expect((request.method, request.path), ('PUT', '/users/m1/password'));
+      expect(request.data, {'password': ' new pass '});
+      expect(result.isSuccess, isTrue);
+    });
   });
 }

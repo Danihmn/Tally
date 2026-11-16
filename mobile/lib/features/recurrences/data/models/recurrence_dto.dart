@@ -12,6 +12,8 @@ class RecurrenceDto {
     required this.dueDay,
     required this.category,
     required this.notes,
+    required this.userId,
+    required this.status,
   });
 
   /// Throws [FormatException] when a required field is missing or invalid.
@@ -24,6 +26,8 @@ class RecurrenceDto {
     dueDay: json['due_day'] as int?,
     category: json['category'] as String?,
     notes: json['notes'] as String?,
+    userId: json['user_id'] as String?,
+    status: json['status'] as String? ?? 'ACTIVE',
   );
 
   final String id;
@@ -38,6 +42,12 @@ class RecurrenceDto {
   final int? dueDay;
   final String? category;
   final String? notes;
+
+  /// The owner. `null` when that person is gone.
+  final String? userId;
+
+  /// `ACTIVE` or `CANCELLED`.
+  final String status;
 }
 
 /// The answer of `POST /recurrences/provision`.
