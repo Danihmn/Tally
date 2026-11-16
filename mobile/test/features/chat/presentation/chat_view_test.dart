@@ -79,7 +79,7 @@ void main() {
       expect(find.text('Pergunte sobre o dinheiro da casa'), findsOneWidget);
       expect(find.text('Quanto gastei este mês?'), findsOneWidget);
       expect(
-        find.text('O Tally IA pode errar. Confira os valores importantes.'),
+        find.text('O Tally AI pode errar. Confira os valores importantes.'),
         findsOneWidget,
       );
       expect(find.textContaining('só neste aparelho'), findsNothing);

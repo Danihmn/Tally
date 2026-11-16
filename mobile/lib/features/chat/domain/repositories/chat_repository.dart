@@ -4,7 +4,7 @@ import 'package:mobile/features/chat/domain/entities/chat_message.dart';
 import 'package:mobile/features/chat/domain/entities/chat_stream_event.dart';
 import 'package:mobile/features/chat/domain/entities/conversation.dart';
 
-/// Tally IA conversations.
+/// Tally AI conversations.
 abstract interface class ChatRepository {
   /// Sends a question and streams the answer. Each element is an event, or a
   /// failure (which ends the stream). [conversationId] `null` starts a new

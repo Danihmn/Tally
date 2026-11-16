@@ -9,7 +9,7 @@ import 'package:mobile/features/chat/domain/usecases/send_chat_message.dart';
 import 'package:mobile/features/chat/presentation/viewmodels/chat_view_model.dart';
 import 'package:mobile/features/chat/presentation/viewmodels/conversations_view_model.dart';
 
-/// Registers the Tally IA chat feature.
+/// Registers the Tally AI chat feature.
 void registerChatDependencies(GetIt container) {
   container
     ..registerLazySingleton<ChatRemoteDataSource>(

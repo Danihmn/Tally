@@ -127,7 +127,7 @@ abstract class AppLocalizations {
   /// No description provided for @navChat.
   ///
   /// In pt, this message translates to:
-  /// **'Tally IA'**
+  /// **'Tally AI'**
   String get navChat;
 
   /// No description provided for @retry.
@@ -1549,7 +1549,7 @@ abstract class AppLocalizations {
   /// No description provided for @chatCaption.
   ///
   /// In pt, this message translates to:
-  /// **'O Tally IA pode errar. Confira os valores importantes.'**
+  /// **'O Tally AI pode errar. Confira os valores importantes.'**
   String get chatCaption;
 
   /// No description provided for @chatHistorySaved.
@@ -1615,7 +1615,7 @@ abstract class AppLocalizations {
   /// No description provided for @chatAssistant.
   ///
   /// In pt, this message translates to:
-  /// **'Tally IA'**
+  /// **'Tally AI'**
   String get chatAssistant;
 
   /// No description provided for @conversationsTitle.
@@ -1639,7 +1639,7 @@ abstract class AppLocalizations {
   /// No description provided for @conversationsEmptyMessage.
   ///
   /// In pt, this message translates to:
-  /// **'Quando você perguntar algo ao Tally IA, a conversa aparece aqui.'**
+  /// **'Quando você perguntar algo ao Tally AI, a conversa aparece aqui.'**
   String get conversationsEmptyMessage;
 
   /// No description provided for @conversationUntitled.

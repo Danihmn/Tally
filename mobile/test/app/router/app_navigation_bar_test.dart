@@ -8,7 +8,7 @@ void main() {
   const items = [
     AppNavigationItem(icon: Icons.home_outlined, label: 'Início'),
     AppNavigationItem(icon: Icons.event_note_outlined, label: 'Planejamento'),
-    AppNavigationItem(icon: Icons.auto_awesome_outlined, label: 'Tally IA'),
+    AppNavigationItem(icon: Icons.auto_awesome_outlined, label: 'Tally AI'),
   ];
 
   Future<void> show(

@@ -9,7 +9,7 @@ import 'package:mobile/core/result/result.dart';
 import 'package:mobile/features/chat/data/models/chat_event_dto.dart';
 import 'package:mobile/features/chat/data/models/conversation_dto.dart';
 
-/// Calls the Tally IA endpoints.
+/// Calls the Tally AI endpoints.
 class ChatRemoteDataSource {
   const ChatRemoteDataSource(this._dio);
 

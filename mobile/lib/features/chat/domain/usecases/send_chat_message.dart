@@ -2,7 +2,7 @@ import 'package:mobile/core/result/result.dart';
 import 'package:mobile/features/chat/domain/entities/chat_stream_event.dart';
 import 'package:mobile/features/chat/domain/repositories/chat_repository.dart';
 
-/// Sends a question to Tally IA and streams the answer.
+/// Sends a question to Tally AI and streams the answer.
 class SendChatMessage {
   const SendChatMessage(this._repository);
 

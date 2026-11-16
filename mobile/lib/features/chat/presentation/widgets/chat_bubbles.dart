@@ -90,7 +90,7 @@ class _AssistantFrame extends StatelessWidget {
   }
 }
 
-/// The answer of Tally IA, rendered as markdown.
+/// The answer of Tally AI, rendered as markdown.
 class AssistantBubble extends StatelessWidget {
   const AssistantBubble({super.key, required this.markdown});
 

@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 
-/// One Tally IA conversation, with how much of its token limit is used.
+/// One Tally AI conversation, with how much of its token limit is used.
 class Conversation extends Equatable {
   const Conversation({
     required this.id,

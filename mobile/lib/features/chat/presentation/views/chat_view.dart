@@ -13,7 +13,7 @@ import 'package:mobile/features/chat/presentation/widgets/chat_composer.dart';
 import 'package:mobile/features/chat/presentation/widgets/chat_empty_state.dart';
 import 'package:mobile/l10n/app_localizations.dart';
 
-/// The Tally IA tab: a chat with the assistant, with markdown answers that
+/// The Tally AI tab: a chat with the assistant, with markdown answers that
 /// stream in, a history list and a token limit per conversation.
 ///
 /// [onOpenHistory] defaults to the router: it opens the history and gives
