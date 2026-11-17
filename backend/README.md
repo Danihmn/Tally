@@ -18,37 +18,49 @@ uv sync
 
 ## PostgreSQL
 
-The project is **database first**: the source of truth is the scripts in `sql_scripts/`, numbered and applied in order.
+The project is **codebase first**: the source of truth is the SQLAlchemy models in `infra/database/models.py`. Schema changes are **Alembic** migrations in `alembic/versions/`. `alembic/env.py` reads `DATABASE_URL` from the `.env` (through `settings.py`), so `alembic.ini` has no url.
 
-Create the database:
+Create the database and the schema:
 
 ```bash
 createdb finance_app
+uv run alembic upgrade head
 ```
 
-Apply the scripts, in order:
+### Existing database (built by the old `sql_scripts/`)
+
+Until November 2026 the schema was built by the SQL scripts `001..019` (database first). The migration `0001_baseline` creates exactly that schema (checked against a database built by the scripts: same columns, types, defaults, constraints and indexes). A database that already ran the scripts must **not** run the baseline. Mark it once, without changing anything:
 
 ```bash
-for f in sql_scripts/*.sql; do psql -d finance_app -v ON_ERROR_STOP=1 -f "$f"; done
+uv run alembic stamp 0001
 ```
+
+Then `uv run alembic upgrade head` as usual for the next migrations.
+
+### Changing the schema
+
+1. Change the models in `infra/database/models.py`.
+2. Generate the migration (against a database that is up to date):
+
+    ```bash
+    uv run alembic revision --autogenerate -m "short description"
+    ```
+
+3. **Read the generated file** and fix it. Autogenerate does not see everything:
+    - It does **not** compare `CHECK` constraints: add or drop them by hand (`op.create_check_constraint` / `op.drop_constraint`).
+    - It does not detect renames (it writes a drop + add, which loses data): use `op.alter_column(..., new_column_name=...)`.
+    - Data backfills (`UPDATE ...`) go in the migration with `op.execute(...)`, between adding a column as nullable and setting it `NOT NULL`.
+    - Give every constraint and index an explicit `name`, the same in the model and in the migration.
+4. Apply it: `uv run alembic upgrade head`. Check that `uv run alembic check` answers "No new upgrade operations detected".
 
 Rules:
 
-- A schema change = a **new script** (`004_...sql`). Never edit a script that was already applied.
-- The SQLAlchemy models (`infra/database/models.py`) are **generated** with `sqlacodegen`, never written by hand.
+- Never edit a migration that was already applied. A new change is a new migration.
+- Money columns use `Numeric`, never `Float`. In Python, `Decimal`.
 
-### Regenerating the models (`sqlacodegen`)
+### Tables that are not ours (LangGraph)
 
-The database also holds tables that are **not ours**: the LangGraph `PostgresSaver` (the Tally conversation history) creates `checkpoints`, `checkpoint_blobs`, `checkpoint_writes` and `checkpoint_migrations` in the same schema (`public`) when the app calls `setup()`. They must **never** appear in `models.py`.
-
-`sqlacodegen` 4.0.4 has no option to exclude tables, only `--tables` (an allowlist, comma-delimited). So always generate **only the domain tables**, the ones created in `sql_scripts/`:
-
-```bash
-TABLES=$(grep -ohiE 'CREATE TABLE (IF NOT EXISTS )?[a-z_]+' sql_scripts/*.sql | awk '{print $NF}' | paste -sd,)
-uv run sqlacodegen "$DATABASE_URL" --generator declarative --tables "$TABLES" --outfile infra/database/models.py
-```
-
-Never run `sqlacodegen` without `--tables`: it would pick up the LangGraph tables. If a new script drops a table, remove it from the list (the command above does not read `DROP TABLE`). `DATABASE_URL` is the one in the `.env`. Use the plain `postgresql+psycopg2://` form that `sqlacodegen` (SQLAlchemy) understands. After generating, run `git diff infra/database/models.py`: the only changes should be the ones from the new script.
+The LangGraph `PostgresSaver` (the Tally conversation history) creates `checkpoints`, `checkpoint_blobs`, `checkpoint_writes` and `checkpoint_migrations` in the same schema (`public`) when the app calls `setup()`. They must **never** appear in `models.py` or in a migration. `include_object` (`infra/database/alembic_filters.py`, list `IGNORED_TABLES`) makes autogenerate skip them, so it never writes a `drop_table` for them. If LangGraph adds a new table, add it to that list.
 
 ## Configuration (`.env`)
 
@@ -198,10 +210,10 @@ Prices and plan sizes are not written here because they change. Check the AWS pr
 | Folder | Content |
 |---|---|
 | `domain/` | Entities, read models, pure rules (reconciliation matching, internal transfers) |
-| `infra/` | Database (session, generated models), repositories (`common/`: errors and query helpers), security (`security/`: password hash, encryption, webhook secret, JWT) |
+| `infra/` | Database (session, models, Alembic filters), repositories (`common/`: errors and query helpers), security (`security/`: password hash, encryption, webhook secret, JWT) |
 | `integrations/pluggy/` | Pluggy's HTTP clients, schemas and config |
 | `jobs/` | Background flows that call the services (item registration, transaction import, reconciliation, webhook registration) |
 | `presentation/` | FastAPI app, routers, schemas, webhooks, dependencies (`get_current_user`) |
 | `services/` | Business rules (`common/`: service errors and entity mappers) |
-| `sql_scripts/` | Schema (source of truth) |
+| `alembic/` | Alembic migrations (`versions/`) and `env.py` |
 | `tests/` | Unit tests, same folder structure as the source |

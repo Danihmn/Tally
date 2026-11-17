@@ -29,19 +29,20 @@ Pluggy code lives in `backend/integrations/pluggy/` (`http_clients/`, `schemas/`
 
 ## 3. Database schema
 
-The project is **database first**. The source of truth is the versioned SQL scripts in `backend/sql_scripts/`, numbered in order (`001_init.sql`, `002_...sql`). The SQLAlchemy models are generated from the database (with `sqlacodegen`), never written by hand.
+The project is **codebase first**. The source of truth is the SQLAlchemy models in `backend/infra/database/models.py`. Schema changes are **Alembic** migrations in `backend/alembic/versions/`. The session is in `backend/infra/database/session.py` and the settings in `backend/settings.py`.
 
-- `backend/sql_scripts/`: **source of truth.** Read the scripts, in order, before writing queries or code that touches tables, or answering questions about tables and columns. A change to the schema is a new script. Do not edit a script that was already applied.
-- Generated models: `backend/infra/database/models.py`. Do not edit them by hand, they are overwritten on each generation. Extra logic goes in separate modules. The session is in `backend/infra/database/session.py` and the settings in `backend/settings.py`.
-- The database also has tables that are **not ours**: the LangGraph `PostgresSaver` (Tally conversation history) creates `checkpoints`, `checkpoint_blobs`, `checkpoint_writes` and `checkpoint_migrations` by itself, with `setup()`. They are **not** in `sql_scripts/`, and they must **never** go into `models.py`. When regenerating the models, `sqlacodegen` has no "exclude" option, so always pass `--tables` with **only the domain tables** (the ones created by `CREATE TABLE` in `sql_scripts/`), never run it over the whole database. The command is in `backend/README.md` ("Regenerating the models"). Do not write queries or repositories against the LangGraph tables: read the history through the checkpointer.
-- There is no diagram or Markdown export of the schema anymore (the DrawSQL files were deleted). Do not recreate them.
+- `backend/infra/database/models.py`: **source of truth.** Read it before writing queries or code that touches tables, or answering questions about tables and columns. It is written by hand now (the old `sqlacodegen` generation is gone).
+- `backend/alembic/versions/`: the migrations, in order. `0001_baseline` is the schema of the old SQL scripts (`sql_scripts/001..019`, deleted, still in git history). The database that already ran those scripts must be marked once with `alembic stamp 0001` (never run the baseline on it).
+- The database also has tables that are **not ours**: the LangGraph `PostgresSaver` (Tally conversation history) creates `checkpoints`, `checkpoint_blobs`, `checkpoint_writes` and `checkpoint_migrations` by itself, with `setup()`. They must **never** go into `models.py` or into a migration. Autogenerate skips them through `include_object` (`backend/infra/database/alembic_filters.py`, `IGNORED_TABLES`). Do not write queries or repositories against them: read the history through the checkpointer.
+- There is no diagram or Markdown export of the schema (the DrawSQL files were deleted). Do not recreate them.
 
-The schema (tables, columns, relations, constraints) is defined only by the SQL scripts and the generated models. This file does not keep a summary of it, so it cannot go out of date. For questions about tables and columns, read `backend/sql_scripts/` (in order) and `backend/infra/database/models.py`.
+This file does not keep a summary of the schema, so it cannot go out of date. The steps and commands are in `backend/README.md` ("PostgreSQL").
 
 Rules:
-1. If the code and the scripts disagree, the scripts win. Tell me about the difference, and do not silently pick one.
-2. When you suggest schema changes, write them as a new SQL script in `backend/sql_scripts/`.
-3. Money columns use `numeric`, never `float`/`double precision`. In Python, use `Decimal`.
+1. A schema change = change `models.py` **and** add a new migration (`uv run alembic revision --autogenerate -m "..."`) in the same change. Always read and fix the generated file: autogenerate does not compare `CHECK` constraints, does not detect renames, and does not write data backfills (use `op.execute`).
+2. Never edit a migration that was already applied. Give every constraint and index an explicit `name`, the same in the model and in the migration.
+3. If the models and the migrations disagree (`uv run alembic check` lists operations), tell me about the difference, and do not silently pick one.
+4. Money columns use `Numeric`, never `Float`. In Python, use `Decimal`.
 
 ## 4. Pluggy documentation access (MCP): use it first
 
