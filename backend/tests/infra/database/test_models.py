@@ -2,11 +2,18 @@ import dataclasses
 import unittest
 
 from domain.entities import FinancialEntry, Recurrence
-from infra.database.models import FinancialEntries, Recurrences
+from sqlalchemy import CheckConstraint
+
+from infra.database.models import (
+    Conversations,
+    FinancialEntries,
+    Recurrences,
+    Transactions,
+)
 
 
 def _missing_columns(entity, model) -> set[str]:
-    """Entity fields with no column in the generated model (the model is stale)."""
+    """Entity fields with no column in the model (the model is stale)."""
     fields = {field.name for field in dataclasses.fields(entity)}
     return fields - set(model.__table__.columns.keys())
 
@@ -33,6 +40,49 @@ class TestRecurrenceStatusColumn(unittest.TestCase):
         )
         self.assertTrue(index.unique)
         self.assertIn("CANCELLED", str(index.dialect_options["postgresql"]["where"]))
+
+
+def _index(model, name: str):
+    return next(i for i in model.__table__.indexes if i.name == name)
+
+
+def _check_names(model) -> set[str]:
+    return {c.name for c in model.__table__.constraints if isinstance(c, CheckConstraint)}
+
+
+class TestRecentFirstIndexes(unittest.TestCase):
+    """The database has these indexes in DESC order: the models must keep it."""
+
+    def test_transactions_by_account_are_newest_first(self):
+        index = _index(Transactions, "idx_transactions_account_date")
+        self.assertIn("date DESC", [str(e) for e in index.expressions])
+
+    def test_transactions_by_household_are_newest_first(self):
+        index = _index(Transactions, "idx_transactions_household_date")
+        self.assertIn("date DESC", [str(e) for e in index.expressions])
+
+    def test_conversations_are_most_recent_first(self):
+        index = _index(Conversations, "idx_conversations_user_recent")
+        self.assertIn("last_message_at DESC", [str(e) for e in index.expressions])
+
+
+class TestCheckConstraintNames(unittest.TestCase):
+    """Names must match the database, or a future migration cannot drop them."""
+
+    def test_installment_check_has_the_database_name(self):
+        names = _check_names(FinancialEntries)
+        self.assertIn("financial_entries_check", names)
+        self.assertNotIn("financial_entries_installment_total_check", names)
+
+    def test_internal_transfer_checks_exist(self):
+        self.assertLessEqual(
+            {
+                "transactions_internal_transfer_check",
+                "transactions_internal_transfer_source_check",
+                "transactions_internal_transfer_consistency_check",
+            },
+            _check_names(Transactions),
+        )
 
 
 if __name__ == "__main__":

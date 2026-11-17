@@ -1,3 +1,9 @@
+"""SQLAlchemy models: the source of truth of the database schema (codebase first).
+
+A schema change is a change here plus a new Alembic migration (see backend/README.md, "Migrations").
+The LangGraph checkpointer tables are not ours and never go here.
+"""
+
 import datetime
 import decimal
 import uuid
@@ -115,7 +121,7 @@ class Conversations(Base):
         Index(
             "idx_conversations_user_recent",
             "user_id",
-            "last_message_at",
+            text("last_message_at DESC"),
             postgresql_where="(deleted_at IS NULL)",
         ),
     )
@@ -411,11 +417,11 @@ class Transactions(Base):
             name="transactions_internal_transfer_consistency_check",
         ),
         CheckConstraint(
-            "internal_transfer::text = ANY (ARRAY['SAME_PERSON'::character varying, 'SAME_HOUSEHOLD'::character varying, 'NOT_INTERNAL_TRANSFER'::character varying]::text[])",
+            "internal_transfer IN ('SAME_PERSON', 'SAME_HOUSEHOLD', 'NOT_INTERNAL_TRANSFER')",
             name="transactions_internal_transfer_check",
         ),
         CheckConstraint(
-            "internal_transfer_classification_source::text = ANY (ARRAY['MANUAL'::character varying, 'AUTO'::character varying]::text[])",
+            "internal_transfer_classification_source IN ('MANUAL', 'AUTO')",
             name="transactions_internal_transfer_source_check",
         ),
         CheckConstraint(
@@ -442,8 +448,8 @@ class Transactions(Base):
         UniqueConstraint(
             "pluggy_transaction_id", name="transactions_pluggy_transaction_id_key"
         ),
-        Index("idx_transactions_account_date", "bank_account_id", "date"),
-        Index("idx_transactions_household_date", "household_id", "date"),
+        Index("idx_transactions_account_date", "bank_account_id", text("date DESC")),
+        Index("idx_transactions_household_date", "household_id", text("date DESC")),
         Index(
             "idx_transactions_provider_id",
             "bank_account_id",
@@ -508,7 +514,7 @@ class FinancialEntries(Base):
         ),
         CheckConstraint(
             "installment_total >= installment_number",
-            name="financial_entries_installment_total_check",
+            name="financial_entries_check",
         ),
         CheckConstraint(
             "reference_month = date_trunc('month'::text, reference_month::timestamp with time zone)::date",
