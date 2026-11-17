@@ -572,7 +572,10 @@ class FinancialEntries(Base):
             "uq_financial_entries_recurrence_month",
             "recurrence_id",
             "reference_month",
-            postgresql_where="((deleted_at IS NULL) AND (recurrence_id IS NOT NULL))",
+            postgresql_where=(
+                "((deleted_at IS NULL) AND (recurrence_id IS NOT NULL) "
+                "AND (status <> 'CANCELLED'::text))"
+            ),
             unique=True,
         ),
     )
@@ -696,6 +699,10 @@ class Recurrences(Base):
             name="recurrences_source_check",
         ),
         CheckConstraint(
+            "status = ANY (ARRAY['ACTIVE'::text, 'CANCELLED'::text])",
+            name="recurrences_status_check",
+        ),
+        CheckConstraint(
             "type = ANY (ARRAY['REVENUES'::text, 'EXPENSES'::text])",
             name="recurrences_type_check",
         ),
@@ -737,6 +744,9 @@ class Recurrences(Base):
         Text, nullable=False, server_default=text("'MANUAL'::text")
     )
     household_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    status: Mapped[str] = mapped_column(
+        Text, nullable=False, server_default=text("'ACTIVE'::text")
+    )
     category: Mapped[str | None] = mapped_column(Text)
     updated_at: Mapped[datetime.datetime | None] = mapped_column(DateTime(True))
     deleted_at: Mapped[datetime.datetime | None] = mapped_column(DateTime(True))
