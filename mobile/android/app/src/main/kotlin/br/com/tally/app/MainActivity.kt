@@ -1,4 +1,4 @@
-package com.example.mobile
+package br.com.tally.app
 
 import android.os.Bundle
 import android.view.WindowManager
