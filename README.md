@@ -30,7 +30,7 @@ Private use for now. It is not a public product.
 | Security | JWT, Argon2 password hash, Fernet encryption for the Pluggy client secret |
 | Mobile | Flutter (Dart 3.14), Dio, Provider, get_it, go_router |
 | Infra | Docker, Docker Compose, Caddy (HTTPS), GitHub Actions, GitHub Container Registry |
-| Hosting | **AWS** (backend), **Firebase App Distribution** (mobile) |
+| Hosting | **AWS Lightsail** (backend), **Firebase App Distribution** (mobile) |
 
 ## Repository layout
 
@@ -169,7 +169,7 @@ There is no scheduler. The jobs run after a webhook, and each one opens its own 
 
 ### Backend on AWS
 
-The backend runs on an **AWS** server with Docker Compose (`backend/compose.yaml`):
+The backend runs on an **AWS Lightsail** server with Docker Compose (`backend/compose.yaml`):
 
 | Service | What it is |
 |---|---|

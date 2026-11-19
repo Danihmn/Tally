@@ -10,6 +10,8 @@ A personal finance app. It connects to our bank accounts, imports transactions, 
 
 Use case: private use by two people (two different CPFs). Not a public product for now.
 
+Setup, jobs and webhooks are explained in the root `README.md`. When a job, a webhook or a deploy step changes, update the README in the same change.
+
 ## 2. Tech stack (decided)
 
 | Layer | Choice |
@@ -19,11 +21,18 @@ Use case: private use by two people (two different CPFs). Not a public product f
 | Database | PostgreSQL |
 | Mobile app | Flutter |
 | Bank data | Pluggy, free "Meu Pluggy" plan (Open Finance) |
-| Hosting (planned, not final) | AWS Lightsail |
+| AI models | Ollama (dev), OpenAI model on AWS Bedrock (prod) |
+| Hosting | AWS Lightsail (Ubuntu server, Docker Compose + Caddy) |
+| CI/CD | GitHub Actions → GitHub Container Registry → SSH deploy |
+| Mobile distribution | Firebase App Distribution (distribution only) |
 
-Hosting is **not decided yet**. AWS Lightsail is the likely choice because of low management complexity and low cost. It may change. Details and open points are in `backend/README.md` ("Deployment (planned)"). In production, the static public domain replaces ngrok as `PUBLIC_BASE_URL`.
+The backend runs on **AWS Lightsail** with Docker Compose (`backend/compose.yaml`: `db`, `api`, `caddy`). The image is `ghcr.io/danihmn/tally`. On every push to `main`, `.github/workflows/deploy.yml` builds and pushes the image, copies `compose.yaml` and `Caddyfile` to the server, runs `alembic upgrade head` and `docker compose up -d`. In production, the public domain (`api.tally-api.com`) replaces ngrok as `PUBLIC_BASE_URL`. Open points are in `backend/README.md` ("Deployment").
 
-Deployment constraint: the API runs with **one worker and one instance** (no auto-scaling). The webhook registration (`register_webhooks`, in the app's `lifespan`) rotates the webhook secret in Pluggy and then stores its hash, and two processes starting together can leave them out of sync (all webhooks return 401 until a restart). If more than one worker is needed, or AWS auto-scaling is turned on, **first** add a PostgreSQL advisory lock (`pg_advisory_lock`, same session, released in a `finally`) around the registration in `jobs/webhook_registration.py`. The code and the notes are in `backend/README.md` ("Deployment (planned)").
+Deployment constraint: the API runs with **one worker and one instance** (no auto-scaling). The webhook registration (`register_webhooks`, in the app's `lifespan`) rotates the webhook secret in Pluggy and then stores its hash, and two processes starting together can leave them out of sync (all webhooks return 401 until a restart). If more than one worker is needed, or AWS auto-scaling is turned on, **first** add a PostgreSQL advisory lock (`pg_advisory_lock`, same session, released in a `finally`) around the registration in `jobs/webhook_registration.py`. The code and the notes are in `backend/README.md` ("Deployment").
+
+### Mobile distribution
+
+After the backend deploy, the same workflow builds the release APK (`API_BASE_URL`, `ENVIRONMENT=prod`) and sends it with **Firebase App Distribution** to the group `tally_users`. Firebase is used **only for distribution**: no Firebase Auth, FCM or Hosting, and no `firebase.json` or `google-services.json`. Do not add Firebase SDKs to the app without asking me.
 
 Pluggy code lives in `backend/integrations/pluggy/` (`http_clients/`, `schemas/`, `exceptions/`, `config.py`).
 
@@ -100,7 +109,7 @@ Run from `backend/`:
 uv run python -m unittest discover -s tests -t .
 ```
 
-`main_test.py` is not a test: it runs the real sync job. The `test*.py` pattern does not collect it.
+The tests do not run in CI yet (the workflow only deploys). Run them before committing.
 
 ## 7. Endpoints used by the app
 
