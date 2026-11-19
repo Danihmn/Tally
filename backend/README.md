@@ -196,6 +196,17 @@ with get_session() as session:
 - The static public domain replaces ngrok in production: `PUBLIC_BASE_URL` becomes that domain, and the webhook registration (`jobs/webhook_registration.py`) uses it as it does today.
 - ngrok stays only for local development.
 
+**Domain and Cloudflare:**
+
+- The API domain (`api.tally-api.com`, see `Caddyfile`) goes through **Cloudflare**, which points to the Lightsail instance. Caddy serves HTTPS on the server.
+- Cloudflare is set up in its dashboard, not in this repository (no code or compose change is needed for it).
+- `PUBLIC_BASE_URL` is this domain. Pluggy's webhooks and the mobile app both reach the API through it.
+- To confirm (the current settings are not documented yet):
+  - [ ] DNS record: proxied (orange cloud) or DNS only (grey cloud).
+  - [ ] SSL/TLS mode. If the record is proxied, use **Full (strict)**: Caddy has its own certificate, and *Flexible* mode can cause redirect loops.
+  - [ ] If proxied: no Cloudflare rule (WAF, bot protection, rate limit) may block `POST /webhooks/pluggy/*`. Pluggy needs a `2XX` in 10 seconds.
+  - [ ] If proxied: the client IP arrives in the `CF-Connecting-IP` header. The API does not read it today, so logs show Cloudflare's IP.
+
 **Decided:** PostgreSQL on the instance (Compose), HTTPS with Caddy, the API runs in Docker, secrets in the server's `.env`.
 
 **Open points:**

@@ -11,12 +11,12 @@ Private use for now. It is not a public product.
 ## Architecture
 
 ```
- Flutter app ──HTTPS──► Caddy ──► FastAPI (API) ──► PostgreSQL
- (Firebase App                       ▲   │
-  Distribution)                      │   └──► AI agents (LangChain / LangGraph)
-                                     │            ├─ dev:  Ollama (local)
- Pluggy (Meu Pluggy / Open Finance)  │            └─ prod: OpenAI model on AWS Bedrock
-        └── webhooks (item/*) ───────┘
+ Flutter app ──HTTPS──► Cloudflare ──► Caddy ──► FastAPI (API) ──► PostgreSQL
+ (Firebase App                              ▲        │
+  Distribution)                             │        └──► AI agents (LangChain / LangGraph)
+                                            │                 ├─ dev:  Ollama (local)
+ Pluggy (Meu Pluggy / Open Finance)         │                 └─ prod: OpenAI model on AWS Bedrock
+        └── webhooks (item/*) ──► Cloudflare ┘
 ```
 
 ## Stack
@@ -31,6 +31,7 @@ Private use for now. It is not a public product.
 | Mobile | Flutter (Dart 3.14), Dio, Provider, get_it, go_router |
 | Infra | Docker, Docker Compose, Caddy (HTTPS), GitHub Actions, GitHub Container Registry |
 | Hosting | **AWS Lightsail** (backend), **Firebase App Distribution** (mobile) |
+| Domain / DNS | **Cloudflare** (`api.tally-api.com`) |
 
 ## Repository layout
 
@@ -185,6 +186,8 @@ On every push to `main`, GitHub Actions (`.github/workflows/deploy.yml`):
 4. runs `docker compose up -d`.
 
 The AI uses a model on **AWS Bedrock** in production.
+
+**Domain and Cloudflare.** The API domain (`api.tally-api.com`) goes through **Cloudflare**, which points to the Lightsail server. Caddy still serves HTTPS on the server. Cloudflare is configured in its dashboard, not in this repository. Pluggy webhooks and the mobile app both reach the API through this domain. Still to confirm (not documented yet): whether the DNS record is proxied (orange cloud) or DNS only, and the SSL/TLS mode. See [`backend/README.md`](backend/README.md) ("Domain and Cloudflare").
 
 **Single worker, single instance.** Do not use more than one worker or auto-scaling. Two processes starting together can rotate the webhook secret at the same time, and every webhook would return `401` until a restart. If this is ever needed, add a PostgreSQL advisory lock in `jobs/webhook_registration.py` first (details in [`backend/README.md`](backend/README.md)).
 

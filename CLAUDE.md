@@ -23,6 +23,7 @@ Setup, jobs and webhooks are explained in the root `README.md`. When a job, a we
 | Bank data | Pluggy, free "Meu Pluggy" plan (Open Finance) |
 | AI models | Ollama (dev), OpenAI model on AWS Bedrock (prod) |
 | Hosting | AWS Lightsail (Ubuntu server, Docker Compose + Caddy) |
+| Domain / DNS | Cloudflare (`api.tally-api.com`), configured in its dashboard, not in the repo |
 | CI/CD | GitHub Actions → GitHub Container Registry → SSH deploy |
 | Mobile distribution | Firebase App Distribution (distribution only) |
 
