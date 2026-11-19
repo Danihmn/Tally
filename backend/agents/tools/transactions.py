@@ -1,5 +1,4 @@
 import calendar
-import dataclasses
 import datetime
 from typing import Literal
 
@@ -76,8 +75,12 @@ def _filters(
     category: str | None,
     search: str | None,
 ) -> TransactionFilters:
-    """The same filters for the list and the summary tools (the period is in whole UTC days)."""
+    """The same filters for the list and the summary tools (the period is in whole UTC days).
+
+    Internal transfers (between the people of the household) are always left out.
+    """
     return TransactionFilters(
+        exclude_internal_transfers=True,
         household_id=user.household_id,
         user_id=user.id if only_mine else None,
         date_from=start_of_day_utc(start),
@@ -233,10 +236,7 @@ def _summarize(
     by_owner = group_by in ("owner", "owner_and_category")
     by_category = group_by in ("category", "owner_and_category")
     start, end, defaulted = _resolve_period(date_from, date_to)
-    filters = dataclasses.replace(
-        _filters(user, only_mine, start, end, type, category, search),
-        exclude_internal_transfers=True,
-    )
+    filters = _filters(user, only_mine, start, end, type, category, search)
 
     with get_session() as session:
         groups = summarize_transactions_by(session, filters, by_owner, by_category)
