@@ -94,6 +94,12 @@ class TestSystemPrompt(unittest.TestCase):
     def test_prompt_asks_for_a_friendly_tone(self):
         self.assertIn("friendly and warm", TALLY_AI_SYSTEM_PROMPT)
 
+    def test_answers_do_not_always_open_with_a_greeting_but_it_is_not_forbidden(self):
+        self.assertIn("do NOT open every answer with a greeting", TALLY_AI_SYSTEM_PROMPT)
+        self.assertIn("fine only now and then", TALLY_AI_SYSTEM_PROMPT)
+        self.assertNotIn("call the person by name", TALLY_AI_SYSTEM_PROMPT)
+        self.assertNotIn("NEVER start an answer", TALLY_AI_SYSTEM_PROMPT)
+
     def test_planning_questions_use_recurrences_and_entries(self):
         text = _system_prompt_text()
 
