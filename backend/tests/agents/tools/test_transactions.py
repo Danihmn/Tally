@@ -215,14 +215,18 @@ class SpendingSummaryScopeTests(ToolTestCase):
         self.assertEqual(filters.household_id, HOUSEHOLD_ID)
         self.assertEqual((by_owner, by_category), (False, True))
 
-    def test_the_summaries_leave_internal_transfers_out_but_the_listings_do_not(self):
+    def test_the_summaries_and_the_listings_leave_internal_transfers_out(self):
         get_my_spending_summary.func(runtime=self.runtime)
         get_household_spending_summary.func(runtime=self.runtime)
         get_my_transactions.func(runtime=self.runtime)
+        get_household_transactions.func(runtime=self.runtime)
 
         for call in self.mocks["summarize_transactions_by"].call_args_list:
             self.assertTrue(call.args[1].exclude_internal_transfers)
-        self.assertFalse(self.filters().exclude_internal_transfers)
+        for call in self.mocks["search_transactions"].call_args_list:
+            self.assertTrue(call.args[1].exclude_internal_transfers)
+        for call in self.mocks["summarize_transactions"].call_args_list:
+            self.assertTrue(call.args[1].exclude_internal_transfers)
 
     def test_household_summary_is_not_filtered_by_user_and_groups_by_owner_by_default(self):
         get_household_spending_summary.func(runtime=self.runtime)
