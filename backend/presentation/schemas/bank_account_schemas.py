@@ -74,7 +74,7 @@ class BalanceQuery(BaseModel):
 class TotalBalanceQuery(BaseModel):
     """Query string of GET /bank-accounts/total-balance.
 
-    `type` is required: the balance of the accounts and the open bills of the cards are never
+    `type` is required: the balance of the accounts and the bills of the cards are never
     added together."""
 
     model_config = ConfigDict(extra="forbid")
@@ -85,7 +85,9 @@ class TotalBalanceQuery(BaseModel):
 
 class TotalBalanceResponse(BaseModel):
     type: str  # BANK | CREDIT
+    # BANK: sum of the balances. CREDIT: sum of the bills due in `month` (next month)
     total: decimal.Decimal
+    month: str | None = None  # "YYYY-MM", only for CREDIT
 
 
 class CreditInfoResponse(BaseModel):
@@ -95,6 +97,22 @@ class CreditInfoResponse(BaseModel):
     available_credit_limit: decimal.Decimal | None
     balance_due_date: datetime.datetime | None
     balance_close_date: datetime.datetime | None
+
+
+class CardBillSummaryResponse(BaseModel):
+    """The bill of a card due next month, without its transactions."""
+
+    month: str  # Due month, "YYYY-MM"
+    total: decimal.Decimal
+    estimated: bool
+
+    @classmethod
+    def from_read_model(cls, bill: CardBill) -> "CardBillSummaryResponse":  # noqa: UP037
+        return cls(
+            month=bill.month.strftime("%Y-%m"),
+            total=bill.total,
+            estimated=bill.estimated,
+        )
 
 
 class AccountBalanceResponse(BaseModel):
@@ -113,9 +131,13 @@ class AccountBalanceResponse(BaseModel):
     bank_code: str | None
     updated_at: datetime.datetime | None
     credit: CreditInfoResponse | None  # Only for cards that have credit data
+    # Only for cards: the bill due next month. `balance` stays the whole used limit
+    next_bill: CardBillSummaryResponse | None = None
 
     @classmethod
-    def from_read_model(cls, item: AccountBalance) -> "AccountBalanceResponse":  # noqa: UP037
+    def from_read_model(
+        cls, item: AccountBalance, next_bill: CardBill | None = None
+    ) -> "AccountBalanceResponse":  # noqa: UP037
         account = item.account
         assert account.id is not None
         credit = item.credit_data
@@ -140,6 +162,9 @@ class AccountBalanceResponse(BaseModel):
                 balance_due_date=credit.balance_due_date,
                 balance_close_date=credit.balance_close_date,
             ),
+            next_bill=None
+            if next_bill is None
+            else CardBillSummaryResponse.from_read_model(next_bill),
         )
 
 

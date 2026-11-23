@@ -28,7 +28,11 @@ from services.bank_accounts_service import (
     search_bank_accounts,
     update_bank_account_settings,
 )
-from services.credit_card_bills_service import get_card_bill
+from services.credit_card_bills_service import (
+    get_card_bill,
+    get_next_bills,
+    get_next_bills_total,
+)
 from utils.dates import next_month_start, today_local
 
 # Both people of the household see every account of the household (the app is private, for two
@@ -89,6 +93,17 @@ def total_balance_endpoint(
     session: Annotated[Session, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_user)],
 ) -> TotalBalanceResponse:
+    """BANK: the sum of the balances. CREDIT: the sum of the bills due next month (one
+    installment per purchase), not Pluggy's card balance (the whole used limit)."""
+    if query.type == "CREDIT":
+        month = next_month_start(today_local())
+        return TotalBalanceResponse(
+            type=query.type,
+            total=get_next_bills_total(
+                session, current_user.household_id, month, query.user_id
+            ),
+            month=month.strftime("%Y-%m"),
+        )
     return TotalBalanceResponse(
         type=query.type,
         total=get_total_balance(
@@ -103,10 +118,17 @@ def list_balances_endpoint(
     session: Annotated[Session, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_user)],
 ) -> list[AccountBalanceResponse]:
+    """Each card also has `next_bill`: the bill due next month."""
     items = list_account_balances(
         session, current_user.household_id, query.type, query.user_id
     )
-    return [AccountBalanceResponse.from_read_model(item) for item in items]
+    bills = get_next_bills(
+        session, current_user.household_id, items, next_month_start(today_local())
+    )
+    return [
+        AccountBalanceResponse.from_read_model(item, bills.get(item.account.id))
+        for item in items
+    ]
 
 
 @router.get("/{account_id}/bill", response_model=CardBillResponse)

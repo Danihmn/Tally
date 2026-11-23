@@ -155,18 +155,51 @@ class TotalBalanceEndpointTests(_BalanceEndpointsTestCase):
     def setUp(self):
         super().setUp()
         self.service.return_value = Decimal("3500.75")
+        bills = patch(f"{MODULE}.get_next_bills_total", return_value=Decimal("30.00"))
+        self.bills_total = bills.start()
+        self.addCleanup(bills.stop)
+        today = patch(f"{MODULE}.today_local", return_value=datetime.date(2026, 11, 23))
+        today.start()
+        self.addCleanup(today.stop)
 
     def test_answers_with_the_type_and_the_total(self):
         response = self.client.get("/bank-accounts/total-balance", params={"type": "BANK"})
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), {"type": "BANK", "total": "3500.75"})
+        self.assertEqual(
+            response.json(), {"type": "BANK", "total": "3500.75", "month": None}
+        )
 
     def test_the_household_comes_from_the_logged_user(self):
-        self.client.get("/bank-accounts/total-balance", params={"type": "CREDIT"})
+        self.client.get("/bank-accounts/total-balance", params={"type": "BANK"})
 
         args = self.service.call_args.args
-        self.assertEqual(args[1:], (HOUSEHOLD_ID, "CREDIT", None))
+        self.assertEqual(args[1:], (HOUSEHOLD_ID, "BANK", None))
+
+    def test_the_cards_total_is_the_sum_of_the_bills_due_next_month(self):
+        response = self.client.get("/bank-accounts/total-balance", params={"type": "CREDIT"})
+
+        self.assertEqual(
+            response.json(), {"type": "CREDIT", "total": "30.00", "month": "2026-12"}
+        )
+        self.bills_total.assert_called_once_with(
+            self.session, HOUSEHOLD_ID, datetime.date(2026, 12, 1), None
+        )
+        self.service.assert_not_called()
+
+    def test_the_cards_total_of_one_person(self):
+        self.client.get(
+            "/bank-accounts/total-balance",
+            params={"type": "CREDIT", "user_id": str(OWNER_ID)},
+        )
+
+        self.assertEqual(self.bills_total.call_args.args[3], OWNER_ID)
+
+    def test_the_bank_total_has_no_month_and_no_bills(self):
+        body = self.client.get("/bank-accounts/total-balance", params={"type": "BANK"}).json()
+
+        self.assertIsNone(body["month"])
+        self.bills_total.assert_not_called()
 
     def test_the_person_filter_is_passed_on(self):
         self.client.get(
@@ -217,6 +250,12 @@ class ListBalancesEndpointTests(_BalanceEndpointsTestCase):
     def setUp(self):
         super().setUp()
         self.service.return_value = []
+        bills = patch(f"{MODULE}.get_next_bills", return_value={})
+        self.bills = bills.start()
+        self.addCleanup(bills.stop)
+        today = patch(f"{MODULE}.today_local", return_value=datetime.date(2026, 11, 23))
+        today.start()
+        self.addCleanup(today.stop)
 
     def test_the_household_comes_from_the_logged_user(self):
         response = self.client.get("/bank-accounts/balances")
@@ -288,6 +327,40 @@ class ListBalancesEndpointTests(_BalanceEndpointsTestCase):
         self.assertEqual(item["credit"]["available_credit_limit"], "51300.00")
         self.assertTrue(item["credit"]["balance_due_date"].startswith("2026-11-17"))
         self.assertIsNone(item["credit"]["balance_close_date"])
+
+    def test_a_card_has_the_bill_due_next_month(self):
+        account = make_bank_account(
+            type="CREDIT", subtype="CREDIT_CARD", balance=Decimal("300.00")
+        )
+        items = [AccountBalance(account=account, user_id=OWNER_ID)]
+        self.service.return_value = items
+        self.bills.return_value = {
+            account.id: CardBill(
+                account=account,
+                month=datetime.date(2026, 12, 1),
+                total=Decimal("30.00"),
+                estimated=True,
+            )
+        }
+
+        item = self.client.get("/bank-accounts/balances").json()[0]
+
+        self.assertEqual(item["balance"], "300.00")  # the whole used limit stays
+        self.assertEqual(
+            item["next_bill"], {"month": "2026-12", "total": "30.00", "estimated": True}
+        )
+        self.bills.assert_called_once_with(
+            self.session, HOUSEHOLD_ID, items, datetime.date(2026, 12, 1)
+        )
+
+    def test_a_bank_account_has_no_bill(self):
+        self.service.return_value = [
+            AccountBalance(account=make_bank_account(), user_id=OWNER_ID)
+        ]
+
+        item = self.client.get("/bank-accounts/balances").json()[0]
+
+        self.assertIsNone(item["next_bill"])
 
     def test_the_holder_tax_number_is_never_in_the_answer(self):
         self.service.return_value = [

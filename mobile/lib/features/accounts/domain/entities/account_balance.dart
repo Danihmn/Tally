@@ -47,9 +47,31 @@ class CreditInfo extends Equatable {
   ];
 }
 
+/// The bill of a card due in [month], without its transactions.
+class CardBillSummary extends Equatable {
+  const CardBillSummary({
+    required this.month,
+    required this.total,
+    required this.estimated,
+  });
+
+  /// Day 1 of the due month.
+  final DateTime month;
+
+  /// Only the installment of that month counts for a purchase in installments.
+  final Decimal total;
+
+  /// The bank did not say the bill of some purchase: it was estimated.
+  final bool estimated;
+
+  @override
+  List<Object?> get props => [month, total, estimated];
+}
+
 /// An account or a card of the house with the balance the bank gave in its
 /// last sync. The balance of an account is what can be spent (it can be
-/// negative); the balance of a card is the open bill.
+/// negative); the balance of a card is the whole used limit (every
+/// installment still to pay), and [nextBill] is what is paid next month.
 class AccountBalance extends Equatable {
   const AccountBalance({
     required this.id,
@@ -62,6 +84,7 @@ class AccountBalance extends Equatable {
     required this.credit,
     this.outgoingTransfersAreIncome = false,
     this.bankCode,
+    this.nextBill,
   });
 
   final String id;
@@ -85,6 +108,9 @@ class AccountBalance extends Equatable {
 
   /// The COMPE code of the bank (3 digits), set by the person with the flag.
   final String? bankCode;
+
+  /// Only for cards: the bill due next month.
+  final CardBillSummary? nextBill;
 
   bool get isCreditCard => kind == AccountKind.credit;
 
@@ -113,5 +139,6 @@ class AccountBalance extends Equatable {
     credit,
     outgoingTransfersAreIncome,
     bankCode,
+    nextBill,
   ];
 }

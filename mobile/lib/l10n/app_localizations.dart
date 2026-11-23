@@ -1261,8 +1261,8 @@ abstract class AppLocalizations {
   /// No description provided for @accountsBills.
   ///
   /// In pt, this message translates to:
-  /// **'Faturas abertas nos cartões: {amount}'**
-  String accountsBills(String amount);
+  /// **'Faturas de {month}: {amount}'**
+  String accountsBills(String month, String amount);
 
   /// No description provided for @accountsNoCards.
   ///
@@ -1288,11 +1288,17 @@ abstract class AppLocalizations {
   /// **'Saldo atual'**
   String get accountBalanceLabel;
 
-  /// No description provided for @accountBillLabel.
+  /// No description provided for @accountNextBillLabel.
   ///
   /// In pt, this message translates to:
-  /// **'Fatura atual'**
-  String get accountBillLabel;
+  /// **'Fatura de {month}'**
+  String accountNextBillLabel(String month);
+
+  /// No description provided for @accountNextBillLabelGeneric.
+  ///
+  /// In pt, this message translates to:
+  /// **'Fatura do mês que vem'**
+  String get accountNextBillLabelGeneric;
 
   /// No description provided for @cardBillTitle.
   ///
@@ -1377,6 +1383,12 @@ abstract class AppLocalizations {
   /// In pt, this message translates to:
   /// **'Ver transações'**
   String get accountSeeTransactions;
+
+  /// No description provided for @accountSeeBill.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ver fatura'**
+  String get accountSeeBill;
 
   /// No description provided for @accountSalaryTitle.
   ///

@@ -39,6 +39,7 @@ class AccountsKit {
       getBalances: GetAccountBalances(accounts),
       getTotal: GetTotalBalance(accounts),
       updateSettings: UpdateAccountSettings(accounts),
+      now: () => DateTime(2026, 11, 23),
     );
   }
 

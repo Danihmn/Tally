@@ -119,6 +119,52 @@ void main() {
       expect(accounts.last.isCreditCard, isTrue);
     });
 
+    test('a_card_reads_its_bill_due_next_month', () async {
+      final adapter = answering([
+        {
+          ...item('b', 'CREDIT'),
+          'balance': '300.00',
+          'next_bill': {
+            'month': '2026-12',
+            'total': '30.00',
+            'estimated': true,
+          },
+        },
+        item('a', 'BANK'),
+      ]);
+
+      final result = await GetAccountBalances(repository(adapter))();
+
+      final [card, bank] = result.valueOrNull!;
+      expect(card.balance, Decimal.parse('300.00'));
+      expect(
+        card.nextBill,
+        CardBillSummary(
+          month: DateTime(2026, 12),
+          total: Decimal.parse('30.00'),
+          estimated: true,
+        ),
+      );
+      expect(bank.nextBill, isNull);
+    });
+
+    test('a_bad_bill_month_is_an_unknown_failure', () async {
+      final adapter = answering([
+        {
+          ...item('b', 'CREDIT'),
+          'next_bill': {
+            'month': '2026-13',
+            'total': '30.00',
+            'estimated': false,
+          },
+        },
+      ]);
+
+      final result = await GetAccountBalances(repository(adapter))();
+
+      expect(result.failureOrNull, const UnknownFailure());
+    });
+
     test('the_total_goes_through_as_a_decimal', () async {
       final adapter = answering({'type': 'BANK', 'total': '12.30'});
 

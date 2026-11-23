@@ -1,14 +1,16 @@
 import 'package:decimal/decimal.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:mobile/app/theme/app_spacing.dart';
+import 'package:mobile/core/utils/date_formatter.dart';
 import 'package:mobile/core/utils/money_formatter.dart';
 import 'package:mobile/core/widgets/ellipsis_text.dart';
 import 'package:mobile/features/accounts/domain/entities/account_balance.dart';
 import 'package:mobile/l10n/app_localizations.dart';
 
 /// One account or card: icon, name, "Conta •••• 1234", the owner, the balance
-/// (or the open bill) and, for a card, how much of the limit is used. Tapping
-/// it opens the transactions of that account. A bank account also has the
+/// (for a card, the bill due next month) and, for a card, how much of the
+/// limit is used (from the whole used limit, not the bill). Tapping an account
+/// opens its transactions; tapping a card opens its bill. A bank account also has the
 /// "Conta salário" switch when [onSalaryAccountChanged] is given.
 class AccountCard extends StatelessWidget {
   const AccountCard({
@@ -46,6 +48,7 @@ class AccountCard extends StatelessWidget {
     );
     final isCard = account.isCreditCard;
     final balance = account.balance;
+    final nextBill = account.nextBill;
     return Card(
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -98,11 +101,20 @@ class AccountCard extends StatelessWidget {
               ),
               const SizedBox(height: AppSpacing.md),
               Text(
-                isCard ? l10n.accountBillLabel : l10n.accountBalanceLabel,
+                !isCard
+                    ? l10n.accountBalanceLabel
+                    : nextBill == null
+                    ? l10n.accountNextBillLabelGeneric
+                    : l10n.accountNextBillLabel(
+                        DateFormatter.monthName(nextBill.month),
+                      ),
                 style: muted,
               ),
               EllipsisText(
-                balance == null ? '—' : MoneyFormatter.format(balance),
+                switch (isCard ? nextBill?.total : balance) {
+                  final Decimal value => MoneyFormatter.format(value),
+                  null => '—',
+                },
                 style: theme.textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
@@ -123,7 +135,9 @@ class AccountCard extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      l10n.accountSeeTransactions,
+                      isCard
+                          ? l10n.accountSeeBill
+                          : l10n.accountSeeTransactions,
                       style: theme.textTheme.labelLarge?.copyWith(
                         color: scheme.primary,
                       ),
