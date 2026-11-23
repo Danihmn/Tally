@@ -30,6 +30,7 @@ void main() {
           Text(args == null ? 'TX-DETAIL-NONE' : 'TX-DETAIL'),
       entryDetail: (args) =>
           Text(args == null ? 'ENTRY-DETAIL-NONE' : 'ENTRY-DETAIL'),
+      cardBill: (args) => Text(args == null ? 'CARD-BILL-NONE' : 'CARD-BILL'),
       users: const Text('USERS-PAGE'),
       userDetail: (member) => Text(
         member == null ? 'USER-DETAIL-NONE' : 'USER-${member.firstName}',
@@ -135,6 +136,18 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('ENTRY-DETAIL-NONE'), findsOneWidget);
+      expect(find.byType(AppNavigationBar), findsNothing);
+    });
+
+    testWidgets('the_card_bill_without_args_gets_null', (tester) async {
+      await pumpRouter(tester);
+      await tester.pumpAndSettle();
+
+      GoRouter.of(tester.element(find.byType(AppNavigationBar)))
+          .go(AppRoutes.cardBill);
+      await tester.pumpAndSettle();
+
+      expect(find.text('CARD-BILL-NONE'), findsOneWidget);
       expect(find.byType(AppNavigationBar), findsNothing);
     });
 

@@ -8,6 +8,7 @@ import 'package:mobile/app/router/app_routes.dart';
 import 'package:mobile/app/theme/app_theme.dart';
 import 'package:mobile/core/error/failure.dart';
 import 'package:mobile/core/result/result.dart';
+import 'package:mobile/features/accounts/domain/entities/account_balance.dart';
 import 'package:mobile/features/accounts/presentation/views/accounts_view.dart';
 import 'package:mobile/features/accounts/presentation/widgets/account_card.dart';
 import 'package:mobile/features/transactions/domain/transactions_filter_request.dart';
@@ -32,6 +33,7 @@ void main() {
   Future<void> pumpView(
     WidgetTester tester, {
     VoidCallback? onOpenTransactions,
+    void Function(AccountBalance card)? onOpenCardBill,
   }) async {
     tester.view.physicalSize = const Size(800, 3000);
     tester.view.devicePixelRatio = 1;
@@ -42,6 +44,7 @@ void main() {
         createViewModel: () => kit.viewModel,
         filterRequest: request,
         onOpenTransactions: onOpenTransactions ?? () {},
+        onOpenCardBill: onOpenCardBill ?? (_) {},
       ),
     );
     await tester.pumpAndSettle();
@@ -212,14 +215,24 @@ void main() {
       expect(opened, 1);
     });
 
-    testWidgets('tapping_a_card_asks_for_its_transactions', (tester) async {
-      await pumpView(tester);
+    testWidgets('tapping_a_card_opens_its_bill_not_the_transactions', (
+      tester,
+    ) async {
+      AccountBalance? opened;
+      var transactions = 0;
+      await pumpView(
+        tester,
+        onOpenCardBill: (card) => opened = card,
+        onOpenTransactions: () => transactions++,
+      );
       await tester.tap(find.text('Cartões de crédito 1'));
       await tester.pumpAndSettle();
 
       await tester.tap(find.byType(AccountCard).first);
 
-      expect(request.pendingAccountId, 'a2');
+      expect(opened?.id, 'a2');
+      expect(transactions, 0);
+      expect(request.pendingAccountId, isNull);
     });
     testWidgets('with_the_router_the_tap_goes_to_the_transactions_tab', (
       tester,
@@ -240,6 +253,7 @@ void main() {
         ),
         transactionDetail: (_) => const SizedBox(),
         entryDetail: (_) => const SizedBox(),
+        cardBill: (_) => const SizedBox(),
         users: const SizedBox(),
         userDetail: (_) => const SizedBox(),
         initialLocation: AppRoutes.accounts,

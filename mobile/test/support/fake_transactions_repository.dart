@@ -6,6 +6,7 @@ import 'package:mobile/core/pagination/page_result.dart';
 import 'package:mobile/core/result/result.dart';
 import 'package:mobile/features/accounts/domain/entities/account_balance.dart';
 import 'package:mobile/features/accounts/domain/entities/bank_account.dart';
+import 'package:mobile/features/accounts/domain/entities/card_bill.dart';
 import 'package:mobile/features/accounts/domain/repositories/accounts_repository.dart';
 import 'package:mobile/features/transactions/domain/entities/transaction.dart';
 import 'package:mobile/features/transactions/domain/entities/transaction_filters.dart';
@@ -280,5 +281,32 @@ class FakeAccountsRepository implements AccountsRepository {
           b,
     ];
     return const Result.success(null);
+  }
+
+  /// What [getCardBill] answers. Null: an empty bill of the asked month.
+  Result<CardBill>? billForced;
+  final List<(String, DateTime)> billCalls = [];
+
+  /// When set, [getCardBill] waits for it before answering.
+  Completer<void>? billGate;
+
+  @override
+  Future<Result<CardBill>> getCardBill(
+    String accountId, {
+    required DateTime month,
+  }) async {
+    billCalls.add((accountId, month));
+    final gate = billGate;
+    if (gate != null) await gate.future;
+    return billForced ??
+        Result.success(
+          CardBill(
+            accountId: accountId,
+            month: DateTime(month.year, month.month),
+            total: Decimal.zero,
+            estimated: false,
+            items: const [],
+          ),
+        );
   }
 }

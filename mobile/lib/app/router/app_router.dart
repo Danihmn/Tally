@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:mobile/app/router/app_routes.dart';
 import 'package:mobile/app/router/app_shell.dart';
 import 'package:mobile/core/session/session_controller.dart';
+import 'package:mobile/features/accounts/presentation/views/card_bill_args.dart';
 import 'package:mobile/features/entries/presentation/views/entry_detail_args.dart';
 import 'package:mobile/features/household/domain/entities/member.dart';
 import 'package:mobile/features/transactions/presentation/views/transaction_detail_args.dart';
@@ -12,7 +13,7 @@ import 'package:mobile/features/transactions/presentation/views/transaction_deta
 /// [home], [login], [transactions], [entries], [accounts], [chat] and
 /// [conversations] and [users] are the screens that need
 /// their own ViewModel, so the caller builds them (the app with its DI
-/// container, tests with fakes). The same for the three detail screens, which
+/// container, tests with fakes). The same for the detail screens, which
 /// get what the list handed over (or `null` when they were opened without it).
 ///
 /// [redirect] and [refreshListenable] are the hook for the auth redirect, see
@@ -29,6 +30,7 @@ GoRouter createAppRouter({
   required Widget users,
   required Widget Function(TransactionDetailArgs? args) transactionDetail,
   required Widget Function(EntryDetailArgs? args) entryDetail,
+  required Widget Function(CardBillArgs? args) cardBill,
   required Widget Function(Member? member) userDetail,
   String initialLocation = AppRoutes.home,
   GoRouterRedirect? redirect,
@@ -90,7 +92,20 @@ GoRouter createAppRouter({
               ),
             ],
           ),
-          _branch(AppRoutes.accounts, accounts),
+          _branch(
+            AppRoutes.accounts,
+            accounts,
+            subRoutes: [
+              GoRoute(
+                path: 'bill',
+                parentNavigatorKey: rootNavigatorKey,
+                builder: (context, state) => cardBill(switch (state.extra) {
+                  final CardBillArgs args => args,
+                  _ => null,
+                }),
+              ),
+            ],
+          ),
           _branch(
             AppRoutes.chat,
             chat,

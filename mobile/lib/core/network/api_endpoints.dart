@@ -114,6 +114,14 @@ abstract final class ApiEndpoints {
     usedBy: 'Contas',
   );
 
+  /// The bill of a credit card for one due month (`month=YYYY-MM`). `{id}` is
+  /// the card id.
+  static const creditCardBill = ApiEndpoint(
+    'GET',
+    '/bank-accounts/{id}/bill',
+    usedBy: 'Contas',
+  );
+
   // Entries list (and the transactions they are matched with)
 
   static const financialEntries = ApiEndpoint(
@@ -280,6 +288,7 @@ abstract final class ApiEndpoints {
     accountBalances,
     totalAccountBalance,
     updateBankAccount,
+    creditCardBill,
     financialEntries,
     totalExpenses,
     totalRevenues,
