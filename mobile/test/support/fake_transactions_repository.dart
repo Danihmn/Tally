@@ -191,6 +191,12 @@ class FakeAccountsRepository implements AccountsRepository {
         dueDate: DateTime.utc(2026, 11, 17),
         closeDate: DateTime.utc(2026, 11, 8),
       ),
+      // The bill due next month: one installment of each purchase.
+      nextBill: CardBillSummary(
+        month: DateTime(2026, 12),
+        total: Decimal.parse('150.00'),
+        estimated: false,
+      ),
     ),
     AccountBalance(
       id: 'a4',
@@ -227,10 +233,14 @@ class FakeAccountsRepository implements AccountsRepository {
     totalCalls.add((kind, userId));
     final forced = totalForced;
     if (forced != null) return forced;
+    // Like the server: the accounts sum their balances, the cards sum the
+    // bills due next month.
     var sum = Decimal.zero;
     for (final b in balances) {
       if (b.kind == kind && (userId == null || b.ownerId == userId)) {
-        sum += b.balance ?? Decimal.zero;
+        sum += kind == AccountKind.credit
+            ? b.nextBill?.total ?? Decimal.zero
+            : b.balance ?? Decimal.zero;
       }
     }
     return Result.success(sum);
@@ -276,6 +286,7 @@ class FakeAccountsRepository implements AccountsRepository {
             outgoingTransfersAreIncome:
                 outgoingTransfersAreIncome ?? b.outgoingTransfersAreIncome,
             bankCode: code ?? b.bankCode,
+            nextBill: b.nextBill,
           )
         else
           b,

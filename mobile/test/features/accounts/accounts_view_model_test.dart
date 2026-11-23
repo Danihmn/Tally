@@ -35,8 +35,14 @@ void main() {
       );
       expect(
         (kit.viewModel.cardTotal as UiSuccess<Decimal>).data,
-        Decimal.parse('1500.00'),
+        Decimal.parse('150.00'), // the bills due next month
       );
+    });
+
+    test('the_bills_are_the_ones_due_next_month', () async {
+      await started();
+
+      expect(kit.viewModel.billMonth, DateTime(2026, 12));
     });
 
     test('splits_the_list_in_accounts_and_cards', () async {

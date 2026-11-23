@@ -680,8 +680,8 @@ class AppLocalizationsPt extends AppLocalizations {
   String get accountsTotalTitle => 'Saldo total em contas';
 
   @override
-  String accountsBills(String amount) {
-    return 'Faturas abertas nos cartões: $amount';
+  String accountsBills(String month, String amount) {
+    return 'Faturas de $month: $amount';
   }
 
   @override
@@ -697,7 +697,12 @@ class AppLocalizationsPt extends AppLocalizations {
   String get accountBalanceLabel => 'Saldo atual';
 
   @override
-  String get accountBillLabel => 'Fatura atual';
+  String accountNextBillLabel(String month) {
+    return 'Fatura de $month';
+  }
+
+  @override
+  String get accountNextBillLabelGeneric => 'Fatura do mês que vem';
 
   @override
   String get cardBillTitle => 'Fatura do cartão';
@@ -755,6 +760,9 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get accountSeeTransactions => 'Ver transações';
+
+  @override
+  String get accountSeeBill => 'Ver fatura';
 
   @override
   String get accountSalaryTitle => 'Conta salário';

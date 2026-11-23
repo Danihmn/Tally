@@ -170,6 +170,7 @@ class _AccountsViewState extends State<AccountsView> {
             bankTotal: vm.bankTotal,
             cardTotal: vm.cardTotal,
             hasCards: vm.cards.isNotEmpty,
+            billMonth: vm.billMonth,
             onRetry: () => unawaited(vm.retryTotals()),
           ),
           const SizedBox(height: AppSpacing.md),

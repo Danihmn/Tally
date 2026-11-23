@@ -23,6 +23,34 @@ class CreditInfoDto {
   final DateTime? closeDate;
 }
 
+/// The `next_bill` of a card inside `GET /bank-accounts/balances`.
+class CardBillSummaryDto {
+  const CardBillSummaryDto({
+    required this.month,
+    required this.total,
+    required this.estimated,
+  });
+
+  /// Throws [FormatException] when a field is missing or invalid.
+  factory CardBillSummaryDto.fromJson(Map<String, dynamic> json) {
+    final text = requireString(json['month'], 'month');
+    final match = RegExp(r'^(\d{4})-(\d{2})$').firstMatch(text);
+    final month = match == null ? 0 : int.parse(match.group(2)!);
+    if (match == null || month < 1 || month > 12) {
+      throw FormatException('Expected a month as yyyy-MM, got "$text".');
+    }
+    return CardBillSummaryDto(
+      month: DateTime(int.parse(match.group(1)!), month),
+      total: parseDecimal(json['total']),
+      estimated: json['estimated'] as bool? ?? false,
+    );
+  }
+
+  final DateTime month;
+  final Decimal total;
+  final bool estimated;
+}
+
 /// An account or card as `GET /bank-accounts/balances` sends it.
 class AccountBalanceDto {
   const AccountBalanceDto({
@@ -36,11 +64,13 @@ class AccountBalanceDto {
     required this.credit,
     this.outgoingTransfersAreIncome = false,
     this.bankCode,
+    this.nextBill,
   });
 
   /// Throws [FormatException] when a required field is missing or invalid.
   factory AccountBalanceDto.fromJson(Map<String, dynamic> json) {
     final credit = json['credit'];
+    final nextBill = json['next_bill'];
     return AccountBalanceDto(
       id: requireString(json['id'], 'id'),
       userId: requireString(json['user_id'], 'user_id'),
@@ -55,6 +85,9 @@ class AccountBalanceDto {
       outgoingTransfersAreIncome:
           json['outgoing_transfers_are_income'] as bool? ?? false,
       bankCode: json['bank_code'] as String?,
+      nextBill: nextBill is Map<String, dynamic>
+          ? CardBillSummaryDto.fromJson(nextBill)
+          : null,
     );
   }
 
@@ -70,4 +103,5 @@ class AccountBalanceDto {
   final CreditInfoDto? credit;
   final bool outgoingTransfersAreIncome;
   final String? bankCode;
+  final CardBillSummaryDto? nextBill;
 }
