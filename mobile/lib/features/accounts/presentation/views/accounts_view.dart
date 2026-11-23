@@ -12,6 +12,7 @@ import 'package:mobile/core/widgets/failure_message.dart';
 import 'package:mobile/core/widgets/skeleton.dart';
 import 'package:mobile/features/accounts/domain/entities/account_balance.dart';
 import 'package:mobile/features/accounts/presentation/viewmodels/accounts_view_model.dart';
+import 'package:mobile/features/accounts/presentation/views/card_bill_args.dart';
 import 'package:mobile/features/accounts/presentation/widgets/account_card.dart';
 import 'package:mobile/features/accounts/presentation/widgets/accounts_header.dart';
 import 'package:mobile/features/accounts/presentation/widgets/bank_code_dialog.dart';
@@ -23,22 +24,26 @@ import 'package:mobile/features/transactions/domain/transactions_filter_request.
 import 'package:mobile/l10n/app_localizations.dart';
 
 /// The Contas tab: the total balance, the accounts and the cards with their
-/// balance. Tapping one opens the Transações tab filtered by it.
+/// balance. Tapping an account opens the Transações tab filtered by it;
+/// tapping a card opens its bill by month.
 ///
 /// It creates its own ViewModel and loads it. [filterRequest] carries the
 /// chosen account to the Transações tab; [onOpenTransactions] defaults to
-/// going to that tab with the router.
+/// going to that tab with the router, and [onOpenCardBill] to pushing the
+/// bill screen.
 class AccountsView extends StatefulWidget {
   const AccountsView({
     super.key,
     required this.createViewModel,
     required this.filterRequest,
     this.onOpenTransactions,
+    this.onOpenCardBill,
   });
 
   final AccountsViewModel Function() createViewModel;
   final TransactionsFilterRequest filterRequest;
   final VoidCallback? onOpenTransactions;
+  final void Function(AccountBalance card)? onOpenCardBill;
 
   @override
   State<AccountsView> createState() => _AccountsViewState();
@@ -57,6 +62,25 @@ class _AccountsViewState extends State<AccountsView> {
   void dispose() {
     _viewModel.dispose();
     super.dispose();
+  }
+
+  void _open(AccountBalance account) {
+    if (account.isCreditCard) {
+      _openCardBill(account);
+    } else {
+      _openTransactions(account);
+    }
+  }
+
+  void _openCardBill(AccountBalance card) {
+    final open = widget.onOpenCardBill;
+    if (open != null) {
+      open(card);
+    } else {
+      unawaited(
+        context.push(AppRoutes.cardBill, extra: CardBillArgs(account: card)),
+      );
+    }
   }
 
   void _openTransactions(AccountBalance account) {
@@ -238,7 +262,7 @@ class _AccountsViewState extends State<AccountsView> {
                   context,
                   vm.memberIndexOf(account.ownerId),
                 ),
-                onTap: () => _openTransactions(account),
+                onTap: () => _open(account),
                 saving: vm.isSaving(account.id),
                 onSalaryAccountChanged: (enabled) =>
                     unawaited(_changeSalaryAccount(account, enabled)),

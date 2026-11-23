@@ -5,9 +5,11 @@ import 'package:mobile/features/accounts/data/repositories/accounts_repository_i
 import 'package:mobile/features/accounts/domain/repositories/accounts_repository.dart';
 import 'package:mobile/features/accounts/domain/usecases/get_account_balances.dart';
 import 'package:mobile/features/accounts/domain/usecases/get_bank_accounts.dart';
+import 'package:mobile/features/accounts/domain/usecases/get_card_bill.dart';
 import 'package:mobile/features/accounts/domain/usecases/get_total_balance.dart';
 import 'package:mobile/features/accounts/domain/usecases/update_account_settings.dart';
 import 'package:mobile/features/accounts/presentation/viewmodels/accounts_view_model.dart';
+import 'package:mobile/features/accounts/presentation/viewmodels/card_bill_view_model.dart';
 import 'package:mobile/features/household/presentation/viewmodels/household_scope_controller.dart';
 
 /// Registers the accounts feature.
@@ -30,6 +32,15 @@ void registerAccountsDependencies(GetIt container) {
     )
     ..registerLazySingleton<UpdateAccountSettings>(
       () => UpdateAccountSettings(container<AccountsRepository>()),
+    )
+    ..registerLazySingleton<GetCardBill>(
+      () => GetCardBill(container<AccountsRepository>()),
+    )
+    ..registerFactoryParam<CardBillViewModel, String, void>(
+      (accountId, _) => CardBillViewModel(
+        accountId: accountId,
+        getBill: container<GetCardBill>(),
+      ),
     )
     ..registerFactory<AccountsViewModel>(
       () => AccountsViewModel(

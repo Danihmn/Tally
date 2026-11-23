@@ -1,3 +1,4 @@
+import datetime
 import unittest
 import uuid
 from decimal import Decimal
@@ -5,7 +6,7 @@ from unittest.mock import MagicMock, patch
 
 from fastapi.testclient import TestClient
 
-from domain.read_models import AccountBalance, BankAccountWithOwner
+from domain.read_models import AccountBalance, BankAccountWithOwner, CardBill
 from services.common.exceptions import InvalidDataError, NotFoundError
 from infra.database.session import get_db
 from presentation.app import app
@@ -14,6 +15,7 @@ from tests.factories import (
     HOUSEHOLD_ID,
     make_bank_account,
     make_credit_data,
+    make_transaction,
     make_user,
     utc,
 )
@@ -403,6 +405,85 @@ class UpdateBankAccountEndpointTests(unittest.TestCase):
         app.dependency_overrides.pop(get_current_user)
 
         self.assertEqual(self._patch({"bank_code": "001"}).status_code, 401)
+
+
+class CardBillEndpointTests(_BalanceEndpointsTestCase):
+    """GET /bank-accounts/{id}/bill: the bill of a card for one due month."""
+
+    TARGET = "get_card_bill"
+    CARD_ID = uuid.UUID("00000000-0000-0000-0000-00000000a009")
+
+    def setUp(self):
+        super().setUp()
+        self.card = make_bank_account(id=self.CARD_ID, type="CREDIT", subtype="CREDIT_CARD")
+        self.installment = make_transaction(
+            date=utc(2026, 11, 20),
+            amount=Decimal("30.00"),
+            type="DEBIT",
+            status="PENDING",
+            description="Loja",
+            credit_card_metadata={"installmentNumber": 1, "totalInstallments": 10},
+        )
+        self.service.return_value = CardBill(
+            account=self.card,
+            month=datetime.date(2026, 12, 1),
+            total=Decimal("30.00"),
+            estimated=True,
+            transactions=[self.installment],
+        )
+        today = patch(f"{MODULE}.today_local", return_value=datetime.date(2026, 11, 23))
+        today.start()
+        self.addCleanup(today.stop)
+
+    def _get(self, **params):
+        return self.client.get(f"/bank-accounts/{self.CARD_ID}/bill", params=params)
+
+    def test_without_a_month_it_is_the_bill_due_next_month(self):
+        response = self._get()
+
+        self.assertEqual(response.status_code, 200)
+        self.service.assert_called_once_with(
+            self.session, HOUSEHOLD_ID, self.CARD_ID, datetime.date(2026, 12, 1)
+        )
+
+    def test_december_rolls_over_to_january(self):
+        with patch(f"{MODULE}.today_local", return_value=datetime.date(2026, 12, 31)):
+            self._get()
+
+        self.assertEqual(self.service.call_args.args[3], datetime.date(2027, 1, 1))
+
+    def test_the_month_sent_is_used(self):
+        self._get(month="2027-03")
+
+        self.assertEqual(self.service.call_args.args[3], datetime.date(2027, 3, 1))
+
+    def test_a_bad_month_is_rejected(self):
+        for month in ("2027-13", "2027-3", "march", "2027-03-01"):
+            with self.subTest(month=month):
+                self.assertEqual(self._get(month=month).status_code, 422)
+        self.service.assert_not_called()
+
+    def test_the_response_has_the_total_and_the_installment_of_each_transaction(self):
+        body = self._get().json()
+
+        self.assertEqual(body["account_id"], str(self.CARD_ID))
+        self.assertEqual(body["month"], "2026-12")
+        self.assertEqual(Decimal(body["total"]), Decimal("30.00"))
+        self.assertTrue(body["estimated"])
+        [item] = body["transactions"]
+        self.assertEqual(item["id"], str(self.installment.id))
+        self.assertEqual((item["installment_number"], item["total_installments"]), (1, 10))
+        self.assertEqual(item["description"], "Loja")
+
+    def test_a_card_that_is_not_found_is_404(self):
+        self.service.side_effect = NotFoundError("Credit card not found")
+
+        self.assertEqual(self._get().status_code, 404)
+
+    def test_needs_a_logged_user(self):
+        app.dependency_overrides.pop(get_current_user)
+
+        self.assertEqual(self._get().status_code, 401)
 
 
 if __name__ == "__main__":

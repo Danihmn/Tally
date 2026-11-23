@@ -700,6 +700,35 @@ class AppLocalizationsPt extends AppLocalizations {
   String get accountBillLabel => 'Fatura atual';
 
   @override
+  String get cardBillTitle => 'Fatura do cartão';
+
+  @override
+  String get cardBillMissing => 'Não foi possível abrir a fatura deste cartão.';
+
+  @override
+  String get cardBillTotalLabel => 'Total da fatura';
+
+  @override
+  String cardBillCount(int count) {
+    return 'Transações: $count';
+  }
+
+  @override
+  String get cardBillEstimated =>
+      'Valor estimado: o banco ainda não informou a fatura de algumas compras, então usamos o dia de fechamento do cartão.';
+
+  @override
+  String get cardBillEmpty => 'Nenhuma compra nesta fatura';
+
+  @override
+  String cardBillInstallment(String installment) {
+    return 'Parcela $installment';
+  }
+
+  @override
+  String get cardBillPending => 'Em aberto';
+
+  @override
   String accountSubBank(String number) {
     return 'Conta •••• $number';
   }

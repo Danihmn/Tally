@@ -47,6 +47,7 @@ void main() {
       accounts: const Text('ACCOUNTS-PAGE'),
       transactionDetail: (args) => const Text('TX-DETAIL'),
       entryDetail: (args) => const Text('ENTRY-DETAIL'),
+      cardBill: (args) => const Text('CARD-BILL'),
       users: const Text('USERS-PAGE'),
       userDetail: (member) => const Text('USER-DETAIL'),
       initialLocation: initialLocation,

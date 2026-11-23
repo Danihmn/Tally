@@ -410,6 +410,28 @@
   "accountsTabCards": "Cartões de crédito",
   "accountBalanceLabel": "Saldo atual",
   "accountBillLabel": "Fatura atual",
+  "cardBillTitle": "Fatura do cartão",
+  "cardBillMissing": "Não foi possível abrir a fatura deste cartão.",
+  "cardBillTotalLabel": "Total da fatura",
+  "cardBillCount": "Transações: {count}",
+  "@cardBillCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cardBillEstimated": "Valor estimado: o banco ainda não informou a fatura de algumas compras, então usamos o dia de fechamento do cartão.",
+  "cardBillEmpty": "Nenhuma compra nesta fatura",
+  "cardBillInstallment": "Parcela {installment}",
+  "@cardBillInstallment": {
+    "placeholders": {
+      "installment": {
+        "type": "String"
+      }
+    }
+  },
+  "cardBillPending": "Em aberto",
   "accountSubBank": "Conta •••• {number}",
   "@accountSubBank": {
     "placeholders": {

@@ -54,6 +54,36 @@ def list_transactions_since(
 
 
 @translate_db_errors("transactions")
+def list_card_transactions_for_bill(
+    session: Session,
+    household_id: uuid.UUID,
+    bank_account_id: uuid.UUID,
+    date_from: datetime.datetime,
+    date_to: datetime.datetime,
+    forecast_month: str,
+) -> list[Transactions]:
+    """Candidates for one bill of a card: the not deleted rows with date in [date_from, date_to)
+    or with `creditCardMetadata.billForecastDate` equal to `forecast_month` ("YYYY-MM").
+
+    The caller decides which of them really belong to the bill."""
+    stmt = (
+        select(Transactions)
+        .where(Transactions.household_id == household_id)
+        .where(Transactions.bank_account_id == bank_account_id)
+        .where(Transactions.deleted_at.is_(None))
+        .where(
+            ((Transactions.date >= date_from) & (Transactions.date < date_to))
+            | (
+                Transactions.credit_card_metadata["billForecastDate"].astext
+                == forecast_month
+            )
+        )
+        .order_by(Transactions.date, Transactions.id)
+    )
+    return list(session.scalars(stmt).all())
+
+
+@translate_db_errors("transactions")
 def upsert_transactions(
     session: Session, values_list: list[dict[str, Any]]
 ) -> list[Transactions]:

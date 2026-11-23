@@ -6,6 +6,7 @@ import 'package:mobile/core/result/result.dart';
 import 'package:mobile/core/utils/json_parsing.dart';
 import 'package:mobile/features/accounts/data/models/account_balance_dto.dart';
 import 'package:mobile/features/accounts/data/models/bank_account_dto.dart';
+import 'package:mobile/features/accounts/data/models/card_bill_dto.dart';
 import 'package:mobile/features/accounts/domain/entities/account_balance.dart';
 
 /// Calls the bank accounts endpoints.
@@ -69,5 +70,17 @@ class AccountsRemoteDataSource {
         'bank_code': ?bankCode,
       },
     );
+  });
+
+  /// The bill of a card due in [month] (`YYYY-MM`).
+  Future<Result<CardBillDto>> getCardBill(
+    String accountId, {
+    required String month,
+  }) => apiCall(() async {
+    final response = await _dio.get<Map<String, dynamic>>(
+      ApiEndpoints.creditCardBill.path.replaceFirst('{id}', accountId),
+      queryParameters: {'month': month},
+    );
+    return CardBillDto.fromJson(response.data!);
   });
 }

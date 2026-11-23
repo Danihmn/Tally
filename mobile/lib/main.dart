@@ -12,7 +12,9 @@ import 'package:mobile/app/theme/theme_controller.dart';
 import 'package:mobile/core/config/app_config.dart';
 import 'package:mobile/core/session/session_controller.dart';
 import 'package:mobile/features/accounts/presentation/viewmodels/accounts_view_model.dart';
+import 'package:mobile/features/accounts/presentation/viewmodels/card_bill_view_model.dart';
 import 'package:mobile/features/accounts/presentation/views/accounts_view.dart';
+import 'package:mobile/features/accounts/presentation/views/card_bill_view.dart';
 import 'package:mobile/features/auth/presentation/viewmodels/login_view_model.dart';
 import 'package:mobile/features/auth/presentation/views/login_view.dart';
 import 'package:mobile/features/chat/presentation/viewmodels/chat_view_model.dart';
@@ -106,6 +108,10 @@ Future<void> main() async {
           args: args,
           createLinkedViewModel: (id) =>
               getIt<LinkedEntriesViewModel>(param1: id),
+        ),
+        cardBill: (args) => CardBillView(
+          args: args,
+          createViewModel: (id) => getIt<CardBillViewModel>(param1: id),
         ),
         entryDetail: (args) => EntryDetailView(
           args: args,

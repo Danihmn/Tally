@@ -3,8 +3,10 @@ import 'package:mobile/core/result/result.dart';
 import 'package:mobile/features/accounts/data/datasources/accounts_remote_data_source.dart';
 import 'package:mobile/features/accounts/data/mappers/account_balance_mapper.dart';
 import 'package:mobile/features/accounts/data/mappers/bank_account_mapper.dart';
+import 'package:mobile/features/accounts/data/mappers/card_bill_mapper.dart';
 import 'package:mobile/features/accounts/domain/entities/account_balance.dart';
 import 'package:mobile/features/accounts/domain/entities/bank_account.dart';
+import 'package:mobile/features/accounts/domain/entities/card_bill.dart';
 import 'package:mobile/features/accounts/domain/repositories/accounts_repository.dart';
 
 class AccountsRepositoryImpl implements AccountsRepository {
@@ -39,4 +41,18 @@ class AccountsRepositoryImpl implements AccountsRepository {
     outgoingTransfersAreIncome: outgoingTransfersAreIncome,
     bankCode: bankCode,
   );
+
+  @override
+  Future<Result<CardBill>> getCardBill(
+    String accountId, {
+    required DateTime month,
+  }) async => (await _remote.getCardBill(
+    accountId,
+    month: monthParam(month),
+  )).map((dto) => dto.toEntity());
+
+  /// `2026-12` for any day of December 2026.
+  static String monthParam(DateTime month) =>
+      '${month.year.toString().padLeft(4, '0')}-'
+      '${month.month.toString().padLeft(2, '0')}';
 }

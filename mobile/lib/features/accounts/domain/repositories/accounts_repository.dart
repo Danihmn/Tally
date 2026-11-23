@@ -2,6 +2,7 @@ import 'package:decimal/decimal.dart';
 import 'package:mobile/core/result/result.dart';
 import 'package:mobile/features/accounts/domain/entities/account_balance.dart';
 import 'package:mobile/features/accounts/domain/entities/bank_account.dart';
+import 'package:mobile/features/accounts/domain/entities/card_bill.dart';
 
 /// The bank accounts and credit cards of the house.
 abstract interface class AccountsRepository {
@@ -24,5 +25,12 @@ abstract interface class AccountsRepository {
     String accountId, {
     bool? outgoingTransfersAreIncome,
     String? bankCode,
+  });
+
+  /// The bill of a credit card that is due in [month] (any day of it): only
+  /// the installment of that month counts for an installment purchase.
+  Future<Result<CardBill>> getCardBill(
+    String accountId, {
+    required DateTime month,
   });
 }
