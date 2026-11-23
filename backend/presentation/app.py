@@ -1,4 +1,6 @@
+import tomllib
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.concurrency import run_in_threadpool
@@ -27,7 +29,20 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="Tally - Personal Financial Assistant", lifespan=lifespan)
+def _read_version() -> str:
+    """The API version lives only in pyproject.toml."""
+    pyproject = Path(__file__).resolve().parents[1] / "pyproject.toml"
+    with pyproject.open("rb") as file:
+        return tomllib.load(file)["project"]["version"]
+
+
+API_VERSION = _read_version()
+
+app = FastAPI(
+    title="Tally - Personal Financial Assistant",
+    version=API_VERSION,
+    lifespan=lifespan,
+)
 
 register_exception_handlers(app)
 

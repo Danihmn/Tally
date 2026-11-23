@@ -397,9 +397,12 @@
   "linkedTransactionNone": "Nenhuma transação ligada a este lançamento ainda.",
   "linkedLoadError": "Não foi possível carregar o vínculo.",
   "accountsTotalTitle": "Saldo total em contas",
-  "accountsBills": "Faturas abertas nos cartões: {amount}",
+  "accountsBills": "Faturas de {month}: {amount}",
   "@accountsBills": {
     "placeholders": {
+      "month": {
+        "type": "String"
+      },
       "amount": {
         "type": "String"
       }
@@ -409,7 +412,37 @@
   "accountsTabBanks": "Contas bancárias",
   "accountsTabCards": "Cartões de crédito",
   "accountBalanceLabel": "Saldo atual",
-  "accountBillLabel": "Fatura atual",
+  "accountNextBillLabel": "Fatura de {month}",
+  "@accountNextBillLabel": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "accountNextBillLabelGeneric": "Fatura do mês que vem",
+  "cardBillTitle": "Fatura do cartão",
+  "cardBillMissing": "Não foi possível abrir a fatura deste cartão.",
+  "cardBillTotalLabel": "Total da fatura",
+  "cardBillCount": "Transações: {count}",
+  "@cardBillCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cardBillEstimated": "Valor estimado: o banco ainda não informou a fatura de algumas compras, então usamos o dia de fechamento do cartão.",
+  "cardBillEmpty": "Nenhuma compra nesta fatura",
+  "cardBillInstallment": "Parcela {installment}",
+  "@cardBillInstallment": {
+    "placeholders": {
+      "installment": {
+        "type": "String"
+      }
+    }
+  },
+  "cardBillPending": "Em aberto",
   "accountSubBank": "Conta •••• {number}",
   "@accountSubBank": {
     "placeholders": {
@@ -451,6 +484,7 @@
     }
   },
   "accountSeeTransactions": "Ver transações",
+  "accountSeeBill": "Ver fatura",
   "accountSalaryTitle": "Conta salário",
   "accountSalaryText": "TEDs que saem dela para suas contas contam como recebido",
   "accountSalaryBank": "Banco {code}",

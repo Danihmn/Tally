@@ -1261,8 +1261,8 @@ abstract class AppLocalizations {
   /// No description provided for @accountsBills.
   ///
   /// In pt, this message translates to:
-  /// **'Faturas abertas nos cartões: {amount}'**
-  String accountsBills(String amount);
+  /// **'Faturas de {month}: {amount}'**
+  String accountsBills(String month, String amount);
 
   /// No description provided for @accountsNoCards.
   ///
@@ -1288,11 +1288,65 @@ abstract class AppLocalizations {
   /// **'Saldo atual'**
   String get accountBalanceLabel;
 
-  /// No description provided for @accountBillLabel.
+  /// No description provided for @accountNextBillLabel.
   ///
   /// In pt, this message translates to:
-  /// **'Fatura atual'**
-  String get accountBillLabel;
+  /// **'Fatura de {month}'**
+  String accountNextBillLabel(String month);
+
+  /// No description provided for @accountNextBillLabelGeneric.
+  ///
+  /// In pt, this message translates to:
+  /// **'Fatura do mês que vem'**
+  String get accountNextBillLabelGeneric;
+
+  /// No description provided for @cardBillTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Fatura do cartão'**
+  String get cardBillTitle;
+
+  /// No description provided for @cardBillMissing.
+  ///
+  /// In pt, this message translates to:
+  /// **'Não foi possível abrir a fatura deste cartão.'**
+  String get cardBillMissing;
+
+  /// No description provided for @cardBillTotalLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Total da fatura'**
+  String get cardBillTotalLabel;
+
+  /// No description provided for @cardBillCount.
+  ///
+  /// In pt, this message translates to:
+  /// **'Transações: {count}'**
+  String cardBillCount(int count);
+
+  /// No description provided for @cardBillEstimated.
+  ///
+  /// In pt, this message translates to:
+  /// **'Valor estimado: o banco ainda não informou a fatura de algumas compras, então usamos o dia de fechamento do cartão.'**
+  String get cardBillEstimated;
+
+  /// No description provided for @cardBillEmpty.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nenhuma compra nesta fatura'**
+  String get cardBillEmpty;
+
+  /// No description provided for @cardBillInstallment.
+  ///
+  /// In pt, this message translates to:
+  /// **'Parcela {installment}'**
+  String cardBillInstallment(String installment);
+
+  /// No description provided for @cardBillPending.
+  ///
+  /// In pt, this message translates to:
+  /// **'Em aberto'**
+  String get cardBillPending;
 
   /// No description provided for @accountSubBank.
   ///
@@ -1329,6 +1383,12 @@ abstract class AppLocalizations {
   /// In pt, this message translates to:
   /// **'Ver transações'**
   String get accountSeeTransactions;
+
+  /// No description provided for @accountSeeBill.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ver fatura'**
+  String get accountSeeBill;
 
   /// No description provided for @accountSalaryTitle.
   ///

@@ -2,12 +2,14 @@ import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:flutter_localizations/flutter_localizations.dart'
     show GlobalWidgetsLocalizations;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:mobile/app/router/app_router.dart';
 import 'package:mobile/app/router/app_routes.dart';
 import 'package:mobile/app/theme/app_theme.dart';
 import 'package:mobile/core/error/failure.dart';
 import 'package:mobile/core/result/result.dart';
+import 'package:mobile/features/accounts/domain/entities/account_balance.dart';
 import 'package:mobile/features/accounts/presentation/views/accounts_view.dart';
 import 'package:mobile/features/accounts/presentation/widgets/account_card.dart';
 import 'package:mobile/features/transactions/domain/transactions_filter_request.dart';
@@ -17,6 +19,8 @@ import '../../support/accounts_kit.dart';
 import '../../support/pump_app.dart';
 
 void main() {
+  setUpAll(() => initializeDateFormatting('pt_BR'));
+
   late AccountsKit kit;
   late TransactionsFilterRequest request;
 
@@ -32,6 +36,7 @@ void main() {
   Future<void> pumpView(
     WidgetTester tester, {
     VoidCallback? onOpenTransactions,
+    void Function(AccountBalance card)? onOpenCardBill,
   }) async {
     tester.view.physicalSize = const Size(800, 3000);
     tester.view.devicePixelRatio = 1;
@@ -42,23 +47,21 @@ void main() {
         createViewModel: () => kit.viewModel,
         filterRequest: request,
         onOpenTransactions: onOpenTransactions ?? () {},
+        onOpenCardBill: onOpenCardBill ?? (_) {},
       ),
     );
     await tester.pumpAndSettle();
   }
 
   group('AccountsView header', () {
-    testWidgets('shows_the_total_of_the_accounts_and_the_open_bills', (
+    testWidgets('shows_the_total_of_the_accounts_and_the_bills_of_next_month', (
       tester,
     ) async {
       await pumpView(tester);
 
       expect(find.text('Saldo total em contas'), findsOneWidget);
       expect(find.text('R\$ 2.301,45'), findsWidgets);
-      expect(
-        find.text('Faturas abertas nos cartões: R\$ 1.500,00'),
-        findsOneWidget,
-      );
+      expect(find.text('Faturas de dezembro: R\$ 150,00'), findsOneWidget);
     });
 
     testWidgets('without_cards_it_says_so', (tester) async {
@@ -120,12 +123,28 @@ void main() {
 
       expect(find.text('Itaú Card'), findsOneWidget);
       expect(find.text('Cartão •••• 1234'), findsOneWidget);
-      expect(find.text('Fatura atual'), findsOneWidget);
+      // The bill due next month, not the whole used limit (R$ 1.500,00).
+      expect(find.text('Fatura de dezembro'), findsOneWidget);
+      expect(find.text('R\$ 150,00'), findsOneWidget);
+      expect(find.text('R\$ 1.500,00'), findsNothing);
+      expect(find.text('Ver fatura'), findsOneWidget);
+      // The bar still compares the whole used limit with the limit.
       expect(
         find.text('Usado 30% · Limite R\$ 5.000,00 · Disponível R\$ 3.500,00'),
         findsOneWidget,
       );
       expect(find.byType(LinearProgressIndicator), findsOneWidget);
+    });
+
+    testWidgets('a_card_without_the_next_bill_shows_a_dash', (tester) async {
+      await pumpView(tester);
+      await tester.tap(find.text('Casa'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.textContaining('Cartões de crédito'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Fatura do mês que vem'), findsOneWidget);
+      expect(find.text('—'), findsOneWidget);
     });
 
     testWidgets('a_card_without_credit_data_has_no_bar', (tester) async {
@@ -212,14 +231,24 @@ void main() {
       expect(opened, 1);
     });
 
-    testWidgets('tapping_a_card_asks_for_its_transactions', (tester) async {
-      await pumpView(tester);
+    testWidgets('tapping_a_card_opens_its_bill_not_the_transactions', (
+      tester,
+    ) async {
+      AccountBalance? opened;
+      var transactions = 0;
+      await pumpView(
+        tester,
+        onOpenCardBill: (card) => opened = card,
+        onOpenTransactions: () => transactions++,
+      );
       await tester.tap(find.text('Cartões de crédito 1'));
       await tester.pumpAndSettle();
 
       await tester.tap(find.byType(AccountCard).first);
 
-      expect(request.pendingAccountId, 'a2');
+      expect(opened?.id, 'a2');
+      expect(transactions, 0);
+      expect(request.pendingAccountId, isNull);
     });
     testWidgets('with_the_router_the_tap_goes_to_the_transactions_tab', (
       tester,
@@ -240,6 +269,7 @@ void main() {
         ),
         transactionDetail: (_) => const SizedBox(),
         entryDetail: (_) => const SizedBox(),
+        cardBill: (_) => const SizedBox(),
         users: const SizedBox(),
         userDetail: (_) => const SizedBox(),
         initialLocation: AppRoutes.accounts,

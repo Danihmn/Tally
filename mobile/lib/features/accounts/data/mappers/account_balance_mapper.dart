@@ -23,5 +23,13 @@ extension AccountBalanceDtoMapper on AccountBalanceDto {
     },
     outgoingTransfersAreIncome: outgoingTransfersAreIncome,
     bankCode: bankCode,
+    nextBill: switch (nextBill) {
+      final CardBillSummaryDto bill => CardBillSummary(
+        month: bill.month,
+        total: bill.total,
+        estimated: bill.estimated,
+      ),
+      null => null,
+    },
   );
 }

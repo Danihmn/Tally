@@ -16,7 +16,7 @@ import 'package:mobile/features/household/presentation/viewmodels/household_scop
 ///
 /// Three things load at the same time and each one has its own state, so one
 /// failing does not hide the others: the total of the accounts, the total of
-/// the open bills of the cards, and the list of accounts and cards. The person
+/// the cards' bills due next month, and the list of accounts and cards. The person
 /// is the one shared with the other screens. The balances are the ones the
 /// bank gave in its last sync (nothing is calculated here).
 class AccountsViewModel extends ChangeNotifier {
@@ -25,7 +25,8 @@ class AccountsViewModel extends ChangeNotifier {
     required this._getBalances,
     required this._getTotal,
     required this._updateSettings,
-  }) {
+    DateTime Function()? now,
+  }) : _now = now ?? DateTime.now {
     _scopeController.addListener(_onScopeChanged);
   }
 
@@ -33,6 +34,7 @@ class AccountsViewModel extends ChangeNotifier {
   final GetAccountBalances _getBalances;
   final GetTotalBalance _getTotal;
   final UpdateAccountSettings _updateSettings;
+  final DateTime Function() _now;
   final Set<String> _saving = {};
 
   AccountKind _tab = AccountKind.bank;
@@ -63,8 +65,14 @@ class AccountsViewModel extends ChangeNotifier {
   /// The sum of the balances of the accounts.
   UiState<Decimal> get bankTotal => _bankTotal;
 
-  /// The sum of the open bills of the cards.
+  /// The sum of the bills of the cards due next month ([billMonth]).
   UiState<Decimal> get cardTotal => _cardTotal;
+
+  /// Day 1 of next month: the month of the bills the cards show.
+  DateTime get billMonth {
+    final today = _now();
+    return DateTime(today.year, today.month + 1);
+  }
 
   List<AccountBalance> get _all => switch (_list) {
     UiSuccess<List<AccountBalance>>(:final data) => data,

@@ -11,6 +11,9 @@ abstract final class AppRoutes {
   /// The detail of one entry. It covers the tabs.
   static const entryDetail = '/entries/detail';
   static const accounts = '/accounts';
+
+  /// The bill of one credit card by month. It covers the tabs.
+  static const cardBill = '/accounts/bill';
   static const chat = '/chat';
 
   /// The conversation history. It covers the tabs and pops with the id.

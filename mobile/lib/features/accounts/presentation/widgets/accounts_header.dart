@@ -2,11 +2,13 @@ import 'package:decimal/decimal.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:mobile/app/theme/app_spacing.dart';
 import 'package:mobile/core/state/ui_state.dart';
+import 'package:mobile/core/utils/date_formatter.dart';
 import 'package:mobile/core/utils/money_formatter.dart';
 import 'package:mobile/core/widgets/ellipsis_text.dart';
 import 'package:mobile/l10n/app_localizations.dart';
 
-/// "Saldo total em contas" and, under it, the open bills of the cards. Each
+/// "Saldo total em contas" and, under it, the cards' bills due in [billMonth]
+/// (next month). Each
 /// total has its own state: a failed one only shows "—" and a retry.
 class AccountsHeader extends StatelessWidget {
   const AccountsHeader({
@@ -14,6 +16,7 @@ class AccountsHeader extends StatelessWidget {
     required this.bankTotal,
     required this.cardTotal,
     required this.hasCards,
+    required this.billMonth,
     required this.onRetry,
   });
 
@@ -22,6 +25,9 @@ class AccountsHeader extends StatelessWidget {
 
   /// Whether the person has any card (otherwise "Sem cartões conectados").
   final bool hasCards;
+
+  /// Day 1 of the month of the bills in [cardTotal].
+  final DateTime billMonth;
   final VoidCallback onRetry;
 
   @override
@@ -99,12 +105,13 @@ class AccountsHeader extends StatelessWidget {
       color: onPrimary.withValues(alpha: 0.8),
     );
     if (!hasCards) return Text(l10n.accountsNoCards, style: style);
+    final month = DateFormatter.monthName(billMonth);
     return switch (cardTotal) {
       UiSuccess<Decimal>(:final data) => EllipsisText(
-        l10n.accountsBills(MoneyFormatter.format(data)),
+        l10n.accountsBills(month, MoneyFormatter.format(data)),
         style: style,
       ),
-      UiError<Decimal>() => Text(l10n.accountsBills('—'), style: style),
+      UiError<Decimal>() => Text(l10n.accountsBills(month, '—'), style: style),
       _ => _Placeholder(width: 200, height: 14, color: onPrimary),
     };
   }

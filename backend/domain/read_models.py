@@ -28,6 +28,20 @@ class AccountBalance:
 
 
 @dataclass(slots=True)
+class CardBill:
+    """The bill (fatura) of a credit card for one due month.
+
+    `estimated` is True when at least one transaction had no `billForecastDate` from Pluggy and
+    its bill came from the card's closing day."""
+
+    account: BankAccount
+    month: datetime.date  # Day 1 of the due month
+    total: decimal.Decimal
+    estimated: bool
+    transactions: list[Transaction] = field(default_factory=list)
+
+
+@dataclass(slots=True)
 class TransactionWithOwner:
     transaction: Transaction
     user_id: uuid.UUID

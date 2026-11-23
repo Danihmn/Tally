@@ -5,7 +5,8 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from domain.read_models import AccountBalance
+from domain.credit_card_bills import installment_of
+from domain.read_models import AccountBalance, CardBill
 
 
 class BankAccountQuery(BaseModel):
@@ -73,7 +74,7 @@ class BalanceQuery(BaseModel):
 class TotalBalanceQuery(BaseModel):
     """Query string of GET /bank-accounts/total-balance.
 
-    `type` is required: the balance of the accounts and the open bills of the cards are never
+    `type` is required: the balance of the accounts and the bills of the cards are never
     added together."""
 
     model_config = ConfigDict(extra="forbid")
@@ -84,7 +85,9 @@ class TotalBalanceQuery(BaseModel):
 
 class TotalBalanceResponse(BaseModel):
     type: str  # BANK | CREDIT
+    # BANK: sum of the balances. CREDIT: sum of the bills due in `month` (next month)
     total: decimal.Decimal
+    month: str | None = None  # "YYYY-MM", only for CREDIT
 
 
 class CreditInfoResponse(BaseModel):
@@ -94,6 +97,22 @@ class CreditInfoResponse(BaseModel):
     available_credit_limit: decimal.Decimal | None
     balance_due_date: datetime.datetime | None
     balance_close_date: datetime.datetime | None
+
+
+class CardBillSummaryResponse(BaseModel):
+    """The bill of a card due next month, without its transactions."""
+
+    month: str  # Due month, "YYYY-MM"
+    total: decimal.Decimal
+    estimated: bool
+
+    @classmethod
+    def from_read_model(cls, bill: CardBill) -> "CardBillSummaryResponse":  # noqa: UP037
+        return cls(
+            month=bill.month.strftime("%Y-%m"),
+            total=bill.total,
+            estimated=bill.estimated,
+        )
 
 
 class AccountBalanceResponse(BaseModel):
@@ -112,9 +131,13 @@ class AccountBalanceResponse(BaseModel):
     bank_code: str | None
     updated_at: datetime.datetime | None
     credit: CreditInfoResponse | None  # Only for cards that have credit data
+    # Only for cards: the bill due next month. `balance` stays the whole used limit
+    next_bill: CardBillSummaryResponse | None = None
 
     @classmethod
-    def from_read_model(cls, item: AccountBalance) -> "AccountBalanceResponse":  # noqa: UP037
+    def from_read_model(
+        cls, item: AccountBalance, next_bill: CardBill | None = None
+    ) -> "AccountBalanceResponse":  # noqa: UP037
         account = item.account
         assert account.id is not None
         credit = item.credit_data
@@ -139,4 +162,78 @@ class AccountBalanceResponse(BaseModel):
                 balance_due_date=credit.balance_due_date,
                 balance_close_date=credit.balance_close_date,
             ),
+            next_bill=None
+            if next_bill is None
+            else CardBillSummaryResponse.from_read_model(next_bill),
+        )
+
+
+class CardBillQuery(BaseModel):
+    """Query string of GET /bank-accounts/{id}/bill. `month` is the due month ("YYYY-MM").
+
+    Without `month`, the bill due next month (the one the user pays next month)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    month: str | None = Field(default=None, pattern=r"^[0-9]{4}-(0[1-9]|1[0-2])$")
+
+    def month_start(self) -> datetime.date | None:
+        if self.month is None:
+            return None
+        return datetime.date(int(self.month[:4]), int(self.month[5:7]), 1)
+
+
+class CardBillTransactionResponse(BaseModel):
+    id: uuid.UUID
+    date: datetime.datetime
+    description: str | None
+    amount: decimal.Decimal  # Signed as Pluggy sends it. Use `type` for the direction
+    currency_code: str
+    type: str  # DEBIT (purchase) | CREDIT (refund, credit or bill payment)
+    status: str
+    category: str | None
+    operation_type: str | None
+    installment_number: int | None
+    total_installments: int | None
+
+
+class CardBillResponse(BaseModel):
+    """The bill of one card for one due month: only the installment of that month counts."""
+
+    account_id: uuid.UUID
+    month: str  # Due month, "YYYY-MM"
+    total: decimal.Decimal  # Purchases minus refunds. Payments of other bills are left out
+    # True when some transaction had no bill forecast from Pluggy and its bill was estimated
+    # with the card's closing day
+    estimated: bool
+    transactions: list[CardBillTransactionResponse]
+
+    @classmethod
+    def from_read_model(cls, bill: CardBill) -> "CardBillResponse":  # noqa: UP037
+        assert bill.account.id is not None
+        items = []
+        for t in bill.transactions:
+            assert t.id is not None
+            number, total = installment_of(t)
+            items.append(
+                CardBillTransactionResponse(
+                    id=t.id,
+                    date=t.date,
+                    description=t.description,
+                    amount=t.amount,
+                    currency_code=t.currency_code,
+                    type=t.type,
+                    status=t.status,
+                    category=t.category,
+                    operation_type=t.operation_type,
+                    installment_number=number,
+                    total_installments=total,
+                )
+            )
+        return cls(
+            account_id=bill.account.id,
+            month=bill.month.strftime("%Y-%m"),
+            total=bill.total,
+            estimated=bill.estimated,
+            transactions=items,
         )

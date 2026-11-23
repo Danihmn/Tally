@@ -65,8 +65,10 @@ The LangGraph `PostgresSaver` (the Tally conversation history) creates `checkpoi
 ## Configuration (`.env`)
 
 ```bash
-cp .env.example .env
+cp .env.example.dev .env   # local development
 ```
+
+`.env.example.prod` is the template of the production server (it also has `POSTGRES_USER` and `POSTGRES_PASSWORD`, used by `compose.yaml`). Never commit real secrets in these files.
 
 | Variable | Description |
 |---|---|
@@ -117,7 +119,7 @@ Pluggy tells us when an item is created, updated or deleted by calling a webhook
 1. In the `.env`, set ngrok's static domain:
 
    ```
-   PUBLIC_BASE_URL=https://gatherer-darkened-swifter.ngrok-free.dev
+   PUBLIC_BASE_URL=https://<your-static-domain>.ngrok-free.dev
    ```
 
 2. Start the API (previous section). It must be running before the tunnel.
@@ -125,7 +127,7 @@ Pluggy tells us when an item is created, updated or deleted by calling a webhook
 3. In another terminal, open the tunnel:
 
    ```bash
-   ngrok http http://127.0.0.1:8000 --url https://gatherer-darkened-swifter.ngrok-free.dev
+   ngrok http http://127.0.0.1:8000 --url https://<your-static-domain>.ngrok-free.dev
    ```
 
 How it works:
@@ -144,24 +146,33 @@ How it works:
 - The tunnel must be open when Pluggy updates the data. With it closed, ngrok answers `404 ERR_NGROK_3200` and Pluggy gives up after a few attempts.
 - ngrok's inspector, with the received requests, is at `http://127.0.0.1:4040`.
 
-## Deployment (planned): AWS Lightsail
+## Deployment: AWS Lightsail
 
-**Status:** planned, the decision is not final.
+**Status:** in production.
 
 **Why Lightsail:**
 
 - Low management complexity: a fixed-plan virtual server, without the IAM / VPC / ECS setup of the larger AWS services.
 - Low and predictable cost, which fits a private app used by two people.
 
-**Intended shape:**
+**Current shape:**
 
-- One Lightsail instance running the FastAPI API.
-- PostgreSQL on the same instance (cheapest) or on a Lightsail managed database (less upkeep).
-- A static IP and a domain, with HTTPS.
+- One Lightsail instance (Ubuntu), reached by SSH, running Docker Compose in `/home/ubuntu/app` (`compose.yaml`).
+- Three services: `db` (PostgreSQL 17 on the same instance, volume `pgdata`), `api` (image `ghcr.io/danihmn/tally:latest`, gunicorn + uvicorn worker) and `caddy` (reverse proxy with automatic HTTPS, `Caddyfile`).
+- The secrets are in a `.env` file on the server, next to `compose.yaml` (template: `.env.example.prod`). They are not in the repository.
+- The AI uses a model on AWS Bedrock (`BEDROCK_*` variables).
+
+**How a deploy works** (`.github/workflows/deploy.yml`, on every push to `main`):
+
+1. Build the image from `backend/` and push it to GitHub Container Registry (`latest` and the commit sha).
+2. Copy `compose.yaml` and `Caddyfile` to the server by SSH.
+3. On the server: `docker compose pull api`, `docker compose run --rm api alembic upgrade head` (migrations), `docker compose up -d`, `docker image prune -f`.
+
+GitHub secrets used: `SSH_HOST`, `SSH_USER`, `SSH_KEY`. The same workflow also builds and distributes the mobile app (see `mobile/README.md` and the root `README.md`).
 
 **Single worker (required for now):**
 
-- The API runs with **one worker, one process** (for example `uvicorn` without `--workers`, and no `--reload` in production). One instance only: no auto-scaling, no second instance behind a load balancer.
+- The API runs with **one worker, one process** (the Dockerfile's `gunicorn` has no `--workers`, so it uses the default of 1; no `--reload` in production). One instance only: no auto-scaling, no second instance behind a load balancer.
 - Why: the webhook registration (`register_webhooks`, called in the app's `lifespan`) runs at the startup of every process. It reads the webhooks in Pluggy, and if the secret does not match the stored hash it rotates it: new secret in Pluggy first, then its hash in the database. Two processes starting together can do this at the same time. Pluggy then keeps one secret and the database the hash of the other, and every webhook gets a 401 until the next restart.
 - **If more than one worker is ever needed, or AWS auto-scaling is turned on, first implement a lock in the webhook registration** (`jobs/webhook_registration.py`). Use a PostgreSQL advisory lock around the whole loop of users and `ensure_item_webhooks`, on the same session (connection), released in a `finally`:
 
@@ -185,19 +196,29 @@ with get_session() as session:
 - The static public domain replaces ngrok in production: `PUBLIC_BASE_URL` becomes that domain, and the webhook registration (`jobs/webhook_registration.py`) uses it as it does today.
 - ngrok stays only for local development.
 
-**Open points (to decide):**
+**Domain and Cloudflare:**
 
-- [ ] PostgreSQL on the instance or managed.
-- [ ] HTTPS: reverse proxy (Caddy / nginx + Let's Encrypt) or Lightsail load balancer.
-- [ ] Backups / snapshots. The transaction history must not be lost (see `CLAUDE.md`, section 5.4).
-- [ ] How the secrets (`JWT_SECRET_KEY`, `ENCRYPTION_KEY`, `DATABASE_URL`) reach the server.
-- [ ] How the API is run (systemd or Docker).
+- The API domain (`api.tally-api.com`, see `Caddyfile`) goes through **Cloudflare**, which points to the Lightsail instance. Caddy serves HTTPS on the server.
+- Cloudflare is set up in its dashboard, not in this repository (no code or compose change is needed for it).
+- `PUBLIC_BASE_URL` is this domain. Pluggy's webhooks and the mobile app both reach the API through it.
+- To confirm (the current settings are not documented yet):
+  - [ ] DNS record: proxied (orange cloud) or DNS only (grey cloud).
+  - [ ] SSL/TLS mode. If the record is proxied, use **Full (strict)**: Caddy has its own certificate, and *Flexible* mode can cause redirect loops.
+  - [ ] If proxied: no Cloudflare rule (WAF, bot protection, rate limit) may block `POST /webhooks/pluggy/*`. Pluggy needs a `2XX` in 10 seconds.
+  - [ ] If proxied: the client IP arrives in the `CF-Connecting-IP` header. The API does not read it today, so logs show Cloudflare's IP.
 
-Prices and plan sizes are not written here because they change. Check the AWS pricing when deciding.
+**Decided:** PostgreSQL on the instance (Compose), HTTPS with Caddy, the API runs in Docker, secrets in the server's `.env`.
+
+**Open points:**
+
+- [ ] Backups / snapshots of the `pgdata` volume. The transaction history must not be lost (see `CLAUDE.md`, section 5.4).
+- [ ] Run the unit tests in CI before the deploy (today the workflow does not run them).
+
+Prices and plan sizes are not written here because they change. Check the AWS pricing.
 
 ## Testing flow
 
-1. Postgres running, with the scripts applied.
+1. Postgres running, with the migrations applied (`uv run alembic upgrade head`).
 2. `.env` configured.
 3. API up.
 4. ngrok up.
