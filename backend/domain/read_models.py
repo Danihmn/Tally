@@ -39,6 +39,8 @@ class CardBill:
     total: decimal.Decimal
     estimated: bool
     transactions: list[Transaction] = field(default_factory=list)
+    # Transactions in another currency without the converted value: left out of `total`
+    unconverted_count: int = 0
 
 
 @dataclass(slots=True)
@@ -55,6 +57,8 @@ class TransactionSummary:
     credit_total: decimal.Decimal = decimal.Decimal("0.00")
     debit_count: int = 0
     credit_count: int = 0
+    # In another currency without the converted value: not in the totals above
+    unconverted_count: int = 0
 
 
 @dataclass(slots=True)

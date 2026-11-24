@@ -197,6 +197,50 @@ class OutputTests(ToolTestCase):
         self.assertIn("Total debits: 1234.50 (80 transactions)", result)
         self.assertIn("Total credits: 500.00 (54 transactions)", result)
 
+    def test_a_foreign_purchase_shows_the_value_in_reais_and_the_original(self):
+        self.mocks["search_transactions"].return_value = (
+            [
+                TransactionWithOwner(
+                    transaction=make_transaction(
+                        date=utc(2026, 11, 5),
+                        currency_code="USD",
+                        amount=Decimal("20"),
+                        amount_in_account_currency=Decimal("120"),
+                        description="Claude",
+                    ),
+                    user_id=USER_ID,
+                )
+            ],
+            1,
+        )
+
+        result = get_my_transactions.func(runtime=self.runtime)
+
+        self.assertIn("120.00 (original: USD 20.00)", result)
+
+    def test_unconverted_foreign_transactions_are_warned_about(self):
+        self.mocks["search_transactions"].return_value = (
+            [TransactionWithOwner(transaction=make_transaction(), user_id=USER_ID)],
+            1,
+        )
+        self.mocks["summarize_transactions"].return_value = TransactionSummary(
+            unconverted_count=2
+        )
+
+        result = get_my_transactions.func(runtime=self.runtime)
+
+        self.assertIn("WARNING: 2 transaction(s) in a foreign currency", result)
+
+    def test_no_warning_when_every_transaction_is_converted(self):
+        self.mocks["search_transactions"].return_value = (
+            [TransactionWithOwner(transaction=make_transaction(), user_id=USER_ID)],
+            1,
+        )
+
+        result = get_my_transactions.func(runtime=self.runtime)
+
+        self.assertNotIn("WARNING", result)
+
     def test_the_summary_uses_the_same_filters_as_the_listing(self):
         get_my_transactions.func(runtime=self.runtime, type="DEBIT")
 

@@ -17,6 +17,7 @@ from collections.abc import Iterable
 from decimal import Decimal
 
 from domain.entities import Transaction
+from domain.transaction_amounts import amount_in_currency, is_unconverted
 from utils.dates import clamp_day_to_month, next_month_start
 
 BILL_PAYMENT_OPERATION = "PAGAMENTO_FATURA"
@@ -85,12 +86,26 @@ def is_bill_payment(transaction: Transaction) -> bool:
     return transaction.operation_type == BILL_PAYMENT_OPERATION
 
 
-def bill_total(transactions: Iterable[Transaction]) -> Decimal:
-    """Purchases (DEBIT) add, refunds and credits (CREDIT) subtract. Bill payments are left out."""
+def bill_total(transactions: Iterable[Transaction], currency: str = "BRL") -> Decimal:
+    """Purchases (DEBIT) add, refunds and credits (CREDIT) subtract. Bill payments are left out.
+
+    Amounts are in `currency` (the card's): a purchase in another currency counts with the
+    value converted by the bank. One without it is left out (see `unconverted_count`)."""
     total = Decimal("0.00")
     for transaction in transactions:
         if is_bill_payment(transaction):
             continue
-        amount = abs(transaction.amount)
+        amount = amount_in_currency(transaction, currency)
+        if amount is None:
+            continue
         total += amount if transaction.type == "DEBIT" else -amount
     return total
+
+
+def unconverted_count(transactions: Iterable[Transaction], currency: str = "BRL") -> int:
+    """How many transactions `bill_total` leaves out for having no converted value."""
+    return sum(
+        1
+        for transaction in transactions
+        if not is_bill_payment(transaction) and is_unconverted(transaction, currency)
+    )

@@ -8,6 +8,7 @@ from domain.credit_card_bills import (
     forecast_month,
     installment_of,
     is_bill_payment,
+    unconverted_count,
 )
 from tests.factories import make_transaction, utc
 
@@ -137,6 +138,41 @@ class BillTotalTests(unittest.TestCase):
 
     def test_an_empty_bill_is_zero(self):
         self.assertEqual(bill_total([]), Decimal("0.00"))
+
+
+class ForeignCurrencyBillTests(unittest.TestCase):
+    def _usd(self, **overrides):
+        return make_transaction(
+            currency_code="USD",
+            amount=Decimal("20.00"),
+            type="DEBIT",
+            amount_in_account_currency=Decimal("120.00"),
+            **overrides,
+        )
+
+    def test_a_dollar_purchase_counts_with_the_value_in_reais(self):
+        transactions = [make_transaction(amount=Decimal("80.00"), type="DEBIT"), self._usd()]
+
+        self.assertEqual(bill_total(transactions, "BRL"), Decimal("200.00"))
+
+    def test_a_dollar_purchase_without_the_converted_value_is_left_out(self):
+        unconverted = make_transaction(
+            currency_code="USD", amount=Decimal("20.00"), type="DEBIT"
+        )
+        transactions = [make_transaction(amount=Decimal("80.00"), type="DEBIT"), unconverted]
+
+        self.assertEqual(bill_total(transactions, "BRL"), Decimal("80.00"))
+        self.assertEqual(unconverted_count(transactions, "BRL"), 1)
+
+    def test_nothing_is_unconverted_when_every_purchase_has_its_value(self):
+        self.assertEqual(unconverted_count([self._usd()], "BRL"), 0)
+
+    def test_a_bill_payment_is_not_counted_as_unconverted(self):
+        payment = make_transaction(
+            currency_code="USD", operation_type="PAGAMENTO_FATURA", type="CREDIT"
+        )
+
+        self.assertEqual(unconverted_count([payment], "BRL"), 0)
 
 
 if __name__ == "__main__":

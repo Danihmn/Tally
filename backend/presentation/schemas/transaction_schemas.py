@@ -142,8 +142,10 @@ class TransactionResponse(BaseModel):
     user_id: uuid.UUID  # The owner of the account
     date: datetime.datetime
     description: str | None
-    amount: decimal.Decimal  # Signed as Pluggy sends it. Use `type` for the direction
+    amount: decimal.Decimal  # Signed as Pluggy sends it, in `currency_code`. Use `type` for the direction
     currency_code: str
+    # Value in the currency of the account. Only for a purchase in another currency (USD...)
+    amount_in_account_currency: decimal.Decimal | None
     type: str
     status: str
     category: str | None

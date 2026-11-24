@@ -22,7 +22,12 @@ from infra.database.models import BankAccounts, PluggyItems, Transactions
 from infra.repositories.common.exceptions import (
     translate_db_errors,
 )
-from infra.repositories.common.transaction_filters import apply_filters, join_owner
+from infra.repositories.common.transaction_filters import (
+    apply_filters,
+    effective_amount,
+    join_owner,
+    unconverted,
+)
 
 # Columns never overwritten when the transaction already exists.
 _KEEP_ON_CONFLICT = {"id", "created_at", "pluggy_transaction_id", "bank_account_id"}
@@ -236,13 +241,15 @@ def count_transactions(session: Session, filters: TransactionFilters) -> int:
 def summarize_transactions(
     session: Session, filters: TransactionFilters
 ) -> list[tuple[str, decimal.Decimal, int]]:
-    """(type, sum of abs(amount), count) per transaction type, over everything the filters match."""
+    """(type, sum of the amount in the account currency, count) per transaction type, over everything
+    the filters match. A transaction in another currency with no converted value is not counted
+    here (see `count_unconverted`)."""
     stmt = apply_filters(
         join_owner(
             select(
                 Transactions.type,
-                func.coalesce(func.sum(func.abs(Transactions.amount)), 0),
-                func.count(Transactions.id),
+                func.coalesce(func.sum(effective_amount()), 0),
+                func.count(effective_amount()),
             )
         ),
         filters,
@@ -251,13 +258,24 @@ def summarize_transactions(
 
 
 @translate_db_errors("transactions")
+def count_unconverted(session: Session, filters: TransactionFilters) -> int:
+    """How many matching transactions are in another currency than their account's and have no
+    converted value from Pluggy. They are left out of every total."""
+    stmt = apply_filters(
+        join_owner(select(func.count(Transactions.id)).where(unconverted())), filters
+    )
+    return session.scalar(stmt) or 0
+
+
+@translate_db_errors("transactions")
 def sum_transactions_amount(
     session: Session, filters: TransactionFilters
 ) -> decimal.Decimal:
-    """Sum of abs(amount) of everything the filters match (0 when nothing matches, no credit card payments)."""
+    """Sum of the amount in the account currency of everything the filters match (0 when nothing
+    matches, no credit card payments)."""
     stmt = apply_filters(
         join_owner(
-            select(func.coalesce(func.sum(func.abs(Transactions.amount)), 0)).where(
+            select(func.coalesce(func.sum(effective_amount()), 0)).where(
                 BankAccounts.subtype != "CREDIT_CARD"
             )
         ),
@@ -270,13 +288,14 @@ def sum_transactions_amount(
 def list_top_transactions(
     session: Session, filters: TransactionFilters, limit: int
 ) -> list[tuple[datetime.datetime, str | None, decimal.Decimal]]:
-    """(date, description, abs(amount)) of the `limit` biggest transactions the filters match (no credit card payments)."""
-    amount = func.abs(Transactions.amount)
+    """(date, description, amount in the account currency) of the `limit` biggest transactions the
+    filters match (no credit card payments, no transaction without a converted value)."""
+    amount = effective_amount()
     stmt = (
         apply_filters(
             join_owner(
                 select(Transactions.date, Transactions.description, amount).where(
-                    BankAccounts.subtype != "CREDIT_CARD"
+                    BankAccounts.subtype != "CREDIT_CARD", amount.is_not(None)
                 )
             ),
             filters,
@@ -293,7 +312,7 @@ def list_top_transactions(
 def sum_transactions_by_day(
     session: Session, filters: TransactionFilters
 ) -> list[tuple[datetime.date, decimal.Decimal]]:
-    """(UTC day, sum of abs(amount)) per day that has transactions, oldest day first.
+    """(UTC day, sum of the amount in the account currency) per day that has transactions, oldest day first.
 
     The day is cut in UTC on purpose: it does not depend on the time zone of the connection.
     'UTC' is written in the SQL (not a bind parameter), so GROUP BY matches the selected column.
@@ -303,7 +322,8 @@ def sum_transactions_by_day(
     )
     stmt = (
         apply_filters(
-            join_owner(select(day, func.sum(func.abs(Transactions.amount)))), filters
+            join_owner(select(day, func.coalesce(func.sum(effective_amount()), 0))),
+            filters,
         )
         .group_by(day)
         .order_by(day)
@@ -318,7 +338,7 @@ def summarize_transactions_by(
     by_owner: bool,
     by_category: bool,
 ) -> list[tuple[uuid.UUID | None, str | None, str, decimal.Decimal, int]]:
-    """(owner user id, category, type, sum of abs(amount), count) per group and type.
+    """(owner user id, category, type, sum of the amount in the account currency, count) per group and type.
 
     A column that is not grouped comes back as None.
     """
@@ -330,8 +350,8 @@ def summarize_transactions_by(
                 owner,
                 category,
                 Transactions.type,
-                func.coalesce(func.sum(func.abs(Transactions.amount)), 0),
-                func.count(Transactions.id),
+                func.coalesce(func.sum(effective_amount()), 0),
+                func.count(effective_amount()),
             )
         ),
         filters,

@@ -113,6 +113,25 @@ class GetCardBillTests(unittest.TestCase):
         self.assertEqual([t.id for t in bill.transactions], [in_bill.id])
         self.assertTrue(bill.estimated)
 
+    def test_a_dollar_purchase_counts_in_reais_and_one_without_conversion_is_warned(self):
+        self._stored(
+            make_transaction(
+                date=utc(2026, 11, 20),
+                currency_code="USD",
+                amount=Decimal("20.00"),
+                amount_in_account_currency=Decimal("120.00"),
+            ),
+            make_transaction(
+                date=utc(2026, 11, 21), currency_code="USD", amount=Decimal("5.00")
+            ),
+            make_transaction(date=utc(2026, 11, 22), amount=Decimal("30.00")),
+        )
+
+        bill = get_card_bill(self.session, HOUSEHOLD_ID, ACCOUNT_ID, DEC)
+
+        self.assertEqual(bill.total, Decimal("150.00"))
+        self.assertEqual(bill.unconverted_count, 1)
+
     def test_a_bill_with_only_pluggy_forecasts_is_not_estimated(self):
         self._stored(
             make_transaction(

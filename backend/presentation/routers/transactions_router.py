@@ -57,6 +57,7 @@ def _to_response(item: TransactionWithOwner) -> TransactionResponse:
         description=t.description,
         amount=t.amount,
         currency_code=t.currency_code,
+        amount_in_account_currency=t.amount_in_account_currency,
         type=t.type,
         status=t.status,
         category=t.category,

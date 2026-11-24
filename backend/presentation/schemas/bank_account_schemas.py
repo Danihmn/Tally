@@ -187,8 +187,10 @@ class CardBillTransactionResponse(BaseModel):
     id: uuid.UUID
     date: datetime.datetime
     description: str | None
-    amount: decimal.Decimal  # Signed as Pluggy sends it. Use `type` for the direction
+    amount: decimal.Decimal  # Signed as Pluggy sends it, in `currency_code`. Use `type` for the direction
     currency_code: str
+    # Value in the currency of the card (what the bill charged). Only for a purchase in another currency
+    amount_in_account_currency: decimal.Decimal | None
     type: str  # DEBIT (purchase) | CREDIT (refund, credit or bill payment)
     status: str
     category: str | None
@@ -206,6 +208,8 @@ class CardBillResponse(BaseModel):
     # True when some transaction had no bill forecast from Pluggy and its bill was estimated
     # with the card's closing day
     estimated: bool
+    # Purchases in another currency without the converted value: left out of `total`
+    unconverted_count: int
     transactions: list[CardBillTransactionResponse]
 
     @classmethod
@@ -222,6 +226,7 @@ class CardBillResponse(BaseModel):
                     description=t.description,
                     amount=t.amount,
                     currency_code=t.currency_code,
+                    amount_in_account_currency=t.amount_in_account_currency,
                     type=t.type,
                     status=t.status,
                     category=t.category,
@@ -235,5 +240,6 @@ class CardBillResponse(BaseModel):
             month=bill.month.strftime("%Y-%m"),
             total=bill.total,
             estimated=bill.estimated,
+            unconverted_count=bill.unconverted_count,
             transactions=items,
         )
