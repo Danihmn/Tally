@@ -1,7 +1,7 @@
 name: mobile
 description: "Tally: personal finance assistant for a household (mobile client of the Tally API)."
 publish_to: "none"
-version: 1.0.1
+version: 1.0.2+2
 
 environment:
   sdk: ^3.14.0
