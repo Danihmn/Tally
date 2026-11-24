@@ -62,6 +62,23 @@ Rules:
 
 The LangGraph `PostgresSaver` (the Tally conversation history) creates `checkpoints`, `checkpoint_blobs`, `checkpoint_writes` and `checkpoint_migrations` in the same schema (`public`) when the app calls `setup()`. They must **never** appear in `models.py` or in a migration. `include_object` (`infra/database/alembic_filters.py`, list `IGNORED_TABLES`) makes autogenerate skip them, so it never writes a `drop_table` for them. If LangGraph adds a new table, add it to that list.
 
+## AI agents
+
+Tally AI (`agents/tally/`) is the orchestrator. For some topics it asks a **specialist agent** through a
+tool, instead of reading the data itself:
+
+| Specialist | Tool in Tally | Topic |
+|---|---|---|
+| Hawk (`agents/hawk/`) | `ask_hawk` (`agents/tools/hawk.py`) | Bank transactions and spending totals, per person and per household |
+
+- Tally writes one complete request (period, who, what). Hawk has no history. The user comes from
+  Tally's context, never from the model.
+- A specialist tool uses `run_subagent` (`agents/common/subagents.py`). Its tokens are not streamed
+  to the app: only Tally's answer is.
+- Rule for **every** specialist: Tally's final answer must say it consulted it (for example
+  "Consultei o Hawk"). It is in `CONSULTED_RULE`, in the same file. A new specialist = a new
+  tool that calls `run_subagent`, and a line in the table above.
+
 ## Configuration (`.env`)
 
 ```bash
