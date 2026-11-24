@@ -6,6 +6,8 @@ from langchain.agents.middleware import ModelRequest, dynamic_prompt
 from agents.common.chat_model import build_chat_model
 from agents.common.checkpointer import get_checkpointer
 from agents.common.clock import today
+from agents.common.people import people_prompt
+from agents.common.subagents import CONSULTED_RULE
 from agents.tally.context import TallyContext
 from agents.tools.accounts import (
     get_household_bank_accounts,
@@ -15,13 +17,8 @@ from agents.tools.accounts import (
 )
 from agents.tools.calculator import calculate
 from agents.tools.entries import get_household_entries, get_my_entries
+from agents.tools.hawk import ask_hawk
 from agents.tools.recurrences import get_household_recurrences, get_my_recurrences
-from agents.tools.transactions import (
-    get_household_spending_summary,
-    get_household_transactions,
-    get_my_spending_summary,
-    get_my_transactions,
-)
 
 TALLY_AI_SYSTEM_PROMPT = (
     "You are Tally AI, a personal finance assistant for a couple. "
@@ -51,14 +48,18 @@ TALLY_AI_SYSTEM_PROMPT = (
 
 TALLY_AI_TOOLS_PROMPT = (
     "Always call a tool to read the real data before answering. "
-    "You can see: bank transactions, spending totals per person and category, financial "
-    "entries (lançamentos), recurrences (recorrências), bank accounts and credit cards. "
+    "You can see: bank transactions and spending totals per person and category (through "
+    "Hawk, the spending specialist), financial entries (lançamentos), recurrences "
+    "(recorrências), bank accounts and credit cards. "
     "First understand what the person WANTS, even when they use other words, then choose the "
     "tool by WHAT the question is about:\n"
-    "- transactions, gastos, compras, recebimentos (one by one, a list) "
-    "-> the transactions tools;\n"
-    "- totals per person or per category: quanto cada um gastou, quem gastou mais, por pessoa, "
-    "por categoria, onde mais gastei -> the spending summary tools;\n"
+    "- transactions, gastos, compras, recebimentos (one by one, a list), and totals per person "
+    "or per category (quanto cada um gastou, quem gastou mais, por pessoa, por categoria, onde "
+    "mais gastei) -> ask_hawk. You have no transaction tools: Hawk reads them. Write Hawk ONE "
+    "complete request from what the person wants: the period (dates, or \"current month\"), "
+    "WHO (the person talking by name, the partner by name, or the whole household) and WHAT "
+    "(a list, totals, a comparison). Hawk does not see the conversation, so never assume it "
+    "knows what was said before;\n"
     "- financial entries (lançamentos): previsto, planejado, a pagar, a receber, contas do mês, "
     "vencimento, atrasado, parcela, conciliado -> the entries tools;\n"
     "- recurrences (recorrências): contas fixas, gastos fixos, assinaturas, mensalidade, "
@@ -72,19 +73,19 @@ TALLY_AI_TOOLS_PROMPT = (
     "do mês -> the recurrences tools (what repeats every month) AND the entries tools (what is "
     "planned for the month);\n"
     "- resumo, visão geral, saúde financeira, como estamos -> the bank accounts tools, the "
-    "entries tools and the spending summary tools.\n"
+    "entries tools and ask_hawk (for the spending).\n"
     "Before saying you do not know something, think about which of the data above is closest "
     "to what the person wants and use it. If the question is truly ambiguous, ask ONE short "
     "question with the options (for example: \"Você quer ver as recorrências ou os lançamentos "
     "do mês?\"). Only say a topic is outside what you can see when none of the data above "
     "relates to it, and then say what you can help with.\n"
     "Then choose by WHO the question is about:\n"
-    "- the person talking (eu, meu, minha, gastei) -> get_my_transactions, "
-    "get_my_spending_summary, get_my_entries, get_my_recurrences, get_my_bank_accounts or "
-    "get_my_credit_cards;\n"
+    "- the person talking (eu, meu, minha, gastei) -> get_my_entries, get_my_recurrences, "
+    "get_my_bank_accounts or get_my_credit_cards (and, for transactions, ask Hawk about "
+    "that person);\n"
     "- the couple or the house (nós, nosso, a gente, casa, vocês, por pessoa, quem gastou mais) "
-    "-> get_household_transactions, get_household_spending_summary, get_household_entries, "
-    "get_household_recurrences, get_household_bank_accounts or get_household_credit_cards, "
+    "-> get_household_entries, get_household_recurrences, get_household_bank_accounts or "
+    "get_household_credit_cards (and, for transactions, ask Hawk about the whole household), "
     "which already say whose each line is. "
     "Never answer a question about the couple with a get_my_* tool, and never say you cannot "
     "see the partner's data: the get_household_* tools have it.\n"
@@ -96,7 +97,7 @@ TALLY_AI_TOOLS_PROMPT = (
     "Use the totals the tools return as they are. For any other math (difference, percentage, "
     "split, average, a sum the tools did not return) call calculate: never do math yourself. "
     "Say which period you consulted (for transactions and entries) or the last update date "
-    "(for accounts and cards). Never mention tool names to the user."
+    "(for accounts and cards). Never mention tool names to the user (the name of a specialist, like Hawk, is not a tool name: say it)."
 )
 
 LANGUAGE_REMINDER = (
@@ -104,29 +105,12 @@ LANGUAGE_REMINDER = (
 )
 
 
-def _people_prompt(context: TallyContext) -> str:
-    """Who is talking and who the partner is: the tools name each owner by nickname (first name if none)."""
-    me = context.user.display_name
-    text = (
-        f"You are talking to {me}. In the tool results, the owner column uses these names: "
-        f'"eu", "meu", "minha", "gastei" mean {me}.'
-    )
-    if not context.partner_names:
-        return text + " No other person is in the household yet."
-    partners = " and ".join(context.partner_names)
-    return (
-        f"{text} The other person in the household is {partners}: "
-        '"ele", "ela", "meu marido", "minha esposa", "meu parceiro", "minha parceira" '
-        f"mean {partners}."
-    )
-
-
 @dynamic_prompt
 def _system_prompt(request: ModelRequest[TallyContext]) -> str:
     """The model has no clock and no idea who is talking: both go in every call."""
     return (
-        f"{TALLY_AI_SYSTEM_PROMPT}\n\n{TALLY_AI_TOOLS_PROMPT}\n\n"
-        f"{_people_prompt(request.runtime.context)}\n\n"
+        f"{TALLY_AI_SYSTEM_PROMPT}\n\n{TALLY_AI_TOOLS_PROMPT}\n\n{CONSULTED_RULE}\n\n"
+        f"{people_prompt(request.runtime.context)}\n\n"
         f"Today is {today().isoformat()}.\n\n"
         f"{LANGUAGE_REMINDER}"
     )
@@ -137,10 +121,7 @@ def build_tally_ai():
     return create_agent(
         model=build_chat_model(),
         tools=[
-            get_my_transactions,
-            get_household_transactions,
-            get_my_spending_summary,
-            get_household_spending_summary,
+            ask_hawk,
             get_my_entries,
             get_household_entries,
             get_my_recurrences,

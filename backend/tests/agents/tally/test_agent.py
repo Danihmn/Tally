@@ -20,19 +20,15 @@ from agents.tools.accounts import (
 from agents.tools.calculator import calculate
 from agents.tools.entries import get_household_entries, get_my_entries
 from agents.tools.recurrences import get_household_recurrences, get_my_recurrences
-from agents.tools.transactions import (
-    get_household_spending_summary,
-    get_household_transactions,
-    get_my_spending_summary,
-    get_my_transactions,
-)
+from agents.common.subagents import CONSULTED_RULE
+from agents.tools.hawk import ask_hawk
 from tests.factories import make_user
 
 
 @patch("agents.tally.agent.create_agent")
 @patch("agents.tally.agent.build_chat_model")
 class TestBuildTallyAi(unittest.TestCase):
-    def test_agent_gets_every_query_tool_the_calculator_and_the_context_schema(self, build_chat_model, create_agent):
+    def test_agent_gets_hawk_instead_of_the_transaction_tools_and_the_other_query_tools(self, build_chat_model, create_agent):
         agent = build_tally_ai()
 
         kwargs = create_agent.call_args.kwargs
@@ -40,10 +36,7 @@ class TestBuildTallyAi(unittest.TestCase):
         self.assertEqual(
             kwargs["tools"],
             [
-                get_my_transactions,
-                get_household_transactions,
-                get_my_spending_summary,
-                get_household_spending_summary,
+                ask_hawk,
                 get_my_entries,
                 get_household_entries,
                 get_my_recurrences,
@@ -67,11 +60,8 @@ class TestSystemPrompt(unittest.TestCase):
             text = _system_prompt_text()
 
         self.assertIn(TALLY_AI_SYSTEM_PROMPT, text)
-        self.assertIn("get_my_transactions", text)
-        self.assertIn("get_household_transactions", text)
         for name in (
-            "get_my_spending_summary",
-            "get_household_spending_summary",
+            "ask_hawk",
             "get_my_entries",
             "get_household_entries",
             "get_my_recurrences",
@@ -84,6 +74,25 @@ class TestSystemPrompt(unittest.TestCase):
         ):
             self.assertIn(name, text)
         self.assertIn("Today is 2026-11-10.", text)
+
+    def test_transactions_are_asked_to_hawk_and_the_old_tools_are_gone_from_the_prompt(self):
+        text = _system_prompt_text()
+
+        for name in (
+            "get_my_transactions",
+            "get_household_transactions",
+            "get_my_spending_summary",
+            "get_household_spending_summary",
+        ):
+            self.assertNotIn(name, text)
+        self.assertIn("-> ask_hawk", text)
+        self.assertIn("Hawk does not see the conversation", text)
+
+    def test_prompt_makes_tally_say_it_consulted_the_specialist(self):
+        text = _system_prompt_text()
+
+        self.assertIn(CONSULTED_RULE, text)
+        self.assertIn("Consultei o Hawk", text)
 
     def test_prompt_demands_brazilian_portuguese_and_ends_with_the_reminder(self):
         text = _system_prompt_text()
@@ -132,20 +141,10 @@ def _system_prompt_text(user=None, partner_names=("Bruno",)) -> str:
 
 
 class TestPeopleInThePrompt(unittest.TestCase):
-    def test_the_person_talking_is_named_by_the_nickname(self):
-        text = _system_prompt_text(make_user(first_name="Ana", surname="Aninha"))
+    def test_the_prompt_says_who_is_talking_and_who_the_partner_is(self):
+        text = _system_prompt_text(make_user(first_name="Ana", surname="Aninha"), ("Bibi",))
 
         self.assertIn("You are talking to Aninha.", text)
-        self.assertNotIn("You are talking to Ana.", text)
-
-    def test_without_a_nickname_it_is_the_first_name(self):
-        text = _system_prompt_text(make_user(first_name="Ana"))
-
-        self.assertIn("You are talking to Ana.", text)
-
-    def test_the_partner_comes_as_the_router_named_them(self):
-        text = _system_prompt_text(partner_names=("Bibi",))
-
         self.assertIn("The other person in the household is Bibi", text)
 
 

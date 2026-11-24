@@ -5,8 +5,8 @@ from langchain.agents.middleware import ModelRequest, dynamic_prompt
 
 from agents.common.chat_model import build_chat_model
 from agents.common.clock import today
+from agents.common.people import people_prompt
 from agents.hawk.context import HawkContext
-from agents.tally.agent import _people_prompt
 from agents.tools.calculator import calculate
 from agents.tools.transactions import (
     get_household_spending_summary,
@@ -30,7 +30,10 @@ HAWK_SYSTEM_PROMPT = (
     "answer first, then point out the detail that matters, if there is one.\n"
     "Length: keep it short. Formatting (markdown, lists, tables) must organize the answer, "
     "never make it longer.\n"
-    "Never invent amounts, dates, or transactions; if you do not have the information, say so."
+    "Never invent amounts, dates, or transactions; if you do not have the information, say so.\n"
+    "You are consulted by Tally AI, which sends you one request and writes the final answer to "
+    "the person. Answer that request only, with the facts first and always the period you "
+    "consulted."
 )
 
 HAWK_TOOLS_PROMPT = (
@@ -62,7 +65,7 @@ def _system_prompt(request: ModelRequest[HawkContext]) -> str:
     """The model has no clock and no idea who is talking: both go in every call."""
     return (
         f"{HAWK_SYSTEM_PROMPT}\n\n{HAWK_TOOLS_PROMPT}\n\n"
-        f"{_people_prompt(request.runtime.context)}\n\n"  # type: ignore[arg-type]
+        f"{people_prompt(request.runtime.context)}\n\n"  # type: ignore[arg-type]
         f"Today is {today().isoformat()}.\n\n"
         f"{LANGUAGE_REMINDER}"
     )
