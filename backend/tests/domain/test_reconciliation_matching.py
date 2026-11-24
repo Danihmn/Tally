@@ -37,6 +37,28 @@ class IsMatchTests(unittest.TestCase):
 
         self.assertFalse(is_match(entry, transaction))
 
+    def test_a_dollar_purchase_matches_the_entry_by_the_value_in_reais(self):
+        entry = make_entry(type="EXPENSES", amount=Decimal("120.00"), currency_code="BRL")
+        transaction = make_transaction(
+            type="DEBIT",
+            currency_code="USD",
+            amount=Decimal("20.00"),
+            amount_in_account_currency=Decimal("120.00"),
+        )
+
+        self.assertTrue(is_match(entry, transaction))
+
+    def test_a_dollar_purchase_never_matches_by_its_dollar_amount(self):
+        entry = make_entry(type="EXPENSES", amount=Decimal("20.00"), currency_code="BRL")
+        transaction = make_transaction(
+            type="DEBIT",
+            currency_code="USD",
+            amount=Decimal("20.00"),
+            amount_in_account_currency=Decimal("120.00"),
+        )
+
+        self.assertFalse(is_match(entry, transaction))
+
     def test_different_currency_does_not_match(self):
         self.assertFalse(
             is_match(

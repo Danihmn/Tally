@@ -15,7 +15,7 @@ from agents.common.formatting import (
     text,
 )
 from agents.tools._shared import owner_names, tool_errors
-from domain.entities import User
+from domain.entities import Transaction, User
 from domain.read_models import TransactionFilters, TransactionSummary
 from infra.database.session import get_session
 from services.transactions_service import (
@@ -101,10 +101,23 @@ def _header(
 
 
 def _totals_lines(summary: TransactionSummary) -> list[str]:
-    return [
+    lines = [
         f"Total debits: {money(summary.debit_total)} ({summary.debit_count} transactions)",
         f"Total credits: {money(summary.credit_total)} ({summary.credit_count} transactions)",
     ]
+    if summary.unconverted_count:
+        lines.append(
+            f"WARNING: {summary.unconverted_count} transaction(s) in a foreign currency have no "
+            "value in the account currency and are NOT in these totals. Tell the user."
+        )
+    return lines
+
+
+def _amount_text(t: Transaction) -> str:
+    """The amount in the account currency. A foreign purchase also shows its original value."""
+    if t.amount_in_account_currency is None:
+        return money(t.amount)
+    return f"{money(t.amount_in_account_currency)} (original: {t.currency_code} {money(t.amount)})"
 
 
 def _find_transactions(
@@ -137,7 +150,7 @@ def _find_transactions(
         lines.append(
             " | ".join([
                 day(t.date),
-                money(t.amount),
+                _amount_text(t),
                 t.type,
                 text(t.description),
                 names.get(item.user_id, "?"),

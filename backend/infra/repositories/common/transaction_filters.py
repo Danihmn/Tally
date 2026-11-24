@@ -1,4 +1,4 @@
-from sqlalchemy import Select, exists, func, or_, select
+from sqlalchemy import Select, case, exists, func, or_, select
 
 from domain.read_models import TransactionFilters
 from infra.database.models import (
@@ -19,6 +19,29 @@ def join_owner(stmt: Select) -> Select:
     return stmt.join(
         BankAccounts, Transactions.bank_account_id == BankAccounts.id
     ).join(PluggyItems, BankAccounts.pluggy_item_id == PluggyItems.id)
+
+
+def effective_amount():
+    """Absolute value of the transaction in the currency of its account (SQL side of
+    `domain.transaction_amounts.amount_in_currency`). NULL when it is in another currency and
+    Pluggy sent no converted value: SUM skips it, so it never enters a total as if it were BRL.
+    Needs the statement joined with join_owner() (it reads bank_accounts.currency_code)."""
+    return case(
+        (
+            Transactions.currency_code == BankAccounts.currency_code,
+            func.abs(Transactions.amount),
+        ),
+        (
+            Transactions.amount_in_account_currency.is_not(None),
+            func.abs(Transactions.amount_in_account_currency),
+        ),
+        else_=None,
+    )
+
+
+def unconverted():
+    """SQL condition: in another currency than the account's, without the converted value."""
+    return effective_amount().is_(None)
 
 
 def apply_filters(stmt: Select, filters: TransactionFilters) -> Select:
@@ -43,9 +66,9 @@ def apply_filters(stmt: Select, filters: TransactionFilters) -> Select:
     if filters.search:
         stmt = stmt.where(ilike_contains(Transactions.description, filters.search))
     if filters.min_amount is not None:
-        stmt = stmt.where(func.abs(Transactions.amount) >= filters.min_amount)
+        stmt = stmt.where(effective_amount() >= filters.min_amount)
     if filters.max_amount is not None:
-        stmt = stmt.where(func.abs(Transactions.amount) <= filters.max_amount)
+        stmt = stmt.where(effective_amount() <= filters.max_amount)
     if filters.internal_transfer == UNCLASSIFIED:
         stmt = stmt.where(Transactions.internal_transfer.is_(None))
     elif filters.internal_transfer is not None:

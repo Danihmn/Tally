@@ -133,6 +133,9 @@ def summarize_transactions(
             summary.debit_total, summary.debit_count = total, count
         elif type_ == "CREDIT":
             summary.credit_total, summary.credit_count = total, count
+    summary.unconverted_count = transactions_repository.count_unconverted(
+        session, filters
+    )
     return summary
 
 

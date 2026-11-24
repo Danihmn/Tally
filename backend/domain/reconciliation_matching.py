@@ -8,6 +8,7 @@ import uuid
 from collections import defaultdict
 
 from domain.entities import FinancialEntry, Transaction
+from domain.transaction_amounts import amount_in_currency
 
 DATE_TOLERANCE_DAYS = 3
 
@@ -17,9 +18,9 @@ ENTRY_TYPE_TO_TRANSACTION_TYPE = {"EXPENSES": "DEBIT", "REVENUES": "CREDIT"}
 
 def is_match(entry: FinancialEntry, transaction: Transaction) -> bool:
     """True when the transaction looks like the payment/receipt of the entry."""
-    if abs(transaction.amount) != entry.amount:
-        return False
-    if transaction.currency_code != entry.currency_code:
+    # A purchase in another currency is compared by the value the bank converted (what was charged)
+    amount = amount_in_currency(transaction, entry.currency_code)
+    if amount is None or amount != entry.amount:
         return False
     if transaction.type != ENTRY_TYPE_TO_TRANSACTION_TYPE.get(entry.type):
         return False

@@ -4,7 +4,7 @@ from decimal import Decimal
 
 from sqlalchemy.orm import Session
 
-from domain.credit_card_bills import bill_month_of, bill_total
+from domain.credit_card_bills import bill_month_of, bill_total, unconverted_count
 from domain.entities import BankAccount, CreditData, Transaction
 from domain.read_models import AccountBalance, CardBill
 from infra.repositories import (
@@ -96,9 +96,10 @@ def _bill_of(
     return CardBill(
         account=account,
         month=month,
-        total=bill_total(in_bill),
+        total=bill_total(in_bill, account.currency_code),
         estimated=estimated,
         transactions=in_bill,
+        unconverted_count=unconverted_count(in_bill, account.currency_code),
     )
 
 

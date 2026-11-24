@@ -121,6 +121,16 @@ class SummarizeTransactionsTests(unittest.TestCase):
             (Decimal("10.50"), 3, Decimal("99"), 1),
         )
 
+    def test_the_summary_carries_how_many_foreign_transactions_are_left_out(self):
+        session, filters = MagicMock(), TransactionFilters()
+        with patch(f"{MODULE}.transactions_repository") as repository:
+            repository.summarize_transactions.return_value = []
+            repository.count_unconverted.return_value = 2
+            summary = summarize_transactions(session, filters)
+
+        repository.count_unconverted.assert_called_once_with(session, filters)
+        self.assertEqual(summary.unconverted_count, 2)
+
     def test_a_missing_type_is_zero(self):
         summary = self._summarize([("DEBIT", Decimal("10.50"), 3)])
 
