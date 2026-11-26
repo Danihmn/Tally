@@ -3,6 +3,7 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
+from agents.common.subagents import CONSULTED_RULE
 from agents.tally.agent import (
     LANGUAGE_REMINDER,
     TALLY_AI_SYSTEM_PROMPT,
@@ -18,17 +19,16 @@ from agents.tools.accounts import (
     get_my_credit_cards,
 )
 from agents.tools.calculator import calculate
-from agents.tools.entries import get_household_entries, get_my_entries
-from agents.tools.recurrences import get_household_recurrences, get_my_recurrences
-from agents.common.subagents import CONSULTED_RULE
 from agents.tools.hawk import ask_hawk
+from agents.tools.owl import ask_owl
+from agents.tools.recurrence_detection import create_suggested_recurrence
 from tests.factories import make_user
 
 
 @patch("agents.tally.agent.create_agent")
 @patch("agents.tally.agent.build_chat_model")
 class TestBuildTallyAi(unittest.TestCase):
-    def test_agent_gets_hawk_instead_of_the_transaction_tools_and_the_other_query_tools(self, build_chat_model, create_agent):
+    def test_agent_gets_hawk_and_owl_instead_of_the_transaction_and_planning_tools(self, build_chat_model, create_agent):
         agent = build_tally_ai()
 
         kwargs = create_agent.call_args.kwargs
@@ -37,10 +37,8 @@ class TestBuildTallyAi(unittest.TestCase):
             kwargs["tools"],
             [
                 ask_hawk,
-                get_my_entries,
-                get_household_entries,
-                get_my_recurrences,
-                get_household_recurrences,
+                ask_owl,
+                create_suggested_recurrence,
                 get_my_bank_accounts,
                 get_household_bank_accounts,
                 get_my_credit_cards,
@@ -62,10 +60,8 @@ class TestSystemPrompt(unittest.TestCase):
         self.assertIn(TALLY_AI_SYSTEM_PROMPT, text)
         for name in (
             "ask_hawk",
-            "get_my_entries",
-            "get_household_entries",
-            "get_my_recurrences",
-            "get_household_recurrences",
+            "ask_owl",
+            "create_suggested_recurrence",
             "calculate",
             "get_my_bank_accounts",
             "get_household_bank_accounts",
@@ -109,11 +105,27 @@ class TestSystemPrompt(unittest.TestCase):
         self.assertNotIn("call the person by name", TALLY_AI_SYSTEM_PROMPT)
         self.assertNotIn("NEVER start an answer", TALLY_AI_SYSTEM_PROMPT)
 
-    def test_planning_questions_use_recurrences_and_entries(self):
+    def test_entries_recurrences_and_planning_are_asked_to_owl(self):
         text = _system_prompt_text()
 
         self.assertIn("planejamento", text)
-        self.assertIn("the recurrences tools (what repeats every month) AND the entries tools", text)
+        self.assertIn("sobra no fim do mês -> ask_owl", text)
+        self.assertIn("Owl does not see the conversation", text)
+        for name in (
+            "get_my_entries",
+            "get_household_entries",
+            "get_my_recurrences",
+            "get_household_recurrences",
+        ):
+            self.assertNotIn(name, text)
+
+    def test_suggested_recurrences_are_created_only_after_the_person_confirms(self):
+        text = _system_prompt_text()
+
+        self.assertIn("criar recorrências a partir das transações -> ask_owl", text)
+        self.assertIn("Owl only suggests", text)
+        self.assertIn("create_suggested_recurrence ONLY after the person confirms a specific candidate", text)
+        self.assertIn("Never create a recurrence on your own initiative", text)
 
     def test_ambiguous_questions_get_one_short_question_instead_of_i_dont_know(self):
         text = _system_prompt_text()

@@ -16,9 +16,9 @@ from agents.tools.accounts import (
     get_my_credit_cards,
 )
 from agents.tools.calculator import calculate
-from agents.tools.entries import get_household_entries, get_my_entries
 from agents.tools.hawk import ask_hawk
-from agents.tools.recurrences import get_household_recurrences, get_my_recurrences
+from agents.tools.owl import ask_owl
+from agents.tools.recurrence_detection import create_suggested_recurrence
 
 TALLY_AI_SYSTEM_PROMPT = (
     "You are Tally AI, a personal finance assistant for a couple. "
@@ -49,8 +49,8 @@ TALLY_AI_SYSTEM_PROMPT = (
 TALLY_AI_TOOLS_PROMPT = (
     "Always call a tool to read the real data before answering. "
     "You can see: bank transactions and spending totals per person and category (through "
-    "Hawk, the spending specialist), financial entries (lançamentos), recurrences "
-    "(recorrências), bank accounts and credit cards. "
+    "Hawk, the spending specialist), financial entries (lançamentos) and recurrences "
+    "(recorrências) (through Owl, the planning specialist), bank accounts and credit cards. "
     "First understand what the person WANTS, even when they use other words, then choose the "
     "tool by WHAT the question is about:\n"
     "- transactions, gastos, compras, recebimentos (one by one, a list), and totals per person "
@@ -60,35 +60,43 @@ TALLY_AI_TOOLS_PROMPT = (
     "WHO (the person talking by name, the partner by name, or the whole household) and WHAT "
     "(a list, totals, a comparison). Hawk does not see the conversation, so never assume it "
     "knows what was said before;\n"
-    "- financial entries (lançamentos): previsto, planejado, a pagar, a receber, contas do mês, "
-    "vencimento, atrasado, parcela, conciliado -> the entries tools;\n"
-    "- recurrences (recorrências): contas fixas, gastos fixos, assinaturas, mensalidade, "
-    "salário fixo, todo mês, o que se repete -> the recurrences tools;\n"
+    "- planning: financial entries (lançamentos: previsto, planejado, a pagar, a receber, "
+    "contas do mês, vencimento, atrasado, parcela, conciliado), recurrences (recorrências: "
+    "contas fixas, gastos fixos, assinaturas, mensalidade, salário fixo, todo mês, o que se "
+    "repete), planejamento, orçamento, previsão, como está o mês, o que vem pela frente, sobra "
+    "no fim do mês -> ask_owl. You have no entries or recurrences tools: Owl, the planning "
+    "specialist, reads them. Write Owl ONE complete request from what the person wants: the "
+    "period (a month, dates, or \"current month\") when it matters, WHO (the person talking by "
+    "name, the partner by name, or the whole household) and WHAT (entries, recurrences, a "
+    "month plan). Owl does not see the conversation, so never assume it knows what was said "
+    "before;\n"
+    "- new recurrences from the transactions: sugerir recorrências, o que se repete e não "
+    "está cadastrado, criar recorrências a partir das transações -> ask_owl too. Owl only "
+    "suggests: show the candidates (description, amount, due day, how many months, whose) and "
+    "ask which ones to create. Call create_suggested_recurrence ONLY after the person confirms "
+    "a specific candidate, once per confirmed candidate, with the id Owl returned; a vague "
+    "answer is not a confirmation, so ask again. Never create a recurrence on your own "
+    "initiative;\n"
     "- bank accounts: saldo, conta, conta corrente, poupança, cheque especial, quanto tenho "
     "-> the bank accounts tools;\n"
     "- credit cards: cartão, fatura, limite, vencimento da fatura, pagamento mínimo "
     "-> the credit cards tools.\n"
-    "Broad questions need more than one tool:\n"
-    "- planejamento, orçamento, previsão, como está o mês, o que vem pela frente, sobra no fim "
-    "do mês -> the recurrences tools (what repeats every month) AND the entries tools (what is "
-    "planned for the month);\n"
-    "- resumo, visão geral, saúde financeira, como estamos -> the bank accounts tools, the "
-    "entries tools and ask_hawk (for the spending).\n"
+    "Broad questions need more than one tool: resumo, visão geral, saúde financeira, como "
+    "estamos -> the bank accounts tools, ask_owl (for what is planned) and ask_hawk (for the "
+    "spending).\n"
     "Before saying you do not know something, think about which of the data above is closest "
     "to what the person wants and use it. If the question is truly ambiguous, ask ONE short "
     "question with the options (for example: \"Você quer ver as recorrências ou os lançamentos "
     "do mês?\"). Only say a topic is outside what you can see when none of the data above "
     "relates to it, and then say what you can help with.\n"
     "Then choose by WHO the question is about:\n"
-    "- the person talking (eu, meu, minha, gastei) -> get_my_entries, get_my_recurrences, "
-    "get_my_bank_accounts or get_my_credit_cards (and, for transactions, ask Hawk about "
-    "that person);\n"
+    "- the person talking (eu, meu, minha, gastei) -> get_my_bank_accounts or "
+    "get_my_credit_cards (and ask Hawk or Owl about that person);\n"
     "- the couple or the house (nós, nosso, a gente, casa, vocês, por pessoa, quem gastou mais) "
-    "-> get_household_entries, get_household_recurrences, get_household_bank_accounts or "
-    "get_household_credit_cards (and, for transactions, ask Hawk about the whole household), "
-    "which already say whose each line is. "
+    "-> get_household_bank_accounts or get_household_credit_cards, which already say whose "
+    "each line is (and ask Hawk or Owl about the whole household). "
     "Never answer a question about the couple with a get_my_* tool, and never say you cannot "
-    "see the partner's data: the get_household_* tools have it.\n"
+    "see the partner's data: the get_household_* tools, Hawk and Owl have it.\n"
     "Entries are what was planned or expected for a month; recurrences are the monthly "
     "templates that create entries; transactions are money that really moved in the bank: "
     "never mix the three. "
@@ -122,10 +130,8 @@ def build_tally_ai():
         model=build_chat_model(),
         tools=[
             ask_hawk,
-            get_my_entries,
-            get_household_entries,
-            get_my_recurrences,
-            get_household_recurrences,
+            ask_owl,
+            create_suggested_recurrence,
             get_my_bank_accounts,
             get_household_bank_accounts,
             get_my_credit_cards,

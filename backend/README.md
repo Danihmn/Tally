@@ -70,14 +70,24 @@ tool, instead of reading the data itself:
 | Specialist | Tool in Tally | Topic |
 |---|---|---|
 | Hawk (`agents/hawk/`) | `ask_hawk` (`agents/tools/hawk.py`) | Bank transactions and spending totals, per person and per household |
+| Owl (`agents/owl/`) | `ask_owl` (`agents/tools/owl.py`) | Planning: financial entries, recurrences, the month plan, and recurrence suggestions from what repeats every month in the transactions (read only) |
 
-- Tally writes one complete request (period, who, what). Hawk has no history. The user comes from
+- Tally writes one complete request (period, who, what). Hawk and Owl have no history. The user comes from
   Tally's context, never from the model.
 - A specialist tool uses `run_subagent` (`agents/common/subagents.py`). Its tokens are not streamed
   to the app: only Tally's answer is.
 - Rule for **every** specialist: Tally's final answer must say it consulted it (for example
   "Consultei o Hawk"). It is in `CONSULTED_RULE`, in the same file. A new specialist = a new
   tool that calls `run_subagent`, and a line in the table above.
+
+### Recurrence suggestions
+
+Owl suggests, Tally creates. The candidates come from deterministic rules
+(`domain/recurrence_detection.py`), not from the model. Owl only has read-only tools: the entries and
+recurrences tools and the suggest tools (`agents/tools/recurrence_detection.py`). Tally's `create_suggested_recurrence` only creates a
+candidate that came back from `ask_owl` in the conversation and that the person answered (Owl keeps
+no history, so it never sees the confirmation). The rule is in `docs/recurrence-detection.md`
+(repository root).
 
 ## Configuration (`.env`)
 
