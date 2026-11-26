@@ -3,7 +3,13 @@ from unittest.mock import MagicMock
 
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 
-from agents.common.subagents import CONSULTED_RULE, EMPTY_ANSWER, run_subagent
+from agents.common.subagents import (
+    CONSULTED_RULE,
+    EMPTY_ANSWER,
+    final_answer,
+    invoke_subagent,
+    run_subagent,
+)
 
 
 def _agent(*messages):
@@ -57,6 +63,24 @@ class TestRunSubagent(unittest.TestCase):
     def test_no_answer_returns_an_error_the_caller_can_read(self):
         self.assertEqual(run_subagent(_agent(), "x", object()), EMPTY_ANSWER)
         self.assertEqual(run_subagent(_agent(AIMessage(content="  ")), "x", object()), EMPTY_ANSWER)
+
+
+class TestInvokeSubagent(unittest.TestCase):
+    def test_returns_every_message_of_the_run_including_the_tool_results(self):
+        tool_result = ToolMessage(content="data", tool_call_id="1")
+        agent = _agent(HumanMessage(content="x"), tool_result, AIMessage(content="ok"))
+
+        messages = invoke_subagent(agent, "x", object())
+
+        self.assertEqual(len(messages), 3)
+        self.assertIs(messages[1], tool_result)
+        self.assertEqual(agent.invoke.call_args.kwargs["config"], {"callbacks": []})
+
+    def test_final_answer_reads_the_last_answer_of_those_messages(self):
+        call = AIMessage(content="", tool_calls=[{"name": "t", "args": {}, "id": "1"}])
+
+        self.assertEqual(final_answer([call, AIMessage(content="Pronto.")]), "Pronto.")
+        self.assertEqual(final_answer([call]), EMPTY_ANSWER)
 
 
 class TestConsultedRule(unittest.TestCase):

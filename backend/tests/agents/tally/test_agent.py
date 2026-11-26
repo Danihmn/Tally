@@ -22,11 +22,8 @@ from agents.tools.entries import get_household_entries, get_my_entries
 from agents.tools.recurrences import get_household_recurrences, get_my_recurrences
 from agents.common.subagents import CONSULTED_RULE
 from agents.tools.hawk import ask_hawk
-from agents.tools.recurrence_detection import (
-    create_suggested_recurrence,
-    suggest_household_recurrences,
-    suggest_my_recurrences,
-)
+from agents.tools.owl import ask_owl
+from agents.tools.recurrence_detection import create_suggested_recurrence
 from tests.factories import make_user
 
 
@@ -46,8 +43,7 @@ class TestBuildTallyAi(unittest.TestCase):
                 get_household_entries,
                 get_my_recurrences,
                 get_household_recurrences,
-                suggest_my_recurrences,
-                suggest_household_recurrences,
+                ask_owl,
                 create_suggested_recurrence,
                 get_my_bank_accounts,
                 get_household_bank_accounts,
@@ -126,7 +122,8 @@ class TestSystemPrompt(unittest.TestCase):
     def test_suggested_recurrences_are_created_only_after_the_person_confirms(self):
         text = _system_prompt_text()
 
-        self.assertIn("suggest_my_recurrences or suggest_household_recurrences (read only)", text)
+        self.assertIn("criar recorrências a partir das transações -> ask_owl", text)
+        self.assertIn("Owl, the recurrence specialist, only suggests", text)
         self.assertIn("create_suggested_recurrence ONLY after the person confirms a specific candidate", text)
         self.assertIn("Never create a recurrence on your own initiative", text)
 

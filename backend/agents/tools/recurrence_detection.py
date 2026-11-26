@@ -2,8 +2,9 @@
 ones the person confirms.
 
 The candidates come from deterministic rules (`domain/recurrence_detection.py`), never from the
-model. Suggesting is read only. Creating takes only a candidate id, and only after the
-candidate was shown to the person and the person wrote back (the confirmation)."""
+model. The suggest tools are Owl's (read only). The create tool is Tally's: Owl keeps no
+history, so only Tally sees the confirmation. It takes only a candidate id, and only after Owl
+showed that candidate in the conversation and the person wrote back."""
 
 from langchain.tools import ToolRuntime, tool
 from langchain_core.messages import HumanMessage, ToolMessage
@@ -25,13 +26,14 @@ from services.recurrence_detection_service import (
 DEFAULT_LIMIT = 10
 MAX_LIMIT = 30
 SUGGEST_TOOL_NAMES = ("suggest_my_recurrences", "suggest_household_recurrences")
+# Tally's tool that asks Owl: its result holds the candidates the person was shown
+ASK_OWL_TOOL_NAME = "ask_owl"
 CANDIDATE_LABEL = "candidate"
 
 _SUGGEST_HELP = (
     "Read only: it creates nothing. Each candidate has an id, the monthly amount (the median), "
-    "the due day, a confidence from 0 to 1 and the transactions it came from. Show the "
-    "candidates to the person and ask which ones they want as recurrences; never create one "
-    "without their explicit yes for that candidate. Optional: limit (max 30)."
+    "the due day, a confidence from 0 to 1 and the transactions it came from. Keep each "
+    "candidate id in your answer. Optional: limit (max 30)."
 )
 
 
@@ -86,8 +88,8 @@ def _suggest(user: User, only_mine: bool, limit: int) -> str:
         f"Showing {min(len(candidates), limit)} of {len(candidates)} candidates."
     )
     lines.append(
-        "Notes: these are suggestions, NOT recurrences yet. To create one, the person must "
-        "confirm that specific candidate; then call create_suggested_recurrence with its id."
+        "Notes: these are suggestions, NOT recurrences yet. Only the person can confirm one, "
+        "and only then it is created."
     )
     return "\n".join(lines)
 
@@ -127,7 +129,7 @@ def suggest_household_recurrences(
 
 
 def _was_confirmed(messages: list, candidate_id: str) -> bool:
-    """True when a suggest tool showed this candidate in the conversation and the person wrote
+    """True when Owl showed this candidate in the conversation and the person wrote
     after it. Whether that message is a yes is the model's reading; this rule makes sure the
     yes can only come from the person, after they saw the candidate."""
     marker = f"{CANDIDATE_LABEL} {candidate_id}"
@@ -135,7 +137,7 @@ def _was_confirmed(messages: list, candidate_id: str) -> bool:
     for index, message in enumerate(messages):
         if (
             isinstance(message, ToolMessage)
-            and message.name in SUGGEST_TOOL_NAMES
+            and message.name == ASK_OWL_TOOL_NAME
             and marker in str(message.content)
         ):
             shown_at = index
@@ -147,11 +149,11 @@ def _was_confirmed(messages: list, candidate_id: str) -> bool:
 @tool(
     "create_suggested_recurrence",
     description=(
-        "Creates ONE recurrence from a candidate that a suggest tool showed in this "
+        "Creates ONE recurrence from a candidate that Owl showed in this "
         "conversation. Call it ONLY after the person explicitly confirmed THAT candidate in "
         "their last message (for example 'sim, cria a do Netflix'). Never call it on your own "
         "initiative, never for candidates the person did not name, and never with an id you "
-        "did not get from a suggest tool. One call per confirmed candidate. The amount, "
+        "did not get from Owl. One call per confirmed candidate. The amount, "
         "description and due day come from the candidate: you cannot change them here."
     ),
 )
@@ -164,7 +166,7 @@ def create_suggested_recurrence(
     if not _was_confirmed(messages, candidate_id):
         raise ValueError(
             f"candidate {candidate_id} was not shown to the person, or they did not answer "
-            "yet. Call a suggest tool, show the candidate and wait for the person to confirm it."
+            "yet. Ask Owl, show the candidate and wait for the person to confirm it."
         )
 
     user = runtime.context.user
@@ -177,7 +179,7 @@ def create_suggested_recurrence(
             session.rollback()
             raise ValueError(
                 f"could not create the recurrence of candidate {candidate_id} ({error}). "
-                "It may already be a recurrence: call a suggest tool again."
+                "It may already be a recurrence: ask Owl again."
             ) from None
         session.commit()
         names = owner_names(session, user.household_id)

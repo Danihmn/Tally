@@ -14,8 +14,9 @@ candidates and asks for the confirmation.
 |---|---|---|
 | Domain (pure rules) | `backend/domain/recurrence_detection.py` | Normalizes descriptions, groups the transactions, checks the monthly rhythm, builds the candidates. No database. |
 | Service | `backend/services/recurrence_detection_service.py` | Reads the transactions, the accounts and the active recurrences of the household, calls the domain rules, creates the recurrence of a confirmed candidate. |
-| Agent tools | `backend/agents/tools/recurrence_detection.py` | `suggest_my_recurrences`, `suggest_household_recurrences` (read only) and `create_suggested_recurrence` (writes, only after the confirmation). |
-| Agent | `backend/agents/tally/agent.py` | Tally AI gets the three tools. Hawk does not change: it stays read only. |
+| Agent tools | `backend/agents/tools/recurrence_detection.py` | `suggest_my_recurrences`, `suggest_household_recurrences` (read only, Owl's) and `create_suggested_recurrence` (writes, Tally's, only after the confirmation). |
+| Owl | `backend/agents/owl/`, `backend/agents/tools/owl.py` | Owl, the recurrence specialist: a sub-agent with only the suggest tools. Tally asks it with `ask_owl`. |
+| Tally AI | `backend/agents/tally/agent.py` | Gets `ask_owl` and `create_suggested_recurrence`. Hawk does not change: it stays read only. |
 
 ## Detection rule
 
@@ -61,20 +62,27 @@ candidates and asks for the confirmation.
 
 The created recurrence has `source = AI` and a note with the number of months it came from.
 
-## Agent tools
+## Agents and tools
 
-- `suggest_my_recurrences` / `suggest_household_recurrences`: read only. They list the
-  candidates (only the logged person's, or the whole household's with the owner of each one)
-  with the id, amount, due day, confidence and evidence.
-- `create_suggested_recurrence(candidate_id)`: creates the recurrence of one candidate. It
-  does not take amounts or descriptions from the model: it runs the detection again and uses
-  the candidate with that id. It refuses when:
-  - the candidate was not shown by a suggest tool in this conversation, or the person did not
+**Owl suggests, Tally creates.** Owl is a specialist like Hawk: it keeps no history, so it
+never sees the person's answer. The confirmation lives in Tally's conversation, so the tool
+that writes is Tally's.
+
+- Owl's tools, `suggest_my_recurrences` / `suggest_household_recurrences`: read only. They list
+  the candidates (only the logged person's, or the whole household's with the owner of each
+  one) with the id, amount, due day, confidence and evidence.
+- Tally's `ask_owl(request)`: runs Owl and returns its answer, followed by the candidate rows
+  exactly as the suggest tools wrote them (not Owl's words), so the ids Tally sees are the
+  real ones.
+- Tally's `create_suggested_recurrence(candidate_id)`: creates the recurrence of one
+  candidate. It does not take amounts or descriptions from the model: it runs the detection
+  again and uses the candidate with that id. It refuses when:
+  - the candidate was not in an `ask_owl` result of this conversation, or the person did not
     write after it (the confirmation must come from the person, in the chat);
   - the id is not a current candidate any more (it may have become a recurrence already).
 
-The prompt tells Tally AI to show the candidates, ask which ones the person wants, and call
-the create tool once per candidate that the person confirmed by name.
+The prompt tells Tally AI to ask Owl, show the candidates, ask which ones the person wants,
+and call the create tool once per candidate that the person confirmed by name.
 
 ## Tests
 
@@ -86,4 +94,7 @@ the create tool once per candidate that the person confirmed by name.
   the paging, the owner filter and the creation of a confirmed candidate.
 - `backend/tests/agents/tools/test_recurrence_detection.py`: the tool output, the scope, the
   confirmation guard and the errors.
-- `backend/tests/agents/tally/test_agent.py`: Tally AI has the new tools.
+- `backend/tests/agents/owl/test_agent.py`: Owl has only the read-only tools, no history.
+- `backend/tests/agents/tools/test_owl.py`: `ask_owl` passes the context and appends the
+  candidate rows of the rules.
+- `backend/tests/agents/tally/test_agent.py`: Tally AI has `ask_owl` and the create tool.

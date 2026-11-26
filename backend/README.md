@@ -70,6 +70,7 @@ tool, instead of reading the data itself:
 | Specialist | Tool in Tally | Topic |
 |---|---|---|
 | Hawk (`agents/hawk/`) | `ask_hawk` (`agents/tools/hawk.py`) | Bank transactions and spending totals, per person and per household |
+| Owl (`agents/owl/`) | `ask_owl` (`agents/tools/owl.py`) | Suggests recurrences from what repeats every month in the transactions (read only) |
 
 - Tally writes one complete request (period, who, what). Hawk has no history. The user comes from
   Tally's context, never from the model.
@@ -81,11 +82,12 @@ tool, instead of reading the data itself:
 
 ### Recurrence suggestions
 
-Tally also suggests recurrences from the bank transactions (`agents/tools/recurrence_detection.py`).
-The candidates come from deterministic rules (`domain/recurrence_detection.py`), not from the model.
-`suggest_my_recurrences` / `suggest_household_recurrences` are read only; `create_suggested_recurrence`
-only creates a candidate that was shown in the conversation and that the person answered. The rule
-is in `docs/recurrence-detection.md` (repository root).
+Owl suggests, Tally creates. The candidates come from deterministic rules
+(`domain/recurrence_detection.py`), not from the model. Owl only has the read-only suggest tools
+(`agents/tools/recurrence_detection.py`). Tally's `create_suggested_recurrence` only creates a
+candidate that came back from `ask_owl` in the conversation and that the person answered (Owl keeps
+no history, so it never sees the confirmation). The rule is in `docs/recurrence-detection.md`
+(repository root).
 
 ## Configuration (`.env`)
 

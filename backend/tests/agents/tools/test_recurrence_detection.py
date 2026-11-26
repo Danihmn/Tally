@@ -143,7 +143,7 @@ class SuggestToolsTests(DetectionToolTestCase):
 
 
 class CreateToolTests(DetectionToolTestCase):
-    def shown(self, candidate_id="ab12cd34", tool_name="suggest_household_recurrences"):
+    def shown(self, candidate_id="ab12cd34", tool_name="ask_owl"):
         return ToolMessage(
             content=f"... candidate {candidate_id} | NETFLIX.COM | ...",
             name=tool_name,
@@ -196,9 +196,9 @@ class CreateToolTests(DetectionToolTestCase):
         self.assertTrue(result.startswith("Error:"))
         self.create.assert_not_called()
 
-    def test_refuses_an_id_shown_by_another_tool(self):
+    def test_refuses_an_id_that_did_not_come_from_owl(self):
         self.with_messages(
-            self.shown(tool_name="get_household_recurrences"), HumanMessage("sim")
+            self.shown(tool_name="suggest_household_recurrences"), HumanMessage("sim")
         )
 
         result = create_suggested_recurrence.func(
@@ -227,6 +227,6 @@ class CreateToolTests(DetectionToolTestCase):
         )
 
         self.assertTrue(result.startswith("Error:"))
-        self.assertIn("call a suggest tool again", result)
+        self.assertIn("ask Owl again", result)
         self.session.rollback.assert_called_once()
         self.session.commit.assert_not_called()
