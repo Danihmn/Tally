@@ -79,6 +79,14 @@ tool, instead of reading the data itself:
   "Consultei o Hawk"). It is in `CONSULTED_RULE`, in the same file. A new specialist = a new
   tool that calls `run_subagent`, and a line in the table above.
 
+### Recurrence suggestions
+
+Tally also suggests recurrences from the bank transactions (`agents/tools/recurrence_detection.py`).
+The candidates come from deterministic rules (`domain/recurrence_detection.py`), not from the model.
+`suggest_my_recurrences` / `suggest_household_recurrences` are read only; `create_suggested_recurrence`
+only creates a candidate that was shown in the conversation and that the person answered. The rule
+is in `docs/recurrence-detection.md` (repository root).
+
 ## Configuration (`.env`)
 
 ```bash

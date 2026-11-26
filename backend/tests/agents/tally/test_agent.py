@@ -22,6 +22,11 @@ from agents.tools.entries import get_household_entries, get_my_entries
 from agents.tools.recurrences import get_household_recurrences, get_my_recurrences
 from agents.common.subagents import CONSULTED_RULE
 from agents.tools.hawk import ask_hawk
+from agents.tools.recurrence_detection import (
+    create_suggested_recurrence,
+    suggest_household_recurrences,
+    suggest_my_recurrences,
+)
 from tests.factories import make_user
 
 
@@ -41,6 +46,9 @@ class TestBuildTallyAi(unittest.TestCase):
                 get_household_entries,
                 get_my_recurrences,
                 get_household_recurrences,
+                suggest_my_recurrences,
+                suggest_household_recurrences,
+                create_suggested_recurrence,
                 get_my_bank_accounts,
                 get_household_bank_accounts,
                 get_my_credit_cards,
@@ -114,6 +122,13 @@ class TestSystemPrompt(unittest.TestCase):
 
         self.assertIn("planejamento", text)
         self.assertIn("the recurrences tools (what repeats every month) AND the entries tools", text)
+
+    def test_suggested_recurrences_are_created_only_after_the_person_confirms(self):
+        text = _system_prompt_text()
+
+        self.assertIn("suggest_my_recurrences or suggest_household_recurrences (read only)", text)
+        self.assertIn("create_suggested_recurrence ONLY after the person confirms a specific candidate", text)
+        self.assertIn("Never create a recurrence on your own initiative", text)
 
     def test_ambiguous_questions_get_one_short_question_instead_of_i_dont_know(self):
         text = _system_prompt_text()

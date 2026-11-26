@@ -18,6 +18,11 @@ from agents.tools.accounts import (
 from agents.tools.calculator import calculate
 from agents.tools.entries import get_household_entries, get_my_entries
 from agents.tools.hawk import ask_hawk
+from agents.tools.recurrence_detection import (
+    create_suggested_recurrence,
+    suggest_household_recurrences,
+    suggest_my_recurrences,
+)
 from agents.tools.recurrences import get_household_recurrences, get_my_recurrences
 
 TALLY_AI_SYSTEM_PROMPT = (
@@ -64,6 +69,13 @@ TALLY_AI_TOOLS_PROMPT = (
     "vencimento, atrasado, parcela, conciliado -> the entries tools;\n"
     "- recurrences (recorrências): contas fixas, gastos fixos, assinaturas, mensalidade, "
     "salário fixo, todo mês, o que se repete -> the recurrences tools;\n"
+    "- new recurrences from the transactions: sugerir recorrências, o que se repete e não "
+    "está cadastrado, criar recorrências a partir das transações -> suggest_my_recurrences or "
+    "suggest_household_recurrences (read only). Show the candidates (description, amount, "
+    "due day, how many months, whose) and ask which ones to create. Call "
+    "create_suggested_recurrence ONLY after the person confirms a specific candidate, once "
+    "per confirmed candidate; a vague answer is not a confirmation, so ask again. Never "
+    "create a recurrence on your own initiative;\n"
     "- bank accounts: saldo, conta, conta corrente, poupança, cheque especial, quanto tenho "
     "-> the bank accounts tools;\n"
     "- credit cards: cartão, fatura, limite, vencimento da fatura, pagamento mínimo "
@@ -126,6 +138,9 @@ def build_tally_ai():
             get_household_entries,
             get_my_recurrences,
             get_household_recurrences,
+            suggest_my_recurrences,
+            suggest_household_recurrences,
+            create_suggested_recurrence,
             get_my_bank_accounts,
             get_household_bank_accounts,
             get_my_credit_cards,
