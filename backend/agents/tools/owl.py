@@ -42,12 +42,15 @@ def _candidate_lines(messages: list[BaseMessage]) -> list[str]:
 @tool(
     ASK_OWL_TOOL_NAME,
     description=(
-        "Asks Owl, the recurrence specialist, to find in the bank transactions what repeats "
-        "every month and is not a recurrence (recorrência) yet: salary, rent, subscriptions, "
-        "fixed bills that were never registered. Owl only SUGGESTS candidates (with an id, "
-        "amount, due day, confidence and evidence); it creates nothing. "
-        "Owl has no memory of the conversation: write ONE complete request in Portuguese "
-        "saying WHO it is about (the person talking, the partner, or the whole household)."
+        "Asks Owl, the planning specialist, to analyse what is planned: financial entries "
+        "(lançamentos: previsto, a pagar, a receber, atrasado, conciliado), recurrences "
+        "(recorrências: contas fixas, assinaturas, salário), the month plan (orçamento, "
+        "previsão, sobra no fim do mês), and what repeats every month in the bank transactions "
+        "and is not a recurrence yet. For those, Owl only SUGGESTS candidates (with an id, "
+        "amount, due day, confidence and evidence); it creates and changes nothing. "
+        "Owl has no memory of the conversation: write ONE complete request in Portuguese with "
+        "the period when it matters, WHO it is about (the person talking, the partner, or the "
+        "whole household) and what is wanted."
     ),
 )
 def ask_owl(request: str, runtime: ToolRuntime[TallyContext]) -> str:

@@ -15,8 +15,8 @@ candidates and asks for the confirmation.
 | Domain (pure rules) | `backend/domain/recurrence_detection.py` | Normalizes descriptions, groups the transactions, checks the monthly rhythm, builds the candidates. No database. |
 | Service | `backend/services/recurrence_detection_service.py` | Reads the transactions, the accounts and the active recurrences of the household, calls the domain rules, creates the recurrence of a confirmed candidate. |
 | Agent tools | `backend/agents/tools/recurrence_detection.py` | `suggest_my_recurrences`, `suggest_household_recurrences` (read only, Owl's) and `create_suggested_recurrence` (writes, Tally's, only after the confirmation). |
-| Owl | `backend/agents/owl/`, `backend/agents/tools/owl.py` | Owl, the recurrence specialist: a sub-agent with only the suggest tools. Tally asks it with `ask_owl`. |
-| Tally AI | `backend/agents/tally/agent.py` | Gets `ask_owl` and `create_suggested_recurrence`. Hawk does not change: it stays read only. |
+| Owl | `backend/agents/owl/`, `backend/agents/tools/owl.py` | Owl, the planning specialist: a read-only sub-agent with the entries and recurrences tools (moved from Tally), the suggest tools and `calculate`. Tally asks it with `ask_owl`. |
+| Tally AI | `backend/agents/tally/agent.py` | Gets `ask_owl` and `create_suggested_recurrence`, and no entries or recurrences tools any more. Hawk does not change: it stays read only. |
 
 ## Detection rule
 
@@ -64,7 +64,11 @@ The created recurrence has `source = AI` and a note with the number of months it
 
 ## Agents and tools
 
-**Owl suggests, Tally creates.** Owl is a specialist like Hawk: it keeps no history, so it
+**Owl analyses and suggests, Tally creates.** Owl is the planning specialist: it reads the
+entries (lançamentos) and the recurrences (`get_my_entries`, `get_household_entries`,
+`get_my_recurrences`, `get_household_recurrences`, that were Tally's before), answers the planning
+questions (the month plan, what is coming, what is left at the end of the month) and suggests new
+recurrences. Owl is a specialist like Hawk: it keeps no history, so it
 never sees the person's answer. The confirmation lives in Tally's conversation, so the tool
 that writes is Tally's.
 
@@ -94,7 +98,9 @@ and call the create tool once per candidate that the person confirmed by name.
   the paging, the owner filter and the creation of a confirmed candidate.
 - `backend/tests/agents/tools/test_recurrence_detection.py`: the tool output, the scope, the
   confirmation guard and the errors.
-- `backend/tests/agents/owl/test_agent.py`: Owl has only the read-only tools, no history.
+- `backend/tests/agents/owl/test_agent.py`: Owl has the planning tools, the suggest tools and the
+  calculator, all read only, and no history.
 - `backend/tests/agents/tools/test_owl.py`: `ask_owl` passes the context and appends the
   candidate rows of the rules.
-- `backend/tests/agents/tally/test_agent.py`: Tally AI has `ask_owl` and the create tool.
+- `backend/tests/agents/tally/test_agent.py`: Tally AI has `ask_owl` and the create tool, and no
+  entries or recurrences tools.
