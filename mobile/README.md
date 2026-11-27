@@ -60,7 +60,8 @@ docs/            ARCHITECTURE.md, BACKEND_GAPS.md
 
 ## Security summary
 
-- JWT only in `flutter_secure_storage` (Keychain/Keystore). Never in preferences, never logged.
+- JWT and refresh token only in `flutter_secure_storage` (Keychain/Keystore). Never in preferences, never logged.
+- Session renewal: on a 401, `AuthInterceptor` calls `POST /auth/refresh` (one refresh for all requests that fail together), saves the new pair and repeats the request once. The login screen only shows when the API rejects the refresh token. Logout also revokes it (`POST /auth/logout`).
 - `shared_preferences` only for theme and other non-sensitive settings.
 - No backups on Android, HTTPS only in release, no secrets in the repository.
 - Debug log prints method, path and status only. No headers, query or bodies.

@@ -34,6 +34,10 @@ class NoRecurrencesError(InvalidDataError):
     """There is no active recurrence to provision a month from."""
 
 
+class InvalidRefreshTokenError(ServiceError):
+    """The refresh token is unknown, expired, revoked or already used."""
+
+
 class ServiceUnavailableError(ServiceError):
     """The database is unreachable."""
 

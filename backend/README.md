@@ -103,6 +103,7 @@ cp .env.example.dev .env   # local development
 | `JWT_SECRET_KEY` | JWT secret. Generate a new one, do not use the example's |
 | `JWT_ALGORITHM` | E.g. `HS256` |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | Access token lifetime |
+| `REFRESH_TOKEN_EXPIRE_DAYS` | Optional, default `30`. Refresh token lifetime (see "Login and refresh token") |
 | `ENCRYPTION_KEY` | Fernet key that encrypts the Pluggy client secret |
 | `PUBLIC_BASE_URL` | Public HTTPS URL Pluggy reaches the backend at (the ngrok one) |
 | `CONVERSATION_TOKEN_LIMIT` | Optional, default `50000`. Size of a Tally AI conversation (tokens the model reads) at which it is full: the app warns at 80% and `POST /tally/chat` answers 409 `conversation_limit_reached` at 100%. Copied to each conversation when it is created |

@@ -12,6 +12,8 @@ class Settings(BaseSettings):
     jwt_secret_key: str
     jwt_algorithm: str
     access_token_expire_minutes: int
+    # How long a refresh token lives. Each use rotates it, so this is the time away from the app before a new login
+    refresh_token_expire_days: int = 30
     encryption_key: str
     # Public HTTPS base url Pluggy reaches this backend at (e.g. an ngrok url). Unset skips the webhook registration
     public_base_url: str | None = None

@@ -7,6 +7,7 @@ from sqlalchemy import CheckConstraint
 from infra.database.models import (
     Conversations,
     FinancialEntries,
+    RefreshTokens,
     Recurrences,
     Transactions,
 )
@@ -87,3 +88,17 @@ class TestCheckConstraintNames(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestRefreshTokensTable(unittest.TestCase):
+    def test_token_hash_is_unique(self):
+        names = {c.name for c in RefreshTokens.__table__.constraints}
+        self.assertIn("refresh_tokens_token_hash_key", names)
+
+    def test_every_entity_field_is_a_column(self):
+        from domain.entities import RefreshToken
+
+        self.assertEqual(_missing_columns(RefreshToken, RefreshTokens), set())
+
+    def test_there_is_no_column_for_the_token_itself(self):
+        self.assertNotIn("token", RefreshTokens.__table__.columns.keys())
