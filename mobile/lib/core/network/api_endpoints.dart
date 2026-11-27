@@ -31,6 +31,14 @@ abstract final class ApiEndpoints {
 
   static const login = ApiEndpoint('POST', '/auth/login', usedBy: 'Login');
 
+  static const refresh = ApiEndpoint(
+    'POST',
+    '/auth/refresh',
+    usedBy: 'Session (new access token when it expires)',
+  );
+
+  static const logout = ApiEndpoint('POST', '/auth/logout', usedBy: 'Logout');
+
   static const me = ApiEndpoint('GET', '/users/me', usedBy: 'Home');
 
   static const users = ApiEndpoint('GET', '/users', usedBy: 'Home');
@@ -275,6 +283,8 @@ abstract final class ApiEndpoints {
   /// Every endpoint above. Add new ones here too.
   static const all = <ApiEndpoint>[
     login,
+    refresh,
+    logout,
     me,
     users,
     createUser,

@@ -27,7 +27,7 @@ abstract final class DioFactory {
     // Order matters: the auth interceptor reads the raw 401 first, then the
     // error interceptor converts the error into a Failure.
     dio.interceptors.addAll([
-      AuthInterceptor(tokenStore: tokenStore, notifier: notifier),
+      AuthInterceptor(dio: dio, tokenStore: tokenStore, notifier: notifier),
       ErrorInterceptor(),
       if (enableLogging) SafeLogInterceptor(),
     ]);

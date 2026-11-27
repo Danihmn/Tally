@@ -65,6 +65,7 @@ Main `.env` variables:
 |---|---|
 | `DATABASE_URL` | Postgres connection |
 | `JWT_SECRET_KEY`, `JWT_ALGORITHM`, `ACCESS_TOKEN_EXPIRE_MINUTES` | Login tokens |
+| `REFRESH_TOKEN_EXPIRE_DAYS` | Optional, default `30`. Life of a refresh token (see "Login and refresh token") |
 | `ENCRYPTION_KEY` | Fernet key (encrypts the Pluggy client secret) |
 | `PUBLIC_BASE_URL` | Public HTTPS URL that Pluggy calls (ngrok in dev, the domain in prod) |
 | `BEDROCK_API_KEY`, `BEDROCK_BASE_URL`, `BEDROCK_MODEL` | Empty key = local Ollama. Filled = Bedrock |
@@ -114,6 +115,16 @@ In production, `https` is required (`--dart-define=ENVIRONMENT=prod`).
 4. The `item/created` webhook saves the item and starts the first sync.
 
 ## Business rules
+
+### Login and refresh token
+
+- `POST /auth/login` returns a short access token (JWT, `ACCESS_TOKEN_EXPIRE_MINUTES`) and a **refresh token** (`REFRESH_TOKEN_EXPIRE_DAYS`, default 30 days).
+- The refresh token is a random string, not a JWT. Only its SHA-256 hash is stored, in the `refresh_tokens` table.
+- When the access token expires, the app calls `POST /auth/refresh` with the refresh token. It gets a **new pair**, and the old refresh token stops working (rotation). So the user only logs in again after 30 days without opening the app.
+- If a token that was already swapped is sent again, it may have been stolen: all refresh tokens of that user are revoked, and the user has to log in again.
+- `POST /auth/logout` revokes the refresh token. It needs no access token.
+- Expired tokens are deleted from the table on each login and refresh.
+- A new table means a migration: the deploy already runs `alembic upgrade head`.
 
 ### Pluggy and Meu Pluggy
 

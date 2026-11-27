@@ -108,6 +108,44 @@ class Users(Base):
     )
 
 
+class RefreshTokens(Base):
+    """Login refresh tokens. Only the SHA-256 hash is stored, never the token."""
+
+    __tablename__ = "refresh_tokens"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["user_id"],
+            ["users.id"],
+            ondelete="CASCADE",
+            name="refresh_tokens_user_id_fkey",
+        ),
+        ForeignKeyConstraint(
+            ["replaced_by_id"],
+            ["refresh_tokens.id"],
+            ondelete="SET NULL",
+            name="refresh_tokens_replaced_by_id_fkey",
+        ),
+        PrimaryKeyConstraint("id", name="refresh_tokens_pkey"),
+        UniqueConstraint("token_hash", name="refresh_tokens_token_hash_key"),
+        Index("idx_refresh_tokens_user_id", "user_id"),
+        Index("idx_refresh_tokens_expires_at", "expires_at"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, primary_key=True, server_default=text("gen_random_uuid()")
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    token_hash: Mapped[str] = mapped_column(Text, nullable=False)
+    expires_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(True), nullable=False
+    )
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(True), nullable=False, server_default=text("now()")
+    )
+    revoked_at: Mapped[datetime.datetime | None] = mapped_column(DateTime(True))
+    replaced_by_id: Mapped[uuid.UUID | None] = mapped_column(Uuid)
+
+
 class Conversations(Base):
     __tablename__ = "conversations"
     __table_args__ = (

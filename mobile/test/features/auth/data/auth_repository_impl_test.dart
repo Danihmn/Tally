@@ -9,12 +9,14 @@ import '../../../support/fakes.dart';
 
 void main() {
   late FakeSecureStorage storage;
+  late FakeHttpAdapter adapter;
 
   AuthRepositoryImpl build(FakeReply Function() reply) {
     storage = FakeSecureStorage();
     final tokenStore = SessionTokenStore(storage);
+    adapter = FakeHttpAdapter((_) => reply());
     final dio = buildFakeDio(
-      FakeHttpAdapter((_) => reply()),
+      adapter,
       tokenStore: tokenStore,
     );
     return AuthRepositoryImpl(
@@ -24,11 +26,12 @@ void main() {
   }
 
   group('AuthRepositoryImpl', () {
-    test('a_successful_login_keeps_the_token', () async {
+    test('a_successful_login_keeps_both_tokens', () async {
       final repository = build(
         () => const FakeReply(200, {
           'access_token': 'jwt-123',
           'token_type': 'bearer',
+          'refresh_token': 'refresh-123',
         }),
       );
 
@@ -36,6 +39,7 @@ void main() {
 
       expect(result.isSuccess, isTrue);
       expect(storage.values['auth_token'], 'jwt-123');
+      expect(storage.values['auth_refresh_token'], 'refresh-123');
     });
 
     test('a_failed_login_keeps_no_token', () async {
@@ -47,13 +51,47 @@ void main() {
       expect(storage.values, isEmpty);
     });
 
-    test('logout_forgets_the_token', () async {
-      final repository = build(() => const FakeReply(200, {}));
+    test('logout_forgets_both_tokens', () async {
+      final repository = build(() => const FakeReply(204));
       storage.values['auth_token'] = 'jwt-123';
+      storage.values['auth_refresh_token'] = 'refresh-123';
 
       await repository.logout();
 
       expect(storage.values, isEmpty);
+    });
+
+    test('logout_asks_the_api_to_revoke_the_refresh_token', () async {
+      final repository = build(() => const FakeReply(204));
+      storage.values['auth_refresh_token'] = 'refresh-123';
+
+      await repository.logout();
+      await pumpEventQueue();
+
+      final request = adapter.requests.single;
+      expect(request.path, '/auth/logout');
+      expect(request.data, {'refresh_token': 'refresh-123'});
+    });
+
+    test('logout_works_even_when_the_api_is_down', () async {
+      final repository = build(() => const FakeReply(503, {}));
+      storage.values['auth_token'] = 'jwt-123';
+      storage.values['auth_refresh_token'] = 'refresh-123';
+
+      await repository.logout();
+      await pumpEventQueue();
+
+      expect(storage.values, isEmpty);
+    });
+
+    test('logout_without_a_refresh_token_calls_no_endpoint', () async {
+      final repository = build(() => const FakeReply(204));
+      storage.values['auth_token'] = 'jwt-123';
+
+      await repository.logout();
+      await pumpEventQueue();
+
+      expect(adapter.requests, isEmpty);
     });
   });
 }

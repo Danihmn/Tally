@@ -21,6 +21,7 @@ void main() {
         (_) => const FakeReply(200, {
           'access_token': 'jwt-123',
           'token_type': 'bearer',
+          'refresh_token': 'refresh-123',
         }),
       );
 
@@ -28,6 +29,7 @@ void main() {
           .login(email: 'ana@casa.com', password: 'segredo123');
 
       expect(result.valueOrNull?.accessToken, 'jwt-123');
+      expect(result.valueOrNull?.refreshToken, 'refresh-123');
       final request = adapter.requests.single;
       expect(request.method, 'POST');
       expect(request.path, '/auth/login');
@@ -63,6 +65,19 @@ void main() {
       expect(result.failureOrNull, const ServerUnavailableFailure());
     });
 
+    test('an_answer_without_a_refresh_token_is_an_unknown_failure', () async {
+      final adapter = FakeHttpAdapter(
+        (_) => const FakeReply(200, {
+          'access_token': 'jwt-123',
+          'token_type': 'bearer',
+        }),
+      );
+
+      final result = await build(adapter).login(email: 'a@b.c', password: 'x');
+
+      expect(result.failureOrNull, const UnknownFailure());
+    });
+
     test('an_answer_without_a_token_is_an_unknown_failure', () async {
       final adapter = FakeHttpAdapter(
         (_) => const FakeReply(200, {'token_type': 'bearer'}),
@@ -71,6 +86,29 @@ void main() {
       final result = await build(adapter).login(email: 'a@b.c', password: 'x');
 
       expect(result.failureOrNull, const UnknownFailure());
+    });
+  });
+
+  group('AuthRemoteDataSource.logout', () {
+    test('posts_the_refresh_token_to_the_logout_endpoint', () async {
+      final adapter = FakeHttpAdapter((_) => const FakeReply(204));
+
+      final result = await build(adapter).logout(refreshToken: 'refresh-123');
+
+      expect(result.isSuccess, isTrue);
+      final request = adapter.requests.single;
+      expect(request.method, 'POST');
+      expect(request.path, '/auth/logout');
+      expect(request.data, {'refresh_token': 'refresh-123'});
+      expect(request.headers['Authorization'], isNull);
+    });
+
+    test('a_failed_logout_is_a_failure_and_does_not_throw', () async {
+      final adapter = FakeHttpAdapter((_) => const FakeReply(503, {}));
+
+      final result = await build(adapter).logout(refreshToken: 'refresh-123');
+
+      expect(result.failureOrNull, const ServerUnavailableFailure());
     });
   });
 }
