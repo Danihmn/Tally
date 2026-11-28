@@ -126,7 +126,7 @@ def list_balances_endpoint(
         session, current_user.household_id, items, next_month_start(today_local())
     )
     return [
-        AccountBalanceResponse.from_read_model(item, bills.get(item.account.id))
+        AccountBalanceResponse.from_read_model(item, bills.get(item.account.id))  # type: ignore
         for item in items
     ]
 
